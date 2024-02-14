@@ -1,41 +1,32 @@
-# project.*
-unset envrc.loaded
+# use just instead?
 
-envrc.pathname() (
-    : 'envrc.pathname # return the absolute pathname to this file'
-    set -Eeuo pipefail; shopt -s nullglob; shopt -s extdebug
-    realpath -LP $(declare -F ${FUNCNAME} | awk '{print($3);}')
-); declare -fx envrc.pathname
+eval "pj.root()( echo '$(realpath ${BASH_SOURCE%/*}/../..)';)"; declare -fx pj.root
+eval "pj.name()( echo '$(basename $(realpath ${BASH_SOURCE%/*}/../..))';)"; declare -fx pj.name
+eval "pj.user() ( echo '${USER}'; )"; declare -fx pj.user
+# eval "pj.user.email() ( echo 'mike@carif.io'; )"; declare -fx pj.user.email
 
-trap '>&2 echo $(envrc.pathname):${BASH_LINENO} => $?; trap - ERR;' ERR
+pj.bin() ( echo $(pj.root)/pj/bin; ); declare -fx pj.bin
 
-eval "project.root()( echo '$(realpath ${BASH_SOURCE%/*}/..)';)"; declare -fx project.root
-eval "project.name()( echo '$(basename $(realpath ${BASH_SOURCE%/*}/..))';)"; declare -fx project.name
-eval "project.user() ( echo '${USER}'; )"; declare -fx project.user
-eval "project.user.email() ( echo 'mike@carif.io'; )"; declare -fx project.user.email
-
-project.bin() ( echo $(project.root)/bin; ); declare -fx project.bin
-
-project.path.add() {
+pj.path.add() {
     for _p in "$@"; do
 	case ":${PATH}:" in 
 	    *:"$1":*) ;;
 	    *) PATH=$1:$PATH;;
 	esac
     done
-}; declare -fx project.path.add
+}; declare -fx pj.path.add
 
-project.path.add "$(project.bin)"
+pj.path.add "$(pj.bin)"
 
-project.fns() (
+pj.fns() (
     local -r _module=${FUNCNAME%%.*}
     local -r _prefix=${1:-${_module}}
     declare -F| cut -c13-|grep -e "^${_prefix}\."
-); declare -fx project.fns
+); declare -fx pj.fns
 
-project.undo() {
-    for _f in $(project.fns) ${FUNCNAME}; do unset ${_f}; done
-}; declare -fx project.undo
+pj.undo() {
+    for _f in $(pj.fns) ${FUNCNAME}; do unset ${_f}; done
+}; declare -fx pj.undo
 
 
 _envrc.bad.arg() {
@@ -53,32 +44,31 @@ envrc.reload() {
     source "${_pathname}" "$@" && >&2 echo "${_pathname} reloaded"
 }; declare -fx envrc.reload
 
-project.browser.open() (
-    : 'project.browser.open ${_url} # opens my default browser in the required url'
+pj.browser.open() (
+    : 'pj.browser.open ${_url} # opens my default browser in the required url'
     set -Eeuo pipefail; shopt -s nullglob
     # local -r _url="${1:?$(_envrc.bad.arg _url "${1-}" 'expecting a envrc url')}"
     for _url in "$@"; do
 	xdg-open  "${_url}" && >&2 printf "opening url '%s'\n" "${_url}"
     done
-); declare -fx project.browser.open
+); declare -fx pj.browser.open
 
-project.mkbookmark() {
-    : 'project.mkbookmark ${name} ${url} # create a "bookmark" function'
+pj.mkbookmark() {
+    : 'pj.mkbookmark ${name} ${url} # create a "bookmark" function'
     local -r _module=${FUNCNAME%%.*}
     local -r _kind=$(echo ${FUNCNAME##*.} | cut -c3-)
     local _name=${1:?$(_envrc.bad.arg _name "${1-}" 'expecting a bookmark name')}
     local _url="${2:?$(_envrc.bad.arg _url "${1-}" 'expecting a url')}"
     local -r _fn="${_module}.${_kind}.${_name}"
     local -r _remember="${_module}_${_kind}s"
-    eval "${_fn}()(jira.browser.open \"${_url}\"; )"
+    eval "${_fn}()(pj.browser.open \"${_url}\"; )"
     declare -fx ${_fn}
     # TODO mcarifio@ciq.com: not working
     # eval "${_remember}[${_fn}]=\"${_url}\""
-}; declare -fx project.mkbookmark
+}; declare -fx pj.mkbookmark
 
-project.mkbookmark mojo.mojo-intro-yt "https://youtu.be/j2BtOxtlJk4"
-project.mkbookmark mojo.docs "https://docs.modular.com/mojo/"
-project.mkbookmark mojo.playground "https://playground.modular.com/hub/spawn-pending/$(project.user.email)"
+pj.mkbookmark $(pj.name).git "tbs"
+# pj.mkbookmark $(pj.name).doc $(pj.name).git/doc
 
 url4() (
     local -r _name="${1:?$(_envrc.bad.arg _name "${1-}" 'expecting a function name')}"
@@ -87,13 +77,12 @@ url4() (
 ); declare -fx url4
 
 
-project.bookmarks() (
+pj.bookmarks() (
     local -r _module=${FUNCNAME%%.*}
-    for _f in $(project.fns ${_module}.bookmark); do type ${_f}; done
+    for _f in $(pj.fns ${_module}.bookmark); do type ${_f}; done
 )
 
-project.loaded() (
-    : 'project.loaded # is defined and returns 0 when called if $(jira.pathname) was sourced to completion'
+pj.loaded() (
+    : 'pj.loaded # is defined and returns 0 when called if $(jira.pathname) was sourced to completion'
     return 0;
-); declare -fx project.loaded
-
+); declare -fx pj.loaded
