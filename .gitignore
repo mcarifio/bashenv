@@ -1,5 +1,11 @@
 # An initial .envrc for direnv is in this repo. But you might modify it and inadvertently commit it.
-.envrc 
+.envrc
+
+# https://www.dotenv.org/docs/
+# for secrets, which you might have yourself
+.env
+.env.*
+
 
 # ignore log files
 *.log
