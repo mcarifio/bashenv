@@ -1,9 +1,9 @@
-source $(dirname ${BASH_SOURCE})/pj.sh
+# not really needed...
 
-cat <<EOF > $(pj.root)/.envrc
-# created by $(realpath ${BASH_SOURCE}) on '$(date)'
+cat <<EOF > $(dirname ${BASH_SOURCE})/../../.envrc
 source pj/bin/pj.sh
 PATH_add pj/bin
 EOF
 
-direnv allow $(pj.root)
+direnv allow $(dirname ${BASH_SOURCE})/../..
+

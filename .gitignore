@@ -1,1 +1,6 @@
+# An initial .envrc for direnv is in this repo. But you might modify it and inadvertently commit it.
+.envrc 
+
+# ignore log files
+*.log
 pj/log/**
