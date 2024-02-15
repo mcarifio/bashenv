@@ -1,3 +1,5 @@
+running.bash || return 0
+
 # better than lsb_release
 # All variables in /etc/os-release can be printed
 name2env() {

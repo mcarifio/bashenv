@@ -1,3 +1,5 @@
+running.bash && u.have $(basename ${BASH_SOURCE} .sh) || return 0
+
 # source into bash, assumes asdf precedes other installation approaches.
 # [commands](http://asdf-vm.com/manage/commands.html)
 export ASDF_DATA_DIR=~/opt/asdf/current

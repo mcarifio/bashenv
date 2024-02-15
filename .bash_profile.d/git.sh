@@ -1,5 +1,4 @@
-# source into bash
-# @see { ~/.config/git/bin for git-* commands }
+running.bash && u.have $(basename ${BASH_SOURCE} .sh) || return 0
 
 git.url.folder() (
     set -Eeuo pipefail

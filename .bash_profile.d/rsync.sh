@@ -1,7 +1,4 @@
-# source for bash only
-realpath /proc/$$/exe | grep -Eq 'bash$' || return 0
-# source only if rsync is available
-type -p rsync &> /dev/null || return 0
+running.bash && u.have $(basename ${BASH_SOURCE} .sh) || return 0
 
 rsync.local.target() ( echo /run/media/${USER}${1:?'expecting a target'}; ); declare -fx rsync.local.target
 rsync.local.root() ( echo /run/media/${USER}/home; ); declare -fx rsync.local.root

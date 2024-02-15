@@ -1,5 +1,4 @@
-realpath /proc/$$/exe | grep -Eq 'bash$' || return 0
-type -p sgpt &> /dev/null || return 0
+running.bash && u.have $(basename ${BASH_SOURCE} .sh) || return 0
 
 sgpt.fix() (
     : 'sgpt.fix [--what=package] --on=[linux] ... additional advice'

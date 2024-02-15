@@ -1,3 +1,5 @@
+running.bash || return 0
+
 # linux.modules() { find /lib/modules -type f -regex '\.ko(\.xz)?$'; } # regex is broken
 linux.modules() { find /lib/modules -type f -name '*.ko'; find /lib/modules -type f -name '*.ko.xz'; } 
 module.is-signed() {

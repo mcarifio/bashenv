@@ -1,5 +1,4 @@
-realpath /proc/$$/exe | grep -Eq 'bash$' || return 0  ## shell must be bash
-type go &> /dev/null || return 0  ## go must be installed
+running.bash && u.have $(basename ${BASH_SOURCE} .sh) || return 0
 
 go.path() (
     : 'go.path |> current path for go binaries iff the folder exists'

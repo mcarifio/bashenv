@@ -1,4 +1,5 @@
-realpath /proc/$$/exe | grep -Eq 'bash$' || return 0
+running.bash && u.have $(basename ${BASH_SOURCE} .sh) || return 0
+
 ssh.scan() {
   for ip in $(arp.scan $@); do ssh ${ip} id > /dev/null && echo ${ip}; done
 }; declare -fx ssh.scan

@@ -1,10 +1,12 @@
+running.bash && u.have $(basename ${BASH_SOURCE} .sh) || return 0
 # dnf install -y emacs
 # systemctl --user enable --now emacs-modified
 # journalctl --user-unit emacs
 # loginctl enable-linger ${USER}
 ec() {
    # run the background service iff it isn't active
-   local _service=emacs-modified
+   # local _service=emacs-modified
+   local _service=emacs
    systemctl --user --quiet is-active ${_service} || systemctl --user start ${_service} || { journalctl --user-unit ${_service}; return 0; }
    declare -i _frames=$(/usr/bin/emacsclient -e '(length (frame-list))')
    (( _frames > 1 )) && emacsclient "$@" || emacsclient -c "${@:-.}" &

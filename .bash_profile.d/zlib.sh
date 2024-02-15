@@ -1,3 +1,5 @@
+running.bash || return 0
+
 zlib.category() (
     : 'zlib.category ${pathname} # |> returns the category of a pathname, e.g. foo.rs.pdf.xz returns rs'
     local _one="${1:?'expecting a pathname'}"

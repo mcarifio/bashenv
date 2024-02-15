@@ -1,4 +1,4 @@
-realpath /proc/$$/exe | grep -Eq 'bash$' || return 0
+running.bash && u.have.all $(basename ${BASH_SOURCE} .sh) rpm || return 0
 
 # dnf and decl must come first
 # https://unix.stackexchange.com/questions/403181/how-to-pin-a-package-in-dnf-fedora

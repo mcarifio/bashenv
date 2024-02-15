@@ -1,3 +1,4 @@
+running.bash || return 0
 # needs work
 
 BASH_SOURCE.dirname() (

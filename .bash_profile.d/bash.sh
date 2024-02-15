@@ -1,3 +1,5 @@
+running.bash || return 0
+
 bash.ec() (
     : 'bash.ec ${function-name} => ec +${lineno} ${pathname} # suitable for emacs'
     shopt -s extdebug

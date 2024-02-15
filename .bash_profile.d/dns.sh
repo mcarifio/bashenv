@@ -1,4 +1,4 @@
-realpath /proc/$$/exe | grep -Eq 'bash$' || return 0
+running.bash && u.have dig || return 0
 
 dns.zone() (
     : 'dns.zone ${tld}'
@@ -13,12 +13,12 @@ dns.zone() (
 ); declare -fx dns.zone
 
 
-dns.resolve-each() (
+dns.resolve.all() (
     local -r _dn=${1:?'expecting a domain name'}
     for _resolver in $(grep nameserver /etc/resolv.conf | awk '{print $2;}'); do
 	(set -x; dig +short @${_resolver} ${_dn})
     done
-); declare -fx dns.resolve-each
+); declare -fx dns.resolve.all
 
 
 

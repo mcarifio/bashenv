@@ -1,3 +1,4 @@
+running.bash && u.have gdbus || return 0
 # https://github.com/vslobodyan/gnome-active-window/blob/master/gnome-active-window#L64
 gnome.lg() {
     : 'send something to gnome looking glass (debugger?)'
