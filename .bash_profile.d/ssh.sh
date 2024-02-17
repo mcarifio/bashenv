@@ -77,7 +77,7 @@ ssh.IdentityFile() (
     [[ -r ${_f} ]] && { echo ${_f}; return 0; }
 )
 
-ssh.ssh() (
+ssh.ssh0() (
     : 'ssh.ssh [${user}@]?${host} $*'
     local _target=${1:?"${FUNCNAME} expecting a host"}; shift
     local _remote_user=$(ssh.User ${_target})
@@ -86,7 +86,22 @@ ssh.ssh() (
     local _options=""
     [[ -n "${_IdentityFile}" ]] && _options+="-o IdentityFile=${_IdentityFile}"
     (set -x; command ssh "$@" "${_options}" ${_target})
-); declare -fx ssh.ssh
+); declare -fx ssh.ssh0
+
+
+ssh.i() (
+    : 'ssh.i [${user}:-${USER}]@${host} $* ## ssh to destination with an explicit IdentityFile based on the destination itself'
+    local _destination=${1:?'expecting a destination'}; shift
+    local _host=${_destination#*@} _user=${_destination%@*}
+    [[ -z "${_user}" ]] && _user=${USER}
+    local _keys_d=~/.ssh/keys.d
+    local _id_rsa=${_keys_d}/${_user}@${_host}_id_rsa
+    if [[ -r ${_id_rsa} ]] ; then
+        command ssh ${SSH_ARGS} -o IdentitiesOnly=true -o IdentityFile=${_id_rsa} ${_destination} "$@"
+    else
+        >&2 echo "IdentityFile ${_id_rsa} not found"
+    fi
+); declare -fx ssh.i
 
 
 ssh.x() (
