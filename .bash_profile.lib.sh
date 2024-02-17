@@ -1,6 +1,6 @@
 running.bash() { realpath /proc/$$/exe | grep -Eq 'bash$' || return 1; }; declare -fx running.bash
-has() ( &> /dev/null type ${1?:'expecting a command'} || return 1; ); declare -fx has
-has.all() ( for _a in "$@"; do has $_a; done; ); declare -fx has.all
+# has() ( &> /dev/null type ${1?:'expecting a command'} || return 1; ); declare -fx has
+# has.all() ( for _a in "$@"; do has $_a; done; ); declare -fx has.all
 u.have() ( &> /dev/null type ${1?:'expecting a command'} || return 1; ); declare -fx u.have
 u.have.all() ( for _a in "$@"; do has $_a; done; ); declare -fx u.have.all
 # uhave() { >&2 echo ${BASH_SOURCE[@]}; }; declare -fx uhave
@@ -74,7 +74,7 @@ source.all() {
 
 source.find() {
     local -r _root="${1:?'expecting a folder'}"
-    source.all $(find "${_root}" -regex '[^#]+\.sh$')
+    source.all $(find "${_root}" -regex '[^#]+\.source\.sh$')
 }; declare -fx source.find
 
 source.bash_profile.d() {
@@ -88,11 +88,6 @@ source.bashrc.d() {
 source.bash_completion.d() {
     source.find $(bashenv.root)/.bash_completion.d
 }; declare -fx source.bash_completion.d
-
-export HISTSIZE=10000
-export HISTFILESIZE=$(( 10 * HISTSIZE ))
-shopt -s histappend
-export HISTCONTROL=$HISTCONTROL:ignorespace:ignoredups
 
 u.or() ( echo "$@" | cut -d' ' -f1; ); declare -fx u.or
 

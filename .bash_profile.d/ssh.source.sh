@@ -1,4 +1,7 @@
-running.bash && u.have $(basename ${BASH_SOURCE} .sh) || return 0
+running.bash
+_for=$(basename ${BASH_SOURCE} .source.sh)
+u.have ${_for} || return 0
+eval "declare -ix _load_count_${_for}"
 
 ssh.scan() {
   for ip in $(arp.scan $@); do ssh ${ip} id > /dev/null && echo ${ip}; done
@@ -117,3 +120,17 @@ ssh.terminator() (
 ssh.terminator.all() (
     for _host in "$@"; do ssh.terminator ${_host} ; done
 ); declare -fx ssh.terminator.all
+
+ssh.env() {
+    return 0 
+}; declare -fx ssh.env
+
+eval "${_for}.load_count() ( echo \$_load_count_${_for}; ); declare -fx ${_for}.load_count"
+if (( _load_count_${_for} == 0 )); then
+    type ${_for}.env &> /dev/null || return 0
+    ${_for}.env "$@"
+else
+    type ${_for}.env &> /dev/null || return 0
+    >&2 echo "${_for}.env # run?"
+fi
+(( ++_load_count_${_for} ))
