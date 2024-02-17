@@ -1,0 +1,21 @@
+import? 'shared.just'
+
+@_default:
+        just --justfile {{justfile()}} list
+
+# install prerequisite packages
+install:
+        echo "tbs"
+        
+## 	if type -p dnf &> /dev/null ; then
+## 	    sudo dnf upgrade -y --allowerasing --nobest
+## 	    sudo dnf install tree
+## 	else if type -p apt &> /dev/null; then
+## 	    sudo apt upgrade -y
+## 	    sudo apt install tree
+## 	else if type -p snap &> /dev/null; then
+## 	    sudo snap install
+## 	else if type -p flatpack &> /dev/null; then
+## 	    :
+## 	fi
+
