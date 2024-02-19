@@ -7,11 +7,11 @@ rsync.local.root() ( echo /run/media/${USER}/home; ); declare -fx rsync.local.ro
 rsync.eject() ( sudo eject /run/media/${USER}/home; ); declare -fx rsync.eject
 
 rsync.local() (
-    local _from="${1:-${PWD}}"; shift
+    local _from="$(realpath --logical --no-symlinks ${1:-${PWD}})"; shift
     local _to=$(${FUNCNAME}.target "${_from}")
 
     set -x
-    rsync -avz --relative --backup --ignore-errors "$@" "${_from}/" "${_to}"
+    rsync --archive --verbose --partial --progress --relative --backup --ignore-errors --links --checksum --mkpath --xattrs --times --hard-links "$@" "${_from}"/ "${_to}"
 ); declare -fx rsync.local
 
 rsync.home() (

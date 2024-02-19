@@ -81,7 +81,16 @@ source.guard() {
     u.have ${_for} || return 1
 }; declare -fx source.guard
 
+source.guarded_source() {
+    local _pathname=${1:-'expecting a pathname'}; shift
+    local _for=${2:-$(path.basename ${_pathname})}; shift
+    source.guard ${_for} || return 0
+    source ${_pathname}
+    u.call ${_for}.env "$@"
+}; declare -fx source.guarded_source
 
+_template() ( echo ${FUNCNAME}; ); declare -fx _template
+ 
 source.all() {
     for _a in $@; do
 	source "${_a}" || >&2 echo "'${_a}' => $?" || true
