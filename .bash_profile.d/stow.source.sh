@@ -1,5 +1,4 @@
-running.bash && u.have $(basename ${BASH_SOURCE} .source.sh) || return 0
-type -p stow.env &> /dev/null; declare -i _first_time=$?
+source.guard $(path.basename ${BASH_SOURCE}) || return 0
 
 stow.env() {
     : 'stow.env [${STOW_DIR}] # set up the stow environment in the current bash'
@@ -7,7 +6,10 @@ stow.env() {
     [[ -d "${STOW_DIR}" ]] || mkdir -pv "${STOW_DIR}"
 }; declare -fx stow.env
 
-(( ${_first_time} )) && stow.env || >&2 echo "stow.env # run?"
+eval "declare -ix _load_count_${_for}"
+eval "${_for}.load_count() ( echo \$_load_count_${_for}; ); declare -fx ${_for}.load_count"
+u.have ${_for}.env && (( _load_count_${_for} == 0 )) && ${_for}.env "$@"
+(( ++_load_count_${_for} ))
 
 
 

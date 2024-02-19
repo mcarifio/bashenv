@@ -4,7 +4,11 @@ running.bash() { realpath /proc/$$/exe | grep -Eq 'bash$' || return 1; }; declar
 u.have() ( &> /dev/null type ${1?:'expecting a command'} || return 1; ); declare -fx u.have
 u.have.all() ( for _a in "$@"; do has $_a; done; ); declare -fx u.have.all
 # uhave() { >&2 echo ${BASH_SOURCE[@]}; }; declare -fx uhave
-
+u.call() {
+    local _f=${1:?'expecting a command'}; shift
+    u.have ${_f} || return 0
+    ${_f} "$@"
+}; declare -fx u.call
 
 home() (
     : 'home [${user}] #> the login directory of the optional user.'
@@ -50,6 +54,11 @@ path.fpn1() ( echo -n ${HOSTNAME}:; realpath -Lms ${1:-${PWD}}; ); declare -fx p
 # full pathname
 path.fpn() ( _map path.fpn1 $* ; ); declare -fx path.fpn
 
+path.basename() (
+    local _pn=${1:?'expecting a pathname'}
+    local _result=${_pn##*/}
+    echo ${_result%%.*}
+); declare -fx path.basename
 
 path.md() (
     : 'path.md ## make a directory and return its pathname, e.g cp foo $(path.md /tmp/foo)/bar'
@@ -65,6 +74,13 @@ path.mkcd() {
 path.mp() ( local _p=$(printf "%s/%s" $(md $1/..) ${1##*/}); printf ${_p}; ); declare -fx path.mp
 path.mpt() ( local _p=$(printf "%s/%s" $(md $1/..) ${1##*/}); touch ${_p}; printf ${_p}; ); declare -fx path.mpt
 path.mpcd() ( cd $(dirname $(mp ${1:?'expecting a pathname'})); ); declare -fx path.mpcd
+
+source.guard() {
+    local _for=${1:?'expecting a command'}
+    running.bash || return 1
+    u.have ${_for} || return 1
+}; declare -fx source.guard
+
 
 source.all() {
     for _a in $@; do

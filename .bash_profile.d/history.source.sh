@@ -1,9 +1,5 @@
-running.bash
-_for=$(basename ${BASH_SOURCE} .source.sh)
-u.have ${_for} || return 0
-eval "declare -ix _load_count_${_for}"
-
-# add global functions here
+# must be in bash with a history command
+source.guard $(path.basename ${BASH_SOURCE}) || return 0
 
 history.env() {
     : 'history.env [${_size}]'
@@ -13,12 +9,10 @@ history.env() {
     export HISTCONTROL=$HISTCONTROL:ignorespace:ignoredups
 }; declare -fx history.env
 
+
+# call history.env() on first load only. history.load_count() counts the number of loads.
+eval "declare -ix _load_count_${_for}"
 eval "${_for}.load_count() ( echo \$_load_count_${_for}; ); declare -fx ${_for}.load_count"
-if (( _load_count_${_for} == 0 )); then
-    type ${_for}.env &> /dev/null || return 0
-    ${_for}.env "$@"
-else
-    type ${_for}.env &> /dev/null || return 0
-    >&2 echo "${_for}.env # run?"
-fi
+u.have ${_for}.env && (( _load_count_${_for} == 0 )) && ${_for}.env "$@"
 (( ++_load_count_${_for} ))
+

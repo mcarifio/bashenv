@@ -1,8 +1,5 @@
 # dnf install -y gh
-running.bash && u.have $(basename ${BASH_SOURCE} .sh) || return 0
-
-# notes: gh config set git_protocol ssh
-source <(gh completion --shell $(u.shell))
+source.guard $(basename ${BASH_SOURCE%%.*}) || return 0
 
 # TODO mike@carif.io: needs testing
 gh.repo.create() {
@@ -22,3 +19,12 @@ gh.repo.delete() (
     local _repo=${1:?'expecting a repo name'}; shift
     gh repo delete --yes ${_repo}
 ); declare -fx gh.repo.delete
+
+gh.env() {
+    return 0 
+}; declare -fx gh.env
+
+eval "declare -ix _load_count_${_for}"
+eval "${_for}.load_count() ( echo \$_load_count_${_for}; ); declare -fx ${_for}.load_count"
+u.have ${_for}.env && (( _load_count_${_for} == 0 )) && ${_for}.env "$@"
+(( ++_load_count_${_for} ))
