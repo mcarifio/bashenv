@@ -1,4 +1,3 @@
-running.bash && u.have $(basename ${BASH_SOURCE} .sh) || return 0
 # dnf install -y emacs
 # systemctl --user enable --now emacs-modified
 # journalctl --user-unit emacs
@@ -42,5 +41,3 @@ doom() (
 
 export EDITOR='emacsclient -t'
 export VISUAL='emacsclient -t'
-alias vi='emacsclient -t'
-alias vim='emacsclient -t'

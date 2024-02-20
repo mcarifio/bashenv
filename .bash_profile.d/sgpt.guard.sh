@@ -1,5 +1,3 @@
-running.bash && u.have $(basename ${BASH_SOURCE} .sh) || return 0
-
 sgpt.fix() (
     : 'sgpt.fix [--what=package] --on=[linux] ... additional advice'
     set -uEeo pipefail

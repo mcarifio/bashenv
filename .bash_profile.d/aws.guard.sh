@@ -1,4 +1,3 @@
-running.bash && u.have asdf || return 0
 # You probably installed this using asdf, not dnf: asdf.plugin+install awscli
 
 # @see: { https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-envvars.html }

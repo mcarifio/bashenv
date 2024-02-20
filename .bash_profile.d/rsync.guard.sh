@@ -1,5 +1,3 @@
-running.bash && u.have $(basename ${BASH_SOURCE} .sh) || return 0
-
 rsync.local.target() ( echo /run/media/${USER}${1:?'expecting a target'}; ); declare -fx rsync.local.target
 rsync.local.root() ( echo /run/media/${USER}/home; ); declare -fx rsync.local.root
 

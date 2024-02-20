@@ -1,5 +1,3 @@
-source.guard $(path.basename ${BASH_SOURCE}) || return 0
-
 ssh.scan() {
   for ip in $(arp.scan $@); do ssh ${ip} id > /dev/null && echo ${ip}; done
 }; declare -fx ssh.scan
@@ -118,14 +116,8 @@ ssh.terminator.all() (
     for _host in "$@"; do ssh.terminator ${_host} ; done
 ); declare -fx ssh.terminator.all
 
-ssh.env() {
-    # echo ${FUNCNAME}
-    return 0 
-}; declare -fx ssh.env
+# ssh.env() {
+#     # echo ${FUNCNAME}
+#     return 0 
+# }; declare -fx ssh.env
 
-
-
-eval "declare -ix _load_count_${_for}"
-eval "${_for}.load_count() ( echo \$_load_count_${_for}; ); declare -fx ${_for}.load_count"
-u.have ${_for}.env && (( _load_count_${_for} == 0 )) && ${_for}.env "$@"
-(( ++_load_count_${_for} ))

@@ -1,5 +1,3 @@
-running.bash || return 0
-
 desktop.data_dirs() (
     : 'desktop.data_dirs # return all directories to look for .desktop files'
     echo ${XDG_DATA_DIRS//:/\/applications } /usr/share/xfce4/helpers ${HOME}/.local/share/applications /usr/share/applications;

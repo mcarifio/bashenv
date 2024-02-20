@@ -1,5 +1,4 @@
-running.bash && u.have $(basename ${BASH_SOURCE} .sh) || return 0
-
+# TODO mike@carifio 02/20/24: probably obsolete
 git.url.folder() (
     set -Eeuo pipefail
     : 'git.url.folder ${git-url} [${prefix:-~/src/} # return a local folder based on a git url, e.g. git.url.folder https://github.com/zotero/zotero |> ~/src/github.com/zotero/zotero/zotero'
@@ -11,6 +10,7 @@ git.url.folder() (
 ); declare -fx url.git.folder
 
 
+# TODO mike@carif.io 02/20/24: probably obsolete
 git.pn2url() (
   : 'usage: git clone $(git.pn2url)'
   local _home=${2:-${HOME}/src}
@@ -25,10 +25,21 @@ git.pn2url() (
 
 
 
-# TODO error unless theirs' only one
+# TODO mike@carif.io 02/20/24: probably obsolete
 git.repopath() (
     dirname $(find ${_here} -name .git -type d -minpath 2 -maxpath 2);
 ); declare -fx git.repopath
+
+git.clcd() {
+    : 'git.clcd ${url} [${folder}] # clone ${url} into ${folder} and cd to it'
+    local _url=${1:?'expecting a url'}
+    local _folder=${2:-${_url##*/}}
+    _folder=${_folder//./\/}
+    git clone --verbose ${_url} ${_folder}
+    [[ -r ${_folder}/.envrc ]] && u.have dotenv && dotenv allow ${_folder}
+    cd ${_folder}
+}; declare -fx git.clcd
+
 
 
 

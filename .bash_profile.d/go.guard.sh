@@ -1,4 +1,3 @@
-running.bash && u.have $(basename ${BASH_SOURCE} .sh) || return 0
 
 go.path() (
     : 'go.path |> current path for go binaries iff the folder exists'

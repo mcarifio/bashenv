@@ -1,14 +1,4 @@
 running.bash() { realpath /proc/$$/exe | grep -Eq 'bash$' || return 1; }; declare -fx running.bash
-# has() ( &> /dev/null type ${1?:'expecting a command'} || return 1; ); declare -fx has
-# has.all() ( for _a in "$@"; do has $_a; done; ); declare -fx has.all
-u.have() ( &> /dev/null type ${1?:'expecting a command'} || return 1; ); declare -fx u.have
-u.have.all() ( for _a in "$@"; do has $_a; done; ); declare -fx u.have.all
-# uhave() { >&2 echo ${BASH_SOURCE[@]}; }; declare -fx uhave
-u.call() {
-    local _f=${1:?'expecting a command'}; shift
-    u.have ${_f} || return 0
-    ${_f} "$@"
-}; declare -fx u.call
 
 home() (
     : 'home [${user}] #> the login directory of the optional user.'
@@ -75,49 +65,138 @@ path.mp() ( local _p=$(printf "%s/%s" $(md $1/..) ${1##*/}); printf ${_p}; ); de
 path.mpt() ( local _p=$(printf "%s/%s" $(md $1/..) ${1##*/}); touch ${_p}; printf ${_p}; ); declare -fx path.mpt
 path.mpcd() ( cd $(dirname $(mp ${1:?'expecting a pathname'})); ); declare -fx path.mpcd
 
-source.guard() {
-    local _for=${1:?'expecting a command'}
-    running.bash || return 1
-    u.have ${_for} || return 1
-}; declare -fx source.guard
+u.map() {
+    : 'u.map ${f} ... # apply $f to each item in the list ...'
+    local _f=${1:?'expecting a function'}; shift
+    for _a in "$@"; do ${_f} ${_a} || return $?; done 
+}; declare -fx u.map
 
-source.guarded_source() {
+u.map.allify() {
+    : 'u.map.allify ${f} # defines a global function ${f}.all that applies $f} to each argument and returns the result'
+    local _f=${1:?'expecting a function'}; shift
+    local _all=${_f}.all
+    eval $(printf '%s() { u.map %s "$@"; }; declare -fx %s' ${_all} ${_f} ${_all})
+}; declare -fx u.map.allify
+
+# has() ( &> /dev/null type ${1?:'expecting a command'} || return 1; ); declare -fx has
+# has.all() ( for _a in "$@"; do has $_a; done; ); declare -fx has.all
+u.have() ( &> /dev/null type ${1?:'expecting a command'} || return 1; ); declare -fx u.have
+u.map.allify u.have # u.have.all
+
+u.have.for0() ( for _a in "$@"; do u.have $_a; done; ); declare -fx u.have.for
+u.have.all0() { u.map ${FUNCNAME##.all} "$@" ; }; declare -fx u.have.all
+
+
+# uhave() { >&2 echo ${BASH_SOURCE[@]}; }; declare -fx uhave
+u.call() {
+    local _f=${1:?'expecting a command'}; shift
+    u.have ${_f} || return 0
+    ${_f} "$@"
+}; declare -fx u.call
+
+
+u.error() {
+    : 'u.error [--return] this is a message' 
+    local -i _status=${1:-1} ; shift || true
+    local _finally=exit
+    if [[ "$1" = --return ]]; then
+	_finally=return
+	shift
+    fi    
+    >&2 printf "{\"exec\": $0, \"status\": ${_status}, \"message\": \"$*\"}"
+    ${_finally} ${_status}
+}; declare -fx u.error
+
+guard.for() {
+    : 'guard.for ${command}... # '
+    running.bash || return 1
+    u.have.all "$@" || return 1
+}; declare -fx guard.for
+
+guard() {
+    : 'guard ${pathname} [${command}] # source ${pathname} iff ${command} resolves'
     local _pathname=${1:-'expecting a pathname'}; shift
     local _for=${2:-$(path.basename ${_pathname})}; shift
-    source.guard ${_for} || return 0
-    source ${_pathname}
-    u.call ${_for}.env "$@"
-}; declare -fx source.guarded_source
+    guard.for ${_for} || return 0
+    if ! source ${_pathname} "$@"; then
+	>&2 echo "${_pathname} => $?, continuing..."
+	return 0
+    fi
+    u.call ${_for}.env "$@" || >&2 echo "${_for}.env => $?, continuing..."
+    return 0
+}; declare -fx guard
 
 _template() ( echo ${FUNCNAME}; ); declare -fx _template
  
-source.all() {
-    for _a in $@; do
-	source "${_a}" || >&2 echo "'${_a}' => $?" || true
-    done
-}; declare -fx source.all
 
-source.find() {
+# TODO mike@carif.io: redo as a tree walk, e.g. u.map guard $(find ...
+
+
+source.all0() {
+    : 'source.all [--guard] *.sh'
+    local _action=source
+    if [[ "${1}" = --guard ]]; then
+	_action=guard
+	shift
+    elif [[ "${1}" = --source ]]; then
+	_action=source
+	shift
+    fi    
+    for _a in $@; do
+	${_action} "${_a}" || >&2 echo "'${_a}' => $?" || true
+    done
+}; declare -fx source.all0
+
+source.find0() {
+    : 'source.find [--guard] ${root}'
+    local _action='source'
+    if [[ "${1}" = --guard ]]; then
+	_action=guard
+	shift
+    elif [[ "${1}" = --source ]]; then
+	_action=source
+	shift
+    fi    
     local -r _root="${1:?'expecting a folder'}"
-    source.all $(find "${_root}" -regex '[^#]+\.source\.sh$')
-}; declare -fx source.find
+    source.all --${_action} $(find "${_root}" -regex "[^#]+\.${_action}\.sh\$")
+}; declare -fx source.find0
+
+u.map.tree() {
+    local _action=${1:?'expecting an action, e.g. source or guard'}
+    local _folder=${2:?'expecting a folder'}
+    [[ -d "${_folder}" ]] || { >&2 echo "${_folder} is not a folder"; return 1; }
+    u.map ${_action} $(find "${_folder}" -type f -regex "[^#]+\.${_action}\.sh\$")        
+}; declare -fx u.map.tree
+
+
+guard.bash_profile.d() {
+    source.find --guard $(bashenv.root)/.bash_profile.d
+}; declare -fx guard.bash_profile.d
+
+guard.bashrc.d() {
+    source.find --guard $(bashenv.root)/.bashrc.d
+}; declare -fx guard.bashrc.d
+
+guard.bash_completion.d() {
+    source.find --guard $(bashenv.root)/.bash_completion.d
+}; declare -fx guard.bash_completion.d
 
 source.bash_profile.d() {
-    source.find $(bashenv.root)/.bash_profile.d
+    source.find --source $(bashenv.root)/.bash_profile.d
 }; declare -fx source.bash_profile.d
 
 source.bashrc.d() {
-    source.find $(bashenv.root)/.bashrc.d
+    source.find --source $(bashenv.root)/.bashrc.d
 }; declare -fx source.bashrc.d
 
 source.bash_completion.d() {
-    source.find $(bashenv.root)/.bash_completion.d
+    source.find --source $(bashenv.root)/.bash_completion.d
 }; declare -fx source.bash_completion.d
 
 u.or() ( echo "$@" | cut -d' ' -f1; ); declare -fx u.or
 
 u.shell() {
-  : 'return your login shell; the SHELL env variable can be unreliable'
+  : 'u.shell # this shell, always bash. But the SHELL env variable can be unreliable'
   basename $(realpath /proc/$$/exe)
 }; declare -fx u.shell
 
@@ -175,44 +254,24 @@ gnome.restart() (
 
 u.here() ( printf $(realpath -Ls $(dirname ${BASH_SOURCE[${1:-1}]})); ); declare -fx u.here
 
-# u.map f list # apply f to each element in list returning a string of results
-# plus1 { printf '%s' (( 1 + $1 )); }
-# declare -a _list=( $(u.map plus1 1 2 3) )
 
-u.map() (
-    local _f=$1; shift
-    for a in $@; do printf "%s " $(${_f} $a); done 
-)
-declare -fx u.map
+u.where() { realpath -Lms ${1:-${BASH_SOURCE}}/..; }; declare -fx u.where
+u.map.allify u.where # u.where.all
 
 
-u.where1() { realpath -Lms ${1:-${BASH_SOURCE}}/..; }
-declare -fx u.where1
-u.where() { u.map u.where1 $* ; }
-declare -fx u.where
-
-
-u.error() {
-    local -i _status=${1:-1} ; shift || true
-    >&2 printf "{\"exec\": $0, \"status\": ${_status}, \"message\": \"$*\"}"
-    exit ${_status}
-}
-declare -fx u.error
 
 u.xwalk() {
     local _top=${1:?'expecting a root directory'} ; shift || true
     local _ext=${1:-sh} ; shift || true
     find -L ${_top} -path \*/enabled.d/\*.${_ext} -type f -executable -exec '{}' $* \;
-}
-declare -fx u.xwalk
+}; declare -fx u.xwalk
 
 u.mkurl() {
     local _self=${FUNCNAME[0]}
     local _url=${1:?'expecting a url'}
     local _pn=${2:?'expecting a pathname'}
     printf "#!/usr/bin/env xdg-open\n%s" ${_url} | install -m 0755 /dev/stdin ${_pn}
-}
-declare -fx u.mkurl
+}; declare -fx u.mkurl
 
 
 # never can remember the entire name
@@ -231,8 +290,7 @@ declare -fx u.all-hosts # hping3
 
 # sudo dnf install -y uuid
 if u.have sos; then
-   sosr() { sudo sos report --batch --case-id="${SUDO_USER}-$(uuidgen)" --description "${FUNCNAME}" $*; }
-   declare -fx sosr
+   sos.r() { sudo sos report --batch --case-id="${SUDO_USER}-$(uuidgen)" --description "${FUNCNAME}" $*; }; declare -fx sos.r
 fi
 
 # go repl
@@ -417,10 +475,10 @@ if u.have oci; then
    export OCI_CLI_CONFIG_FILE=${HOME}/.config/cloud/oci/config
 fi
 
-main() {
+dispatch() {
     local _action=${1:-start} ; shift || true
     ${_action} $*    
-}; declare -fx main
+}; declare -fx dispatch
 
 
 sa.add.user() {

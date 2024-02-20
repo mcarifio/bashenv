@@ -1,5 +1,4 @@
 # dnf install -y gh
-source.guard $(basename ${BASH_SOURCE%%.*}) || return 0
 
 # TODO mike@carif.io: needs testing
 gh.repo.create() {
@@ -23,8 +22,3 @@ gh.repo.delete() (
 gh.env() {
     return 0 
 }; declare -fx gh.env
-
-eval "declare -ix _load_count_${_for}"
-eval "${_for}.load_count() ( echo \$_load_count_${_for}; ); declare -fx ${_for}.load_count"
-u.have ${_for}.env && (( _load_count_${_for} == 0 )) && ${_for}.env "$@"
-(( ++_load_count_${_for} ))

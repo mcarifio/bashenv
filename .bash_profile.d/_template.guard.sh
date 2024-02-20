@@ -27,6 +27,6 @@ _template.parsed() (
 
 
 _template.env() {
-    echo ${FUNCNAME}
+    # echo ${FUNCNAME}
     return 0 
 }; declare -fx _template.env

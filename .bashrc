@@ -13,10 +13,10 @@ export PATH
 
 # Uncomment the following line if you don't like systemctl's auto-paging feature:
 # export SYSTEMD_PAGER=
+# guard.bashrc.d || true
+# source.bashrc.d || true
+u.map.tree source $(bashenv.root)/.bashrc.d
+u.map.tree guard $(bashenv.root)/.bashrc.d
 
-
-# User specific aliases and functions
-[[ function = $(type -t source.bashrc.d) ]] && source.bashrc.d || >&2 echo "source.bashrc.d undefined?"
-[[ function = $(type -t source.bash_completion.d) ]] && source.bash_completion.d || >&2 echo "source.bash_completion.d undefined?"
 
 
