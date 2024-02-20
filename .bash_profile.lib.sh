@@ -78,16 +78,9 @@ u.map.allify() {
     eval $(printf '%s() { u.map %s "$@"; }; declare -fx %s' ${_all} ${_f} ${_all})
 }; declare -fx u.map.allify
 
-# has() ( &> /dev/null type ${1?:'expecting a command'} || return 1; ); declare -fx has
-# has.all() ( for _a in "$@"; do has $_a; done; ); declare -fx has.all
 u.have() ( &> /dev/null type ${1?:'expecting a command'} || return 1; ); declare -fx u.have
 u.map.allify u.have # u.have.all
 
-u.have.for0() ( for _a in "$@"; do u.have $_a; done; ); declare -fx u.have.for
-u.have.all0() { u.map ${FUNCNAME##.all} "$@" ; }; declare -fx u.have.all
-
-
-# uhave() { >&2 echo ${BASH_SOURCE[@]}; }; declare -fx uhave
 u.call() {
     local _f=${1:?'expecting a command'}; shift
     u.have ${_f} || return 0
@@ -128,70 +121,12 @@ guard() {
 
 _template() ( echo ${FUNCNAME}; ); declare -fx _template
  
-
-# TODO mike@carif.io: redo as a tree walk, e.g. u.map guard $(find ...
-
-
-source.all0() {
-    : 'source.all [--guard] *.sh'
-    local _action=source
-    if [[ "${1}" = --guard ]]; then
-	_action=guard
-	shift
-    elif [[ "${1}" = --source ]]; then
-	_action=source
-	shift
-    fi    
-    for _a in $@; do
-	${_action} "${_a}" || >&2 echo "'${_a}' => $?" || true
-    done
-}; declare -fx source.all0
-
-source.find0() {
-    : 'source.find [--guard] ${root}'
-    local _action='source'
-    if [[ "${1}" = --guard ]]; then
-	_action=guard
-	shift
-    elif [[ "${1}" = --source ]]; then
-	_action=source
-	shift
-    fi    
-    local -r _root="${1:?'expecting a folder'}"
-    source.all --${_action} $(find "${_root}" -regex "[^#]+\.${_action}\.sh\$")
-}; declare -fx source.find0
-
 u.map.tree() {
     local _action=${1:?'expecting an action, e.g. source or guard'}
     local _folder=${2:?'expecting a folder'}
     [[ -d "${_folder}" ]] || { >&2 echo "${_folder} is not a folder"; return 1; }
     u.map ${_action} $(find "${_folder}" -type f -regex "[^#]+\.${_action}\.sh\$")        
 }; declare -fx u.map.tree
-
-
-guard.bash_profile.d() {
-    source.find --guard $(bashenv.root)/.bash_profile.d
-}; declare -fx guard.bash_profile.d
-
-guard.bashrc.d() {
-    source.find --guard $(bashenv.root)/.bashrc.d
-}; declare -fx guard.bashrc.d
-
-guard.bash_completion.d() {
-    source.find --guard $(bashenv.root)/.bash_completion.d
-}; declare -fx guard.bash_completion.d
-
-source.bash_profile.d() {
-    source.find --source $(bashenv.root)/.bash_profile.d
-}; declare -fx source.bash_profile.d
-
-source.bashrc.d() {
-    source.find --source $(bashenv.root)/.bashrc.d
-}; declare -fx source.bashrc.d
-
-source.bash_completion.d() {
-    source.find --source $(bashenv.root)/.bash_completion.d
-}; declare -fx source.bash_completion.d
 
 u.or() ( echo "$@" | cut -d' ' -f1; ); declare -fx u.or
 
