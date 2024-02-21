@@ -1,9 +1,106 @@
-running.bash() { realpath /proc/$$/exe | grep -Eq 'bash$' || return 1; }; declare -fx running.bash
+## f
+
+# https://www.gnu.org/software/bash/manual/html_node/Programmable-Completion.html
+
+# bashenv traffics (mostly) in bash functions that follow these conventions:
+#   - they're named ${something}.{something} e.g f.complete. bash completes on .
+#   - they are exported global for subshells
+#   - they optionally have a completion function named __${fn}.complete which will help the user complete
+#       fn's arguments
+#   - the first line of the function definition is : 'text' which acts as a docstring
+
+
+
+declare -Ax __bashenv_loaded=()
+
+f.complete() {
+    local _f=${1:?'expecting a function'}
+    local _fc=__${_f}.complete
+    f.exists ${_f} || return 1
+    declare -gfx ${_f}
+    __bashenv_loaded[${_f}]=$(date)
+    f.exists ${_fc} || return 0
+    declare -gfx ${_fc}
+    complete -F ${_fc} ${_f}
+}; declare -fx f.complete
+
+__u.map.complete() {
+    : ''
+    COMPREPLY=( $(f.match $2) )
+}
+u.map() {
+    : 'u.map ${f} ... # apply $f to each item in the list ...'
+    local _f=${1:?'expecting a function'}; shift
+    for _a in "$@"; do ${_f} ${_a} || return $?; done 
+}; f.complete u.map
+
+u.map.mkall() {
+    : 'u.map.mkall ${f} # defines a global function ${f}.all that applies $f} to each argument and returns the result'
+    local _f=${1:?'expecting a function'}; shift
+    local _all=${_f}.all
+    eval $(printf '%s() { u.map %s "$@"; }; declare -fx %s' ${_all} ${_f} ${_all})
+}; f.complete u.map.mkall
+
+
+__plus1.complete() {
+    local _command=$1 _word=$2 _prev=$3
+    >&2 printf "(int) "
+}
+plus1() (
+    : 'plus1 ${number} #> 1 + ${number} # a useful example for u.map'
+    echo $(( $1 + 1 ))
+); f.complete plus1
+
+
+# This is a pattern. It will make sense after you've seen it a few times.
+__f.exists.complete() {
+    : ''
+    COMPREPLY=( $(f.loaded.match $2) )
+}
+f.exists() {
+    : 'f.exists ${f} # return 0 iff bash function ${f} exists (is defined)'a
+    [[ function = $(type -t "${1}") ]]
+}; f.complete f.exists
+
+f.loaded() {
+    printf '%s\n' ${!__bashenv_loaded[@]}
+}; f.complete f.loaded
+
+f.loaded.match() {
+    f.loaded | grep "^$1"
+}; f.complete f.loaded.match
+
+
+f.match() {
+    declare -F | cut -d' ' -f3 | grep -E "^$1"
+}; f.complete f.match
+
+
+__f.doc.complete() {
+    local _command=$1 _word=$2 _previous_word=$3
+    COMPREPLY=( $(f.loaded | grep "^$2") )
+}
+f.doc() {
+    : 'f.docstring ${function} # echos the docstring of a function to stdout'		    
+    local _f=${1:?'expecting a function'}
+    if [[ $(type -t ${_f}) = "function" ]] ; then
+	type ${_f} | awk "match(\$0,/\s+:\s+'(.*)'/,m) { print m[1]; }"
+    else
+	>&2 echo "'${_f}' not a function"
+	return 1
+    fi
+}; f.complete f.doc
+
+
+running.bash() {
+    : 'running.bash # return 0 iff you are in bash (your parent process is the bash shell)'
+    realpath /proc/$$/exe | grep -Eq 'bash$' || return 1; }; declare -fx running.bash
 
 home() (
-    : 'home [${user}] #> the login directory of the optional user.'
+    : 'home [${user}:-${USER}] #> the login directory of the${user}.'
     getent passwd ${1:-${SUDO_USER:-${USER}}} | cut -d: -f6
 ); declare -fx home
+
 
 # Return the full pathname of the bashenv root directory, usually something like ${HOME}/bashenv.
 # Depends on where you placed it however.
@@ -15,17 +112,13 @@ path.login() (
 ); declare -fx path.login
 
 path.add() {
-    : 'path.add ${folder} [after] ## adds ${folder} to PATH iff not already there'
-    case ":${PATH}:" in
-        *:"$1":*)
-            ;;
-        *)
-            if [ "$2" = "after" ] ; then
-                PATH=$PATH:$1
-            else
-                PATH=$1:$PATH
-            fi
-    esac
+    : 'path.add ${folder}... ## adds ${folder} to PATH iff not already there'
+    for _a in "$@"; do
+	case ":${PATH}:" in
+            *:"$1":*) ;;
+            *) PATH=$1:$PATH
+	esac
+    done
 }; declare -fx path.add
 
 
@@ -37,12 +130,13 @@ path.walk() (
     find . -mindepth ${_mindepth} -maxdepth ${_maxdepth} -type d -regex '.*/[^\.]+$'
 ); declare -fx path.walk
 
-path.pn1() ( realpath -Lms ${1:-${PWD}}; ); declare -fx path.pn1
-path.pn() ( _map path.pn1 $* ; ); declare -fx path.pn
+path.pn() ( realpath -Lms ${1:-${PWD}}; ); declare -fx path.pn
+u.map.mkall path.pn
+
 # full pathname 1
-path.fpn1() ( echo -n ${HOSTNAME}:; realpath -Lms ${1:-${PWD}}; ); declare -fx path.fpn1
-# full pathname
-path.fpn() ( _map path.fpn1 $* ; ); declare -fx path.fpn
+path.fpn() ( echo -n ${HOSTNAME}:; realpath -Lms ${1:-${PWD}}; ); declare -fx path.fpn
+u.map.mkall path.fpn
+
 
 path.basename() (
     local _pn=${1:?'expecting a pathname'}
@@ -65,21 +159,8 @@ path.mp() ( local _p=$(printf "%s/%s" $(md $1/..) ${1##*/}); printf ${_p}; ); de
 path.mpt() ( local _p=$(printf "%s/%s" $(md $1/..) ${1##*/}); touch ${_p}; printf ${_p}; ); declare -fx path.mpt
 path.mpcd() ( cd $(dirname $(mp ${1:?'expecting a pathname'})); ); declare -fx path.mpcd
 
-u.map() {
-    : 'u.map ${f} ... # apply $f to each item in the list ...'
-    local _f=${1:?'expecting a function'}; shift
-    for _a in "$@"; do ${_f} ${_a} || return $?; done 
-}; declare -fx u.map
-
-u.map.allify() {
-    : 'u.map.allify ${f} # defines a global function ${f}.all that applies $f} to each argument and returns the result'
-    local _f=${1:?'expecting a function'}; shift
-    local _all=${_f}.all
-    eval $(printf '%s() { u.map %s "$@"; }; declare -fx %s' ${_all} ${_f} ${_all})
-}; declare -fx u.map.allify
-
 u.have() ( &> /dev/null type ${1?:'expecting a command'} || return 1; ); declare -fx u.have
-u.map.allify u.have # u.have.all
+u.map.mkall u.have # u.have.all
 
 u.call() {
     local _f=${1:?'expecting a command'}; shift
@@ -99,6 +180,10 @@ u.error() {
     >&2 printf "{\"exec\": $0, \"status\": ${_status}, \"message\": \"$*\"}"
     ${_finally} ${_status}
 }; declare -fx u.error
+
+
+## guard
+
 
 guard.for() {
     : 'guard.for ${command}... # '
@@ -191,7 +276,7 @@ u.here() ( printf $(realpath -Ls $(dirname ${BASH_SOURCE[${1:-1}]})); ); declare
 
 
 u.where() { realpath -Lms ${1:-${BASH_SOURCE}}/..; }; declare -fx u.where
-u.map.allify u.where # u.where.all
+u.map.mkall u.where # u.where.all
 
 
 
@@ -533,6 +618,7 @@ pyz() {
 gnome.restart() (
     busctl --user call org.gnome.Shell /org/gnome/Shell org.gnome.Shell Eval s 'Meta.restart("Restarting…")'
 ); declare -fx gnome.restart
+
 
 
 
