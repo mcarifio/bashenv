@@ -13,7 +13,25 @@
 
 declare -Ax __bashenv_loaded=()
 
+# f.exists
+__f.exists.complete() {
+    local _command=$1 _word=$2 _previous_word=$3
+    COMPREPLY=( $(f.match $2) )
+}
+f.exists() {
+    : '${f} # return 0 iff bash function ${f} exists (is defined)'a
+    [[ function = $(type -t "${1}") ]]
+}
+
+
+# This is a pattern. It will make sense after you've seen it a few times.
+# f.complete
+__f.complete.complete() {
+    local _command=$1 _word=$2 _previous_word=$3
+    COMPREPLY=( $(f.loaded.match "$2") )
+}
 f.complete() {
+    : '${fn} # export ${fn} for subshells and connect to a completion fn __${fn}.complete iff it exists'
     local _f=${1:?'expecting a function'}
     local _fc=__${_f}.complete
     f.exists ${_f} || return 1
@@ -22,84 +40,111 @@ f.complete() {
     f.exists ${_fc} || return 0
     declare -gfx ${_fc}
     complete -F ${_fc} ${_f}
-}; declare -fx f.complete
+}
+f.complete f.complete
+# Unwound the circularity, you can now bash complete f.exists.
+f.complete f.exists
 
+# plus1, useful to test u.map next
+__example.plus1.complete() {
+    local _command=$1 _word=$2 _prev=$3
+    >&2 printf "(int...) "
+}
+example.plus1() (
+    : '${number} #> 1 + ${number} # a useful example for u.map'
+    echo $(( $1 + 1 ))
+)
+f.complete example.plus1
+
+
+# u.map
 __u.map.complete() {
-    : ''
-    COMPREPLY=( $(f.match $2) )
+    local _command=$1 _word=$2 _previous_word=$3
+    COMPREPLY=( $(f.loaded.match "$2") )
 }
 u.map() {
-    : 'u.map ${f} ... # apply $f to each item in the list ...'
+    : '${f} ... # apply $f to each item in the list ... and return the result'
     local _f=${1:?'expecting a function'}; shift
     for _a in "$@"; do ${_f} ${_a} || return $?; done 
-}; f.complete u.map
+}
+f.complete u.map
 
+# u.map.mkall
+__u.map.mkall.complete() {
+    local _command=$1 _word=$2 _previous_word=$3
+    COMPREPLY=( $(f.loaded.match "$2") )
+}
 u.map.mkall() {
-    : 'u.map.mkall ${f} # defines a global function ${f}.all that applies $f} to each argument and returns the result'
+    : '${f} # defines a global function ${f}.all that applies $f} to each argument and returns the result'
     local _f=${1:?'expecting a function'}; shift
     local _all=${_f}.all
     eval $(printf '%s() { u.map %s "$@"; }; declare -fx %s' ${_all} ${_f} ${_all})
-}; f.complete u.map.mkall
-
-
-__plus1.complete() {
-    local _command=$1 _word=$2 _prev=$3
-    >&2 printf "(int) "
 }
-plus1() (
-    : 'plus1 ${number} #> 1 + ${number} # a useful example for u.map'
-    echo $(( $1 + 1 ))
-); f.complete plus1
+f.complete u.map.mkall
 
 
-# This is a pattern. It will make sense after you've seen it a few times.
-__f.exists.complete() {
-    : ''
-    COMPREPLY=( $(f.loaded.match $2) )
-}
-f.exists() {
-    : 'f.exists ${f} # return 0 iff bash function ${f} exists (is defined)'a
-    [[ function = $(type -t "${1}") ]]
-}; f.complete f.exists
 
+# f.loaded
 f.loaded() {
+    : '#> return all functions loaded (so far)'
     printf '%s\n' ${!__bashenv_loaded[@]}
-}; f.complete f.loaded
+}
+f.complete f.loaded
 
+
+# f.loaded.match
+__f.loaded.match.complete() {
+    local _command=$1 _word=$2 _previous_word=$3
+    COMPREPLY=( $(f.loaded.match "$2") )
+}
 f.loaded.match() {
-    f.loaded | grep "^$1"
-}; f.complete f.loaded.match
+    : '${prefix:-""} #> echo all bashenv functions matching ${prefix} '
+    f.loaded | \grep "^$1"
+}
+f.complete f.loaded.match
 
-
+# f.match, circular
+__f.match.complete() {
+    local _command=$1 _word=$2 _previous_word=$3
+    COMPREPLY=( $(f.match "$2") )
+}
 f.match() {
-    declare -F | cut -d' ' -f3 | grep -E "^$1"
-}; f.complete f.match
+    : '${prefix} #> echo all bash functions matching ${prefix}'
+    declare -F | cut -d' ' -f3 | \grep -E "^$1"
+}
+f.complete f.match
 
 
+# f.doc
 __f.doc.complete() {
     local _command=$1 _word=$2 _previous_word=$3
-    COMPREPLY=( $(f.loaded | grep "^$2") )
+    COMPREPLY=( $(f.loaded.match "$2") )    
 }
 f.doc() {
-    : 'f.docstring ${function} # echos the docstring of a function to stdout'		    
+    : '${function} # echos the docstring of a function to stdout'		    
     local _f=${1:?'expecting a function'}
     if [[ $(type -t ${_f}) = "function" ]] ; then
+	echo -n "${_f} "
 	type ${_f} | awk "match(\$0,/\s+:\s+'(.*)'/,m) { print m[1]; }"
     else
-	>&2 echo "'${_f}' not a function"
+	>&2 echo "'function ${_f}' not found"
 	return 1
     fi
-}; f.complete f.doc
+}
+f.complete f.doc
 
 
 running.bash() {
-    : 'running.bash # return 0 iff you are in bash (your parent process is the bash shell)'
-    realpath /proc/$$/exe | grep -Eq 'bash$' || return 1; }; declare -fx running.bash
+    : '# return 0 iff you are in bash (your parent process is the bash shell)'
+    realpath /proc/$$/exe | grep -Eq 'bash$' || return 1
+}
+f.complete running.bash
 
 home() (
-    : 'home [${user}:-${USER}] #> the login directory of the${user}.'
+    : '[${user}:-${USER}] #> the login directory of the${user}.'
     getent passwd ${1:-${SUDO_USER:-${USER}}} | cut -d: -f6
-); declare -fx home
+)
+f.complete home
 
 
 # Return the full pathname of the bashenv root directory, usually something like ${HOME}/bashenv.
@@ -107,28 +152,46 @@ home() (
 eval "bashenv.root() ( echo $(dirname $(realpath ${BASH_SOURCE})); )"; declare -fx bashenv.root
 
 path.login() (
-    : 'path.login will return interesting directories under ${HOME}'
+    : '#> echos interesting directories under $(home)'
     printf '%s:' $(home)/opt/*/current/bin $(home)/.config/*/bin
-); declare -fx path.login
+)
+f.complete path.login
 
+
+# path.add
 path.add() {
-    : 'path.add ${folder}... ## adds ${folder} to PATH iff not already there'
+    : '${folder}... ## adds ${folder} to PATH iff not already there'
     for _a in "$@"; do
+	local _p=$(realpath -L ${_a})
 	case ":${PATH}:" in
-            *:"$1":*) ;;
-            *) PATH=$1:$PATH
+            *:"${_p}":*) ;;
+            *) PATH="${_p}:$PATH"
 	esac
     done
-}; declare -fx path.add
+}
+__path.add.complete() {
+    local _command=$1 _word=$2 _previous_word=$3
+    # return list of possible directories https://stackoverflow.com/questions/12933362/getting-compgen-to-include-slashes-on-directories-when-looking-for-files/40227233#40227233a
+    COMPREPLY=( $(compgen -d -- $2) )    
+}
+f.complete path.add
 
 
+
+# path.walk
 path.walk() (
-    : 'path.walk ${folder} [${min} [${max}]] #> all directories under ${folder}'
+    : '${folder} [${min} [${max}]] #> all directories under ${folder}'
     local -r _root=${1:-${PWD}}
     local -ri _maxdepth=${2:-1}
     local -ri _mindepth=${3:-1}
-    find . -mindepth ${_mindepth} -maxdepth ${_maxdepth} -type d -regex '.*/[^\.]+$'
-); declare -fx path.walk
+    find "${_root}" -mindepth ${_mindepth} -maxdepth ${_maxdepth} -type d -regex '.*/[^\.]+$'
+)
+__path.walk.complete() {
+    local _command=$1 _word=$2 _previous_word=$3
+    # return list of possible directories https://stackoverflow.com/questions/12933362/getting-compgen-to-include-slashes-on-directories-when-looking-for-files/40227233#40227233a
+    COMPREPLY=( $(compgen -d -- $2) )    
+}
+f.complete path.walk
 
 path.pn() ( realpath -Lms ${1:-${PWD}}; ); declare -fx path.pn
 u.map.mkall path.pn
