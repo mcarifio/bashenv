@@ -14,22 +14,18 @@
 declare -Ax __bashenv_loaded=()
 
 # f.exists
-__f.exists.complete() {
-    local _command=$1 _word=$2 _previous_word=$3
-    COMPREPLY=( $(f.match $2) )
-}
 f.exists() {
     : '${f} # return 0 iff bash function ${f} exists (is defined)'a
     [[ function = $(type -t "${1}") ]]
+}
+__f.exists.complete() {
+    local _command=$1 _word=$2 _previous_word=$3
+    COMPREPLY=( $(f.match $2) )
 }
 
 
 # This is a pattern. It will make sense after you've seen it a few times.
 # f.complete
-__f.complete.complete() {
-    local _command=$1 _word=$2 _previous_word=$3
-    COMPREPLY=( $(f.loaded.match "$2") )
-}
 f.complete() {
     : '${fn} # export ${fn} for subshells and connect to a completion fn __${fn}.complete iff it exists'
     local _f=${1:?'expecting a function'}
@@ -41,44 +37,48 @@ f.complete() {
     declare -gfx ${_fc}
     complete -F ${_fc} ${_f}
 }
+__f.complete.complete() {
+    local _command=$1 _word=$2 _previous_word=$3
+    COMPREPLY=( $(f.loaded.match "$2") )
+}
 f.complete f.complete
 # Unwound the circularity, you can now bash complete f.exists.
 f.complete f.exists
 
 # plus1, useful to test u.map next
-__example.plus1.complete() {
-    local _command=$1 _word=$2 _prev=$3
-    >&2 printf "(int...) "
-}
 example.plus1() (
     : '${number} #> 1 + ${number} # a useful example for u.map'
     echo $(( $1 + 1 ))
 )
+__example.plus1.complete() {
+    local _command=$1 _word=$2 _prev=$3
+    >&2 printf "(int...) "
+}
 f.complete example.plus1
 
 
 # u.map
-__u.map.complete() {
-    local _command=$1 _word=$2 _previous_word=$3
-    COMPREPLY=( $(f.loaded.match "$2") )
-}
 u.map() {
     : '${f} ... # apply $f to each item in the list ... and return the result'
     local _f=${1:?'expecting a function'}; shift
     for _a in "$@"; do ${_f} ${_a} || return $?; done 
 }
-f.complete u.map
-
-# u.map.mkall
-__u.map.mkall.complete() {
+__u.map.complete() {
     local _command=$1 _word=$2 _previous_word=$3
     COMPREPLY=( $(f.loaded.match "$2") )
 }
+f.complete u.map
+
+# u.map.mkall
 u.map.mkall() {
     : '${f} # defines a global function ${f}.all that applies $f} to each argument and returns the result'
     local _f=${1:?'expecting a function'}; shift
     local _all=${_f}.all
     eval $(printf '%s() { u.map %s "$@"; }; declare -fx %s' ${_all} ${_f} ${_all})
+}
+__u.map.mkall.complete() {
+    local _command=$1 _word=$2 _previous_word=$3
+    COMPREPLY=( $(f.loaded.match "$2") )
 }
 f.complete u.map.mkall
 
@@ -93,33 +93,29 @@ f.complete f.loaded
 
 
 # f.loaded.match
-__f.loaded.match.complete() {
-    local _command=$1 _word=$2 _previous_word=$3
-    COMPREPLY=( $(f.loaded.match "$2") )
-}
 f.loaded.match() {
     : '${prefix:-""} #> echo all bashenv functions matching ${prefix} '
     f.loaded | \grep "^$1"
 }
+__f.loaded.match.complete() {
+    local _command=$1 _word=$2 _previous_word=$3
+    COMPREPLY=( $(f.loaded.match "$2") )
+}
 f.complete f.loaded.match
 
 # f.match, circular
-__f.match.complete() {
-    local _command=$1 _word=$2 _previous_word=$3
-    COMPREPLY=( $(f.match "$2") )
-}
 f.match() {
     : '${prefix} #> echo all bash functions matching ${prefix}'
     declare -F | cut -d' ' -f3 | \grep -E "^$1"
+}
+__f.match.complete() {
+    local _command=$1 _word=$2 _previous_word=$3
+    COMPREPLY=( $(f.match "$2") )
 }
 f.complete f.match
 
 
 # f.doc
-__f.doc.complete() {
-    local _command=$1 _word=$2 _previous_word=$3
-    COMPREPLY=( $(f.loaded.match "$2") )    
-}
 f.doc() {
     : '${function} # echos the docstring of a function to stdout'		    
     local _f=${1:?'expecting a function'}
@@ -130,6 +126,10 @@ f.doc() {
 	>&2 echo "'function ${_f}' not found"
 	return 1
     fi
+}
+__f.doc.complete() {
+    local _command=$1 _word=$2 _previous_word=$3
+    COMPREPLY=( $(f.loaded.match "$2") )    
 }
 f.complete f.doc
 
@@ -144,6 +144,10 @@ home() (
     : '[${user}:-${USER}] #> the login directory of the${user}.'
     getent passwd ${1:-${SUDO_USER:-${USER}}} | cut -d: -f6
 )
+__home.complete() {
+    local _command=$1 _word=$2 _previous_word=$3
+    COMPREPLY=( $(compgen -u -- "$2") )        
+}
 f.complete home
 
 
