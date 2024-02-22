@@ -197,43 +197,86 @@ __path.walk.complete() {
 }
 f.complete path.walk
 
-path.pn() ( realpath -Lms ${1:-${PWD}}; ); declare -fx path.pn
+# path.pn
+path.pn() (
+    realpath -Lms ${1:-${PWD}};
+)
+complete path.pn
 u.map.mkall path.pn
 
-# full pathname 1
-path.fpn() ( echo -n ${HOSTNAME}:; realpath -Lms ${1:-${PWD}}; ); declare -fx path.fpn
-u.map.mkall path.fpn
+# path.hpn, host + pathname 1
+path.hpn() (
+    : '${path} #> echo full pathname including host'
+    echo -n ${HOSTNAME}:
+    realpath -Lms ${1:-${PWD}}
+)
+f.complete path.fpn
+u.map.mkall path.hpn
 
 
+# path.basename
 path.basename() (
+    : '${pathname} #> echo basename of ${pathname}. all extensions are removed.'
     local _pn=${1:?'expecting a pathname'}
     local _result=${_pn##*/}
     echo ${_result%%.*}
-); declare -fx path.basename
+)
+__path.basename.complete() {
+    local _command=$1 _word=$2 _previous_word=$3
+    # return list of possible directories https://stackoverflow.com/questions/12933362/getting-compgen-to-include-slashes-on-directories-when-looking-for-files/40227233#40227233a
+    COMPREPLY=( $(compgen -f -- $2) )        
+}
+f.complete path.basename
 
+# path.md
 path.md() (
-    : 'path.md ## make a directory and return its pathname, e.g cp foo $(path.md /tmp/foo)/bar'
+    : '${folder} #> make a directory and return its pathname, e.g cp foo $(path.md /tmp/foo)/bar'
     local _d=$(path.pn1 $1)
     [[ -d "$_d" ]] || mkdir -p ${_d}
     printf "%s" ${_d}
-); declare -fx path.md
+)
+__path.md.complete() {
+    local _command=$1 _word=$2 _previous_word=$3
+    # return list of possible directories https://stackoverflow.com/questions/12933362/getting-compgen-to-include-slashes-on-directories-when-looking-for-files/40227233#40227233a
+    COMPREPLY=( $(compgen -d -- $2) )        
+}
+f.complete path.md
 
+# path.mkcd
 path.mkcd() {
     local _d=$(path.md $1); [[ -z "${_d}" ]] || cd -Pe ${_d}
-}; declare -fx path.mkcd
+}
+__path.mkcd.complete() {
+    local _command=$1 _word=$2 _previous_word=$3
+    # return list of possible directories https://stackoverflow.com/questions/12933362/getting-compgen-to-include-slashes-on-directories-when-looking-for-files/40227233#40227233a
+    COMPREPLY=( $(compgen -d -- $2) )        
+}
+f.complete path.mkcd
+
 
 path.mp() ( local _p=$(printf "%s/%s" $(md $1/..) ${1##*/}); printf ${_p}; ); declare -fx path.mp
 path.mpt() ( local _p=$(printf "%s/%s" $(md $1/..) ${1##*/}); touch ${_p}; printf ${_p}; ); declare -fx path.mpt
 path.mpcd() ( cd $(dirname $(mp ${1:?'expecting a pathname'})); ); declare -fx path.mpcd
 
-u.have() ( &> /dev/null type ${1?:'expecting a command'} || return 1; ); declare -fx u.have
+# u.have
+u.have() (
+    &> /dev/null type ${1?:'expecting a command'} || return 1
+)
+f.complete u.have
 u.map.mkall u.have # u.have.all
 
+# u.call
 u.call() {
+    : '${command} ... #> run a command against arguments'
     local _f=${1:?'expecting a command'}; shift
     u.have ${_f} || return 0
     ${_f} "$@"
-}; declare -fx u.call
+}
+__u.call.complete() {
+    local _command=$1 _word=$2 _previous_word=$3
+    COMPREPLY=( $(f.match "$2") $(compgen -c "$2") )
+}
+f.complete u.call
 
 
 u.error() {
@@ -273,17 +316,24 @@ guard() {
 
 _template() ( echo ${FUNCNAME}; ); declare -fx _template
  
+# u.map.tree
 u.map.tree() {
     local _action=${1:?'expecting an action, e.g. source or guard'}
     local _folder=${2:?'expecting a folder'}
     [[ -d "${_folder}" ]] || { >&2 echo "${_folder} is not a folder"; return 1; }
     u.map ${_action} $(find "${_folder}" -type f -regex "[^#]+\.${_action}\.sh\$")        
-}; declare -fx u.map.tree
+}
+__u.map.tree.complete0() {
+    local _command=$1 _word=$2 _previous_word=$3
+    # return list of possible directories https://stackoverflow.com/questions/12933362/getting-compgen-to-include-slashes-on-directories-when-looking-for-files/40227233#40227233a
+    COMPREPLY=( $(compgen -d -- $2) )
+}
+f.complete u.map.tree
 
 u.or() ( echo "$@" | cut -d' ' -f1; ); declare -fx u.or
 
 u.shell() {
-  : 'u.shell # this shell, always bash. But the SHELL env variable can be unreliable'
+  : '#> this shell, always bash. But the SHELL env variable can be unreliable'
   basename $(realpath /proc/$$/exe)
 }; declare -fx u.shell
 
@@ -307,30 +357,34 @@ _title() (
 
 
 # dmesg --follow # will follow messages
-dmesg() {
+dmesg() (
     sudo dmesg --human --time-format=iso --decode --color=always "$@" | less -R
-}; declare -fx dmesg
+)
+f.complete dmesg
 
-dmesg.error() {
+dmesg.error() (
     dmesg --level=emerg,alert,crit,err "$@"
-}; declare -fx dmesg.error
+)
+f.complete dmesg.error
 
-dmesg.user() {
+dmesg.user() (
     dmesg --user "$@"
-}; declare -fx dmesg.user
+)
+f.complete dmesg.user
 
 
 # dnf install -y net-tools
 # emacs /etc/ethers
-ether.wake() {
+ether.wake() (
     sudo /usr/sbin/ether-wake $@
-}; declare -fx ether.wake
-
-ether.wake.all() (
-  : 'ether.wake.all apollo mick clubber'
-  local -a _all=(apollo mick clubber "$@")
-  for h in ${_all}; do ether.wake ${h}; done
-); declare -fx ether.wake.all
+)
+__ether.wake.complete0() {
+    local _command=$1 _word=$2 _previous_word=$3
+    # return list of possible directories https://stackoverflow.com/questions/12933362/getting-compgen-to-include-slashes-on-directories-when-looking-for-files/40227233#40227233a
+    COMPREPLY=( hosts )            
+}
+f.complete ether.wake
+u.map.mkall either.wake
 
 
 gnome.restart() (
