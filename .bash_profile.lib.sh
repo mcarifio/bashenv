@@ -11,23 +11,47 @@
 
 
 
+# name -> date
 declare -Ax __bashenv_loaded=()
+
+f.tbs() {
+    : '#> caller to be supplied, returns 1'
+    >&2 echo ${FUNCNAME[-1]} tbs
+    return 1
+}; declare -fx f.tbs
+
 
 # f.exists
 f.exists() {
-    : '${f} # return 0 iff bash function ${f} exists (is defined)'a
+    : '${f} # return 0 iff bash function ${f} exists (is defined)'
+    local _f=${1:?'expecting a bashenv function'}
     [[ function = $(type -t "${1}") ]]
 }
 __f.exists.complete() {
+    # wizard style completion 
     local _command=$1 _word=$2 _previous_word=$3
-    COMPREPLY=( $(f.match $2) )
+    local -i _position=${COMP_CWORD} _arg_length=${#COMP_WORDS[@]}
+    declare -ig __previous_position
+    COMPREPLY=()
+    if (( _position == 1)); then
+	# prompt
+	if (( __previous_position != _position )) && [[ -z "${_word}" ]] ; then
+	    >&2 echo -n "(required bashenv function) "
+	else
+	    COMPREPLY=( $(f.loaded.match "$2") )	    
+	fi	
+    else
+	(( __previous_position != _position )) && >&2 echo -n "(f.exists takes a single argument) "
+    fi
+    let __previous_position=_position
 }
+
 
 
 # This is a pattern. It will make sense after you've seen it a few times.
 # f.complete
 f.complete() {
-    : '${fn} # export ${fn} for subshells and connect to a completion fn __${fn}.complete iff it exists'
+    : '${fn} [__${fn}.complete] # export ${fn} for subshells and connect to a completion fn __${fn}.complete iff it exists'
     local _f=${1:?'expecting a function'}
     local _fc=__${_f}.complete
     f.exists ${_f} || return 1
@@ -39,11 +63,53 @@ f.complete() {
 }
 __f.complete.complete() {
     local _command=$1 _word=$2 _previous_word=$3
-    COMPREPLY=( $(f.loaded.match "$2") )
+    local -i _position=${COMP_CWORD} _arg_length=${#COMP_WORDS[@]}
+    declare -ig __previous_position
+    declare -ig __args_start
+    COMPREPLY=()
+    if (( _position == 1)); then
+	if (( __previous_position != _position )) && [[ -z "${_word}" ]] ; then
+	    >&2 echo -n "(required bashenv function) "
+	else
+	    COMPREPLY=( $(f.loaded.match "$2") )
+	fi
+    elif (( _position == 2 )); then
+	if (( __previous_position != _position )) && [[ -z "${_word}" ]] ; then
+	    >&2 echo -n "(optional bashenv function that completes ${COMP_WORDS[1]}) "
+	else
+	    COMPREPLY=( $(f.loaded.match "$2") )
+	fi	
+    else
+	(( __previous_position != _position )) && >&2 echo -n "(f.complete takes 1..2 arguments) "
+    fi
+    let __previous_position=_position
 }
 f.complete f.complete
 # Unwound the circularity, you can now bash complete f.exists.
 f.complete f.exists
+
+
+# backed myself into a corner here, pause
+f.mkcompleter() {
+    : 'make a completer function given a signiture of the form ${fn} required|optional ${arg_name} 'type' 'completion expression' ... '
+    local _for=${1:?'expecting a bashenv function'}; shift
+    declare -a _args=( "$@" )
+    local -i _len=$(( ( ${#_args[@]} / 4 ) - 1 ))
+    for p3 in $(seq 0 ${_len}) ; do
+	let p=p3*3
+	${FUNCNAME}.generate ${_args[$p]} ${_args[$((p+1))]} "${_args[$((p+2))]}" "${_args[$((p+3))]}"
+    done
+}; declare -fx f.mkcompleter
+
+f.mkcompleter.generate() {
+    local _need="${1:?'expected need'}" _name="${3:?'expected type'}" _type="${3:?'expected type'}" _expression="${3:?'expected expression'}"
+    echo -n ${_need} ${_name} "${_type}" "${_expression}"
+}; declare -fx f.mkcompleter.generate
+
+# f.mkcompleter f.exists required 'bashenv function' 'f.loaded.match'
+# f.mkcompleter u.map required 'bashenv function' 'f.loaded.match' rest int none
+
+
 
 # plus1, useful to test u.map next
 example.plus1() (
@@ -56,16 +122,46 @@ __example.plus1.complete() {
 }
 f.complete example.plus1
 
+f.apply() (
+    local _f=${1:?'expecting a function'}; shift
+    ${_f} "$@"
+); declare -fx f.apply
+
 
 # u.map
 u.map() {
-    : '${f} ... # apply $f to each item in the list ... and return the result'
+    : '[--accumulator=${command}] ${f} ... # apply $f to each item in the list ... and return the result'
+    _options=$(getopt --name ${FUNCNAME} --shell bash --longoptions=accumulator: -- "$@") || return $?
+    eval set -- "${_options}"
+    for _a in ${_options}; do
+	case "${_a}" in
+	    --accumulator) shift; accumulator=$1;;
+	    --) shift; break;;
+	esac
+	shift
+    done
+
+    printf "accumulator: %s" ${accumulator:-unassigned}
+    echo "$@"
     local _f=${1:?'expecting a function'}; shift
     for _a in "$@"; do ${_f} ${_a} || return $?; done 
 }
 __u.map.complete() {
     local _command=$1 _word=$2 _previous_word=$3
-    COMPREPLY=( $(f.loaded.match "$2") )
+    local -i _position=${COMP_CWORD} _arg_length=${#COMP_WORDS[@]}
+    COMPREPLY=()
+    if (( _position == 1)); then
+	if (( __previous_position != _position )) && [[ -z "${_word}" ]] ; then
+	    >&2 echo -n "(required bashenv function to map) "
+	else
+	    COMPREPLY=( $(f.loaded.match "$2") )
+	fi
+	declare -ig __bashenv_rest=0
+    elif (( _position > 1 && __previous_position != _position )); then
+	>&2 echo -n "(u.map ${COMP_WORDS[1]} arguments...) "
+	__bashenv_rest=1	
+    fi
+    let __previous_position=_position
 }
 f.complete u.map
 
@@ -74,11 +170,22 @@ u.map.mkall() {
     : '${f} # defines a global function ${f}.all that applies $f} to each argument and returns the result'
     local _f=${1:?'expecting a function'}; shift
     local _all=${_f}.all
-    eval $(printf '%s() { u.map %s "$@"; }; declare -fx %s' ${_all} ${_f} ${_all})
+    # local _completer=''
+    # f.exists __${_f}.complete && _completer=__f${_f}.complete
+    eval $(printf '%s() { u.map %s "$@"; }; f.complete %s %s' ${_all} ${_f} ${_all})
 }
 __u.map.mkall.complete() {
     local _command=$1 _word=$2 _previous_word=$3
-    COMPREPLY=( $(f.loaded.match "$2") )
+    local -i _position=${COMP_CWORD} _arg_length=${#COMP_WORDS[@]}
+    COMPREPLY=()
+    if (( _position == 1)); then
+	COMPREPLY=( $(f.loaded.match "$2") )
+    else
+	>&2 echo
+	>&2 f.doc u.map.mkall
+	>&2 echo "u.map.mkall takes one argument, currently ${_previous_word}"
+	echo -n "${COMP_LINE} "
+     fi
 }
 f.complete u.map.mkall
 
@@ -99,21 +206,18 @@ f.loaded.match() {
 }
 __f.loaded.match.complete() {
     local _command=$1 _word=$2 _previous_word=$3
-    COMPREPLY=( $(f.loaded.match "$2") )
+    local -i _position=${COMP_CWORD} _arg_length=${#COMP_WORDS[@]}
+    COMPREPLY=()
+    if (( _position == 1)); then
+	COMPREPLY=( $(f.loaded.match "$2") )
+    else
+	>&2 echo
+	>&2 f.doc f.loaded.match
+	>&2 echo "f.loaded.match takes one argument, currently ${_previous_word}"
+	echo -n "${COMP_LINE} "
+     fi
 }
 f.complete f.loaded.match
-
-# f.match, circular
-f.match() {
-    : '${prefix} #> echo all bash functions matching ${prefix}'
-    declare -F | cut -d' ' -f3 | \grep -E "^$1"
-}
-__f.match.complete() {
-    local _command=$1 _word=$2 _previous_word=$3
-    COMPREPLY=( $(f.match "$2") )
-}
-f.complete f.match
-
 
 # f.doc
 f.doc() {
@@ -129,7 +233,16 @@ f.doc() {
 }
 __f.doc.complete() {
     local _command=$1 _word=$2 _previous_word=$3
-    COMPREPLY=( $(f.loaded.match "$2") )    
+    local -i _position=${COMP_CWORD} _arg_length=${#COMP_WORDS[@]}
+    COMPREPLY=()
+    if (( _position == 1)); then
+	COMPREPLY=( $(f.loaded.match "$2") )
+    else
+	>&2 echo
+	>&2 f.doc f.doc
+	>&2 echo "f.doc takes one argument, currently ${_previous_word}"
+	echo -n "${COMP_LINE} "
+     fi
 }
 f.complete f.doc
 
@@ -141,12 +254,21 @@ running.bash() {
 f.complete running.bash
 
 home() (
-    : '[${user}:-${USER}] #> the login directory of the${user}.'
+    : '[${user}:-${USER}] #> the login directory of the ${user}.'
     getent passwd ${1:-${SUDO_USER:-${USER}}} | cut -d: -f6
 )
 __home.complete() {
     local _command=$1 _word=$2 _previous_word=$3
-    COMPREPLY=( $(compgen -u -- "$2") )        
+    local -i _position=${COMP_CWORD} _arg_length=${#COMP_WORDS[@]}
+    COMPREPLY=()
+    if (( _position == 1)); then
+	COMPREPLY=( $(compgen -u -- "$2") )        
+    else
+	>&2 echo
+	>&2 f.doc home
+	>&2 echo "home takes one argument, currently ${_previous_word}"
+	echo -n "${COMP_LINE} "
+     fi
 }
 f.complete home
 
@@ -156,7 +278,7 @@ f.complete home
 eval "bashenv.root() ( echo $(dirname $(realpath ${BASH_SOURCE})); )"; declare -fx bashenv.root
 
 path.login() (
-    : '#> echos interesting directories under $(home)'
+    : '#> Enumerates interesting directories under $(home) to be added to PATH'
     printf '%s:' $(home)/opt/*/current/bin $(home)/.config/*/bin
 )
 f.complete path.login
@@ -176,7 +298,7 @@ path.add() {
 __path.add.complete() {
     local _command=$1 _word=$2 _previous_word=$3
     # return list of possible directories https://stackoverflow.com/questions/12933362/getting-compgen-to-include-slashes-on-directories-when-looking-for-files/40227233#40227233a
-    COMPREPLY=( $(compgen -d -- $2) )    
+    COMPREPLY=( $(compopt -o nospace; compgen -d -- $2) )    
 }
 f.complete path.add
 
@@ -192,8 +314,20 @@ path.walk() (
 )
 __path.walk.complete() {
     local _command=$1 _word=$2 _previous_word=$3
-    # return list of possible directories https://stackoverflow.com/questions/12933362/getting-compgen-to-include-slashes-on-directories-when-looking-for-files/40227233#40227233a
-    COMPREPLY=( $(compgen -d -- $2) )    
+    local -i _position=${COMP_CWORD} _arg_length=${#COMP_WORDS[@]}
+    declare -ig __previous_position
+    COMPREPLY=()
+    if (( _position == 1)); then
+	COMPREPLY=( $(compopt -o nospace; compgen -d -- $2) )
+    elif (( _position == 2 )); then
+	(( __previous_position != _position )) && [[ -z "${_word}" ]] && >&2 echo -n "(mindepth) "
+    elif (( _position == 3 )); then
+	(( __previous_position != _position )) && [[ -z "${_word}" ]] && >&2 echo -n "(maxdepth) "
+    else
+	>&2 echo -n "(path.walk takes 3 arguments) "
+	# echo -n "${COMP_LINE} "
+    fi
+    let __previous_position=_position
 }
 f.complete path.walk
 
@@ -274,6 +408,8 @@ u.call() {
 }
 __u.call.complete() {
     local _command=$1 _word=$2 _previous_word=$3
+    COMPREPLY=( $(compgen -A function -- "$2") )
+
     COMPREPLY=( $(f.match "$2") $(compgen -c "$2") )
 }
 f.complete u.call
@@ -376,12 +512,12 @@ f.complete dmesg.user
 # dnf install -y net-tools
 # emacs /etc/ethers
 ether.wake() (
-    sudo /usr/sbin/ether-wake $@
+    sudo /usr/sbin/ether-wake "$@"
 )
-__ether.wake.complete0() {
+__ether.wake.complete() {
     local _command=$1 _word=$2 _previous_word=$3
     # return list of possible directories https://stackoverflow.com/questions/12933362/getting-compgen-to-include-slashes-on-directories-when-looking-for-files/40227233#40227233a
-    COMPREPLY=( hosts )            
+    COMPREPLY=( $(compgen -A hostname) )            
 }
 f.complete ether.wake
 u.map.mkall either.wake
