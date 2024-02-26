@@ -131,18 +131,15 @@ f.apply() (
 # u.map
 u.map() {
     : '[--accumulator=${command}] ${f} ... # apply $f to each item in the list ... and return the result'
-    _options=$(getopt --name ${FUNCNAME} --shell bash --longoptions=accumulator: -- "$@") || return $?
-    eval set -- "${_options}"
-    for _a in ${_options}; do
+    # _options=$(getopt --name ${FUNCNAME} --shell bash --longoptions=accumulator: -- "$@") || return $?
+    # eval set -- "${_options}"
+    for _a in "$@"; do
 	case "${_a}" in
-	    --accumulator) shift; accumulator=$1;;
 	    --) shift; break;;
+	    *) break;;
 	esac
 	shift
     done
-
-    printf "accumulator: %s" ${accumulator:-unassigned}
-    echo "$@"
     local _f=${1:?'expecting a function'}; shift
     for _a in "$@"; do ${_f} ${_a} || return $?; done 
 }
@@ -301,6 +298,9 @@ __path.add.complete() {
     COMPREPLY=( $(compopt -o nospace; compgen -d -- $2) )    
 }
 f.complete path.add
+u.map.mkall path.add # path.add.all
+
+f.complete path.login
 
 
 
