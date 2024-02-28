@@ -22,6 +22,7 @@ f.tbs() {
 
 
 # f.exists
+f.exists.sig() ( echo ${FUNCNAME%.sig} req _f bash+function no_default; )
 f.exists() {
     : '${f} # return 0 iff bash function ${f} exists (is defined)'
     local _f=${1:?'expecting a bashenv function'}
