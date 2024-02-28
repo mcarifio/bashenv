@@ -1,4 +1,3 @@
-
 go.path() (
     : 'go.path |> current path for go binaries iff the folder exists'
     local _gopath=$(go env GOPATH)
@@ -7,7 +6,8 @@ go.path() (
         # [[ -d "${_gopath_bin}" ]] && export PATH+=:${_gopath_bin}
         [[ -d "${_gopath_bin}" ]] && echo ${_gopath_bin}
     fi
-); declare -fx go.path
+)
+f.complete go.path
 
 # assume path.sh sourced
 path.add $(go.path)

@@ -6,12 +6,14 @@ zlib.category() (
     # turn basename parts into an array. 0 is basename, 1 is category.
     declare -a _cat=( ${_one//./ } )
     (( ${#_cat[@]} > 2 )) && echo ${_cat[1]};
-); declare -fx zlib.category
+)
+f.complete zlib.category
 
 zlib.is-compressed() (
     : 'zlib.is-compressed ${pathname} # sets $? to 0 iff ${pathname} is compressed'
     file -b ${1?'expecting a pathname'} | grep --quiet 'compressed data'
-); declare -fx zlib.is-compressed
+)
+f.complete zlib.is-compressed
 
 zlib.format() (
     : 'zlib.format ${pathname} # |> returns the category of a pathname, e.g. foo.rs.pdf.xz returns pdf, foo.pdf returns pdf'
@@ -23,7 +25,8 @@ zlib.format() (
     declare -i _len=${#_cat[@]}
     (( ${_len} == 2 )) && echo ${_cat[1]}
     (( ${_len} > 2 )) && echo ${_cat[2]}
-); declare -fx zlib.format
+)
+f.complete zlib.format
 
 
 zlib.target() (
@@ -51,18 +54,21 @@ zlib.target() (
 	>&2 echo "No category found in '$2', e.g. something like .rs.pdf"
 	return 1
     fi    
-); declare -fx zlib.target
+)
+f.complete zlib.target
 
 
 zlib.mv() (
     : 'zlib.mv ${_src} [${_target}] # mv src to target. default target is ~/Documents/e/2sort'
     mv -v "${_src}" $(zlib.target "${2:-''}" "${1:?'expecting a pathname'}")
-); declare -fx zlib.mv
+)
+f.complete zlib.mv
 
 zlib.mv.all() (
     : 'zlib.mv-all *.{pdf,epub} # mv all matching pathnames to a target based on the pathname "category"'
     for _src in "$@"; do mv -v "${_src}" $(zlib.target '' "${_src}"); done
-); declare -fx zlib.mv
+)
+f.complete zlib.mv
 
 zlib.categorize.all() (
     local _category=${1:?'expecting a category'}; shift
@@ -76,4 +82,5 @@ zlib.categorize.all() (
 	local _target=${_parts[0]}.${_category}$(printf '.%s' ${_parts[@]:${_start}})
 	mv -v ${_f} ${_target}
     done
-); declare -fx zlib.categorize.all
+)
+f.complete zlib.categorize.all

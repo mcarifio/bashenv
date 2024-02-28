@@ -1,12 +1,11 @@
-running.bash && u.have.all $(basename ${BASH_SOURCE} .sh) rpm || return 0
-
 # dnf and decl must come first
 # https://unix.stackexchange.com/questions/403181/how-to-pin-a-package-in-dnf-fedora
 # dnf install 'dnf-command(versionlock)'
 dnf() (
     : "sudo dnf ..."
     sudo /usr/bin/dnf "$@" -y --allowerasing
-); declare -fx dnf
+)
+f.complete dnf
 
 dnf.src.rpm() (
   : "${FUNCNAME[0]} \${src.rpm} [\${destination_dir:-$PWD/src.rpm}] # extract source rpm to an (optional) destination directory"
@@ -28,35 +27,40 @@ dnf.src.rpm() (
   rpm2cpio ${_src_rpm} | 2>/dev/null cpio -idm -D ${_destdir}
   for _tar in ${_destdir}/*.tar.* ${_destdir}/*.t?z; do &> /dev/null tar -xaf --one-top-level -C "${_destdir}" "${_tar}"; done
   >&2 ${_src_rpm} extracted to ${_destdir}
-); declare -fx dnf.src.rpm
+)
+f.complete dnf.src.rpm
 
 
 
 dnf.files() (
     : "dnf.files lists all files for a package; see also rpm -ql ${package}"
     command dnf repoquery --installed -l ${1:?'expecting a package'}
-); declare -fx dnf.files
+); f.complete dnf.files
 
 # lock the kernel to a specific version. update in a more controlled way.
 dnf.lock-kernel() (
     local _v=${1:-$(uname -r)}
     sudo dnf versionlock kernel-${_v} kernel-{core,modules,devel,tools,abi-stablelists}-${_v}
-); declare -fx dnf.local-kernel
+)
+f.complete dnf.local-kernel
 
 # what package does a command come from?
 dnf.for() (
     rpm -qf $(type -p ${1:?'expecting a command'}) --qf '%{NAME}'
-); declare -fx dnf.for
+)
+f.complete dnf.for
 
 rpm.extract() {
     local _rpm_file=${1:?'expecting an rpm file'}
     rpm2cpio ${_rpm_file} | cpio -idmv
-}; declare -fx rpm.extract
+}
+f.complete rpm.extract
 
 dnf.from() (
     : "dnf.from returns the repo id a package originated from"
     dnf repoquery --qf "%{repoid}" ${1:?'expecting a package'}
-); declare -fx dnf.from
+)
+f.complete dnf.from
 
 
 
@@ -67,4 +71,5 @@ fc.upgrade() (
     dnf install dnf-plugin-system-upgrade -y
     dnf system-upgrade download -y --nogpgcheck --releasever=${_next_version}
     dnf system-upgrade reboot
-); declare -fx fc.upgrade
+)
+f.complete fc.upgrade

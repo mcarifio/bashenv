@@ -1,4 +1,7 @@
-config.memory() ( udevadm info -e | grep -e MEMORY_DEVICE ; ); declare -fx config.memory
+config.memory() (
+    udevadm info -e | grep -e MEMORY_DEVICE
+)
+f.complete config.memory
 
 
 

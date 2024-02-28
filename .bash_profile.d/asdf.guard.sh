@@ -11,7 +11,7 @@ asdf.is-installed() {
     local _plugin=$1
     asdf current ${_plugin} &> /dev/null
 }
-declare -fx asdf.is-installed
+f.complete asdf.is-installed
 
 
 # For those plugins that support "auto install of packages" (and the environment variable is configured), you'll also
@@ -28,10 +28,10 @@ asdf.install-latest-enum() {
     asdf reshim
     hash -r
 }
-declare -fx asdf.install-latest-enum
+f.complete asdf.install-latest-enum
 
 asdf.install-latest() { asdf.install-latest-enum $(asdf plugin-list); }
-declare -fx asdf.install-latest
+f.complete  asdf.install-latest
 
 asdf.plugin+install() {
     local _pkg=${1:?'expecting a pkg'}
@@ -41,7 +41,7 @@ asdf.plugin+install() {
     asdf global ${_pkg} latest
     hash -r
 }
-declare -fx asdf.plugin+install
+f.complete asdf.plugin+install
 # asdf.plugin+install chezmoi https://github.com/joke/asdf-chezmoi.git
 # asdf.plugin+install cheat https://github.com/jmoratilla/asdf-cheat-plugin.git
 
@@ -89,7 +89,7 @@ if asdf.is-installed go; then
     export ASDF_GOLANG_DEFAULT_PACKAGES_FILE=${ASDF_DATA_DIR}/.default-golang-pkgs
 fi
 asdf.go-install() { xargs -n1 -I% go install % < ${ASDF_GOLANG_DEFAULT_PACKAGES_FILE}; }
-declare -fx asdf.go-install
+f.complete asdf.go-install
 
 if asdf.is-installed yq ; then
     source <(yq shell-completion bash)

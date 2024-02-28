@@ -131,7 +131,7 @@ f.apply() (
 
 # u.map
 u.map() {
-    : '[--accumulator=${command}] ${f} ... # apply $f to each item in the list ... and return the result'
+    : '${f} ${item} ... # apply $f to each item in the list echoing the result'
     # _options=$(getopt --name ${FUNCNAME} --shell bash --longoptions=accumulator: -- "$@") || return $?
     # eval set -- "${_options}"
     for _a in "$@"; do

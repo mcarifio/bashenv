@@ -7,7 +7,8 @@ git.url.folder() (
     [[ "${_url}" =~ ^https?://([^/]+)/([^/]+)/(.*)$ ]] && { echo ${_suffix}/${BASH_REMATCH[1]}/${BASH_REMATCH[2]}/${BASH_REMATCH[3]}/${BASH_REMATCH[3]}; return 0; }
     [[ "${_url}" =~ ^([^@]*@)?([^:]+):([^/]+)/(.*)\.git$ ]] && { echo ${_suffix}/${BASH_REMATCH[2]}/${BASH_REMATCH[3]}/${BASH_REMATCH[4]}/${BASH_REMATCH[4]}; return 0; }
     echo ${_suffix}/${_url}    
-); declare -fx url.git.folder
+)
+f.complete url.git.folder
 
 
 # TODO mike@carif.io 02/20/24: probably obsolete
@@ -21,14 +22,16 @@ git.pn2url() (
   # echo ${_url} ${_work_dir}
   # git clone ${_url} ${_work_dir}
   echo ${_url}
-); declare -fx git.pn2url
+)
+f.complete git.pn2url
 
 
 
 # TODO mike@carif.io 02/20/24: probably obsolete
 git.repopath() (
     dirname $(find ${_here} -name .git -type d -minpath 2 -maxpath 2);
-); declare -fx git.repopath
+)
+f.complete git.repopath
 
 git.clcd() {
     : 'git.clcd ${url} [${folder}] # clone ${url} into ${folder} and cd to it'
@@ -38,7 +41,8 @@ git.clcd() {
     git clone --verbose ${_url} ${_folder}
     [[ -r ${_folder}/.envrc ]] && u.have dotenv && dotenv allow ${_folder}
     cd ${_folder}
-}; declare -fx git.clcd
+}
+f.complete git.clcd
 
 
 

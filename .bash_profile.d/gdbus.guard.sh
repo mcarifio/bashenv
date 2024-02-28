@@ -5,5 +5,5 @@ gnome.lg() {
     [[ "${ret:0:8}" = "(true, '" ]] || { >&2 echo "bad output from Gnome looking glass: $ret"; return 1; }
     [[ -n "${ret:8:-2}" ]] && echo "${ret:8:-2}"
 }
-declare -fx gnome.lg
+f.complete gnome.lg
 

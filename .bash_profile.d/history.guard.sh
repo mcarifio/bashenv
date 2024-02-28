@@ -4,7 +4,8 @@ history.prompt() {
      history -a
      history -c
      history -r
-}; declare -fx history.prompt;
+}
+f.complete history.prompt
 
 
 
@@ -15,5 +16,6 @@ history.env() {
     shopt -s histappend
     export HISTCONTROL=$HISTCONTROL:ignorespace:ignoredups
     PROMPT_COMMAND+=( history.prompt )
-}; declare -fx history.env
+}
+f.complete history.env
 

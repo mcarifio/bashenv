@@ -10,7 +10,7 @@ u.export-pn() {
     local _pn=${2:?'expecting a readable pathname'}
     [[ -r "${_pn}" ]] && export ${_name}=${_pn} || { >&2 echo "${_pn} not readable."; return 1; }
 }
-declare -fx u.export-pn
+f.complete u.export-pn
 
 
 # export AWS_CONFIG_FILE=~/.config/aws/config

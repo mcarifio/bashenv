@@ -5,6 +5,7 @@ sgpt.fix() (
     local _on=$(os-release.name-version) # taken from /etc/os-release
     local _using=$(u.shell) # usually bash
     local -i _code=0
+    local _flags=''
     
     if (( ${#@} )) ; then
         for _a in "${@}"; do
@@ -12,7 +13,7 @@ sgpt.fix() (
 		--what=*) _what=${_a#--what=};;
 		--on=*) _on=${_a#--on=};;
 		--using=*) _using=${_a#--using=};;
-		--code) _code=1;;
+		--code) _code=1; __flags+='--code ';;
 		
                 --) shift; break;;
                 *) break;;
@@ -28,13 +29,10 @@ sgpt.fix() (
     [[ -n "${_using}" ]] && _query+=" using ${_on} "
     (( ${#@} )) && _query+=" with symptoms $@"
 
-    local _sgpt='sgpt '
-    (( _code )) && _sgpt+=' --code '
-
     # >&2 echo "# ${_query}"
-    (set -x; ${_sgpt} "${_query}")
+    (set -x; command sgpt ${_flags} "${_query}")
 )
-
+f.complete sgpt.fix
 
 sgpt.install() (
     : 'sgpt.install [--code] [--what=something] --on=[linux] --using=${shell} ... additional advice'
@@ -43,6 +41,7 @@ sgpt.install() (
     local _on=$(os-release.name-version) # taken from /etc/os-release
     local _using=$(u.shell) # usually bash
     local -i _code=0
+    local _flags=''
     
     if (( ${#@} )) ; then
         for _a in "${@}"; do
@@ -50,7 +49,7 @@ sgpt.install() (
 		--what=*) _what=${_a#--what=};;
 		--on=*) _on=${_a#--on=};;
 		--using=*) _using=${_a#--using=};;
-		--code) _code=1;;
+		--code) _code=1; _flags+='--code ';;
 		
                 --) shift; break;;
                 *) break;;
@@ -66,10 +65,8 @@ sgpt.install() (
     [[ -n "${_using}" ]] && _query+=" using ${_using} "
     (( ${#@} )) && _query+=" with advice $@"
 
-    local _sgpt='sgpt '
-    (( _code )) && _sgpt+=' --code '
-
     # >&2 echo "# ${_query}"
-    (set -x; ${_sgpt} "${_query}")
+    (set -x; command sgpt ${_flags} "${_query}")
 
-); declare -fx sgpt.install
+)
+f.complete sgpt.install

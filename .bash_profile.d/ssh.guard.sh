@@ -1,6 +1,7 @@
 ssh.scan() {
   for ip in $(arp.scan $@); do ssh ${ip} id > /dev/null && echo ${ip}; done
-}; declare -fx ssh.scan
+}
+f.complete ssh.scan
 
 
 ssh.keygen() (
@@ -31,7 +32,8 @@ ssh.keygen() (
     # to convert to PEM: ssh.keygen --file=some/path/id_rsa -p -m PEM
     (set ${_trace}; ssh-keygen -f "${_file}" -C "${_comment}" -N "${_password}" "$@"; )
     
-); declare -fx ssh.keygen
+)
+f.complete ssh.keygen
 
 
 
@@ -45,7 +47,8 @@ ssh.mkpair() (
     local _comment="${HOSTNAME}:${_pub}"
     ssh-keygen -q -N ''   -f "${_keyfile}" -C "${_comment}"
     wl-copy -n < "${_pub}" && >&2 echo "'${_pub}' copied to clipboard"
-); declare -fx ssh.mkpair
+)
+f.complete ssh.mkpair
 
 
 ssh.User() (
@@ -54,7 +57,8 @@ ssh.User() (
     else
         echo ${USER}
     fi
-); declare -fx ssh.User
+)
+f.complete ssh.User
 
 ssh.HostName() (
     if [[ "$1" =~ @(.*)$ ]] ; then
@@ -62,7 +66,8 @@ ssh.HostName() (
     else
         echo "$1"
     fi
-); declare -fx ssh.HostName
+)
+f.complete ssh.HostName
 
 ssh.IdentityFile() (
     local _remote_user=$1
@@ -74,6 +79,7 @@ ssh.IdentityFile() (
     local _f=~/.ssh/keys.d/quad/${_remote_host}_id_rsa
     [[ -r ${_f} ]] && { echo ${_f}; return 0; }
 )
+f.complete IdentityFile
 
 ssh.ssh0() (
     : 'ssh.ssh [${user}@]?${host} $*'
@@ -84,7 +90,8 @@ ssh.ssh0() (
     local _options=""
     [[ -n "${_IdentityFile}" ]] && _options+="-o IdentityFile=${_IdentityFile}"
     (set -x; command ssh "$@" "${_options}" ${_target})
-); declare -fx ssh.ssh0
+)
+f.complete ssh.ssh0
 
 
 ssh.i() (
@@ -99,25 +106,28 @@ ssh.i() (
     else
         >&2 echo "IdentityFile ${_id_rsa} not found"
     fi
-); declare -fx ssh.i
+)
+f.complete ssh.i
 
 
 ssh.x() (
     local -r _host=${1:?'expecting a host'}; shift
     ssh -fY ${_host} env GDK_BACKEND=x11 "$@"
-); declare -fx ssh.x
+)
+f.complete ssh.x
 
 ssh.terminator() (
     local -r _host=${1:?'expecting a host'}; shift
     ssh.x ${_host} terminator --hidden --title=\${USER}@\${HOSTNAME} --name=\${USER}@\${HOSTNAME} "$@"
-); declare -fx ssh.terminator
+); f.complete ssh.terminator
 
 ssh.terminator.all() (
     for _host in "$@"; do ssh.terminator ${_host} ; done
-); declare -fx ssh.terminator.all
+)
+f.complete ssh.terminator.all
 
 # ssh.env() {
 #     # echo ${FUNCNAME}
 #     return 0 
-# }; declare -fx ssh.env
+# }; f.complete ssh.env
 
