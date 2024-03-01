@@ -33,14 +33,14 @@ ___template.parsed.complete() {
     COMPREPLY=()
     # echo; echo _word ${_word} _previous_word ${_previous_word}
     # flags
-    if [[ ${_word} == -?(-)* ]]; then
+    if [[ ${_word} == --file=* ]]; then
+	__arg_rest=0
+	COMPREPLY=( $(compgen -f -- ${_word##*=}) )
+    elif [[ ${_word} == -?(-)* ]]; then
 	__arg_rest=0
 	COMPREPLY=( $(compgen -W "--file= --comment= --password= --trace" -- "${_word}") )
 	[[ ${COMPREPLY-} == *= ]] && compopt -o nospace; # --flag= doesn't add space
 	_arg_start=$(( _position + 1 ))
-    elif [[ ${_previous_word} == --file=* ]]; then
-	__arg_rest=0
-	COMPREPLY=( $(compgen -f -- ${_previous_word##*=}) )
     elif (( _position == _arg_start)); then
 	__arg_rest=1	
 	if (( __previous_position != _position )) && [[ -z "${_word}" ]] ; then

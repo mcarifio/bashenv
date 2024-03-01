@@ -273,11 +273,15 @@ f.complete home
 
 # Return the full pathname of the bashenv root directory, usually something like ${HOME}/bashenv.
 # Depends on where you placed it however.
-eval "bashenv.root() ( echo $(dirname $(realpath ${BASH_SOURCE})); )"; declare -fx bashenv.root
+eval "bashenv.root() ( echo $(dirname $(realpath ${BASH_SOURCE})); )"
+f.complete bashenv.root
+
+path() ( echo ${PATH} | tr ':' '\n'; )
+f.complete path
 
 path.login() (
     : '#> Enumerates interesting directories under $(home) to be added to PATH'
-    printf '%s:' $(home)/opt/*/current/bin $(home)/.config/*/bin
+    printf '%s:' $(home)/opt/*/current/bin $(home)/.config/*/bin ~/.local/bin
 )
 f.complete path.login
 
@@ -286,7 +290,8 @@ f.complete path.login
 path.add() {
     : '${folder}... ## adds ${folder} to PATH iff not already there'
     for _a in "$@"; do
-	local _p=$(realpath -L ${_a})
+	[[ -z "${_a}" ]] && continue
+	local _p=$(realpath -sm ${_a})
 	case ":${PATH}:" in
             *:"${_p}":*) ;;
             *) PATH="${_p}:$PATH"
@@ -366,7 +371,7 @@ f.complete path.basename
 # path.md
 path.md() (
     : '${folder} #> make a directory and return its pathname, e.g cp foo $(path.md /tmp/foo)/bar'
-    local _d=$(path.pn1 $1)
+    local _d=$(path.pn $1)
     [[ -d "$_d" ]] || mkdir -p ${_d}
     printf "%s" ${_d}
 )

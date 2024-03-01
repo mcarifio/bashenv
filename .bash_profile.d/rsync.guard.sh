@@ -19,7 +19,7 @@ rsync.local() (
     local _to=$(${FUNCNAME}.target "${_from}")
 
     set -x
-    rsync --archive --verbose --partial --progress --relative --backup --ignore-errors --links --checksum --mkpath --xattrs --times --hard-links "$@" "${_from}"/ "${_to}"
+    command rsync --archive --verbose --partial --progress --relative --backup --ignore-errors --links --checksum --mkpath --xattrs --times --hard-links "$@" "${_from}"/ "${_to}"
 )
 f.complete rsync.local
 
@@ -27,4 +27,10 @@ rsync.home() (
     rsync.local "${HOME}" --exclude='/home/mcarifio/vmware/**' --exclude='/home/mcarifio/.local/share/containers/**' --exclude='/home/mcarifio/.cache'
 )
 f.complete rsync.home
+
+rsync.default() (
+    : 'rsync with default flags' 
+    command rsync --archive --verbose --partial --progress --relative --backup --ignore-errors --links  --mkpath --xattrs --times --hard-links "$@"
+)
+f.complete rsync.default
 
