@@ -19,7 +19,7 @@ rsync.local() (
     local _to=$(${FUNCNAME}.target "${_from}")
 
     set -x
-    command rsync --archive --verbose --partial --progress --relative --backup --ignore-errors --links --checksum --mkpath --xattrs --times --hard-links "$@" "${_from}"/ "${_to}"
+    command rsync --update --human-readable --itemize-changes --fsync --archive --verbose --partial --progress --relative --backup --ignore-errors --links --mkpath --xattrs --times --hard-links "$@" "${_from}"/ "${_to}"
 )
 f.complete rsync.local
 
@@ -30,7 +30,7 @@ f.complete rsync.home
 
 rsync.default() (
     : 'rsync with default flags' 
-    command rsync --archive --verbose --partial --progress --relative --backup --ignore-errors --links  --mkpath --xattrs --times --hard-links "$@"
+    command rsync --update --human-readable --itemize-changes --fsync --archive --verbose --partial --progress --relative --backup --ignore-errors --links  --mkpath --xattrs --times --hard-links "$@"
 )
 f.complete rsync.default
 
