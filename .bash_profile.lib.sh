@@ -422,16 +422,13 @@ f.complete u.call
 
 
 u.error() {
-    : 'u.error [--return] this is a message' 
-    local -i _status=${1:-1} ; shift || true
-    local _finally=exit
-    if [[ "$1" = --return ]]; then
-	_finally=return
-	shift
-    fi    
-    >&2 printf "{\"exec\": $0, \"status\": ${_status}, \"message\": \"$*\"}"
-    ${_finally} ${_status}
-}; declare -fx u.error
+    : '${command} || return $(u.error this is a message)' 
+    local -i _status=$?
+    local -a _frame=( $(caller 0) )
+    >&2 printf '{in: %s, status: %s, message: %s}\n' ${_frame[1]} ${_status} "$@"
+    return ${_status}
+}
+f.complete u.error
 
 
 ## guard
