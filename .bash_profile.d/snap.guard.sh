@@ -1,7 +1,7 @@
 snap() (
     sudo command ${FUNCNAME} "$@"
 )
-f.complete snap $(complete -p snap | cut -d' ' -f3)
+f.complete snap
 
 snapd.install() (
     dnf install epel-release || true

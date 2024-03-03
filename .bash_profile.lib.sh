@@ -89,6 +89,51 @@ f.complete f.complete
 # Unwound the circularity, you can now bash complete f.exists.
 f.complete f.exists
 
+f.complete.4() {
+    local -a _frame=( $(caller 0) )
+    local _one=${_frame[1]}
+    echo ${_one:2:-9}
+}
+declare -fx f.complete.4
+
+
+f.complete.for() (
+    local _command=${1:?'expecting a command'}
+    ( complete -p ${_command} | cut -d' ' -f3 ) || true
+)
+
+f.complete.init() {
+    declare -aig __bashenv_completer_prompted=()
+    declare -ig __bashenv_completer_previous_position=-1
+    declare -ig __bashenv_positionals_start=-1
+    declare -g __bashenv_completer=""
+}
+declare -fx f.complete.init
+# initialize bashenv prompting after each command
+[[ " ${PROMPT_COMMAND[@]} " =~ [[:space:]]f\.complete\.init[[:space:]] ]] || PROMPT_COMMAND+=( f.complete.init )
+
+__f.complete.for.complete() {
+    local _command=$1 _word=$2 _previous_word=$3
+    local -i _position=${COMP_CWORD} _arg_length=${#COMP_WORDS[@]}
+    COMPREPLY=()
+
+    if (( _position == 1)); then
+	# if [[ -z "${_word}" && (( __bashenv_completer_prompted[_position] )) ]] ; then
+	if [[ -z "${_word}" ]] ; then
+	    >&2 echo -n "(required: command) "
+	else
+            COMPREPLY=($(complete -p | command sed -e 's|.* ||'))
+            COMPREPLY=($(compgen -W '${COMPREPLY[@]}' -- "${_word}"))
+	fi
+    elif (( _position > 1 )); then
+	if (( __bashenv_completer_previous_position != _position )) && [[ -z "${_word}" ]] && (( ! __bashenv_completer_prompted[_position] )) ; then
+	    >&2 echo -n "(return) "
+	fi	
+    fi
+    let __bashenv_completer_prompted[_position]=_position
+    let __bashenv_completer_previous_position=_position
+}
+f.complete f.complete.for
 
 # backed myself into a corner here, pause
 f.mkcompleter() {

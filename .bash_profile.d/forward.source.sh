@@ -43,7 +43,7 @@ forward.ts() (
 f.complete forward.ts
 
 forward.f() (
-    : '# forward a call to this function to it's python script co-located with the function source code, example.forward.f for an example'
+    : '# forward a call to this function to its python script co-located with the function source code, example.forward.f for an example'
     local -a _frame=( $(caller 0) )
     forward.py $(dirname $(realpath -s ${_frame[2]}))/${_frame[1]}.${_ext} "$@"
 )
