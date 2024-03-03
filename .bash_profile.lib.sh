@@ -109,8 +109,14 @@ f.complete.init() {
     declare -g __bashenv_completer=""
 }
 declare -fx f.complete.init
-# initialize bashenv prompting after each command
-[[ " ${PROMPT_COMMAND[@]} " =~ [[:space:]]f\.complete\.init[[:space:]] ]] || PROMPT_COMMAND+=( f.complete.init )
+
+prompt.command.add() {
+    local _f=${1:?'expecting a function'}
+    u.have ${_f} || return $(u.error "function '${_f}' not found")
+    [[ " ${PROMPT_COMMAND[@]} " =~ [[:space:]]${_f//./\.}[[:space:]] ]] || PROMPT_COMMAND+=( ${_f} )
+}
+f.complete prompt.command.add
+prompt.command.add f.complete.init
 
 __f.complete.for.complete() {
     local _command=$1 _word=$2 _previous_word=$3

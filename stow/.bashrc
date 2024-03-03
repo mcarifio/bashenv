@@ -1,0 +1,3 @@
+source ~/bashenv/.bashrc
+
+
