@@ -3,7 +3,7 @@ systemctl() (
     sudo command ${FUNCNAME} "$@"
 )
 # use systemctl's completion function (_systemctl). it's a complicated function.
-f.complete systemctl
+f.complete systemctl _systemctl
 
 systemctl.start() (
     : ''

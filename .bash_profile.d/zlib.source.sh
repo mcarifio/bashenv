@@ -60,13 +60,16 @@ f.complete zlib.target
 
 zlib.mv() (
     : 'zlib.mv ${_src} [${_target}] # mv src to target. default target is ~/Documents/e/2sort'
+    local _pathname="${1:?'expecting a pathname'}"
+    local _part="${_pathname}.part"
+    [[ -f "${_part}" ]] && return $(u.error "${_part} indicates ${_pathname} download not complete")
     mv -v "${_src}" $(zlib.target "${2:-''}" "${1:?'expecting a pathname'}")
 )
 f.complete zlib.mv
 
 zlib.mv.all() (
     : 'zlib.mv-all *.{pdf,epub} # mv all matching pathnames to a target based on the pathname "category"'
-    for _src in "$@"; do mv -v "${_src}" $(zlib.target '' "${_src}"); done
+    for _src in "$@"; do mv -v "${_src}" $(zlib.target '' "${_src}") || true ; done
 )
 f.complete zlib.mv
 
