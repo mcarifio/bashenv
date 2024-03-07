@@ -16,8 +16,9 @@ gh.repo.create() {
     : '${name} [${folder}] [--private] # creates github repo ${name} for default github user. --private overrides --public'
     local _repo=${1:?'expecting a repo name'}; shift
     local _folder="$2"
-    gh repo create ${_repo} --add-readme --description "tbs ${_repo}" --public "$@"
-    local _git_dir=$(2>&1 >/dev/null git clone gh:${USER}/${_repo} ${_folder} | awk $'match($0, /^Cloning into \'([^\']+)\'\.\.\./, m) { print m[1]; }' )
+    gh repo create ${_repo} --add-readme --description "tbs ${_repo}" --public
+    # local _git_dir=$(2>&1 >/dev/null git clone gh:${USER}/${_repo} ${_folder} | awk $'match($0, /^Cloning into \'([^\']+)\'\.\.\./, m) { print m[1]; }' )
+    git clone gh:${USER}/${_repo} ${_folder}
     cd ${_git_dir}
 }
 f.complete gh.repo.create
