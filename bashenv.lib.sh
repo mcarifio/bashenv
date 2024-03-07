@@ -295,6 +295,8 @@ f.complete home
 # Depends on where you placed it however.
 eval "bashenv.root() ( echo $(dirname $(realpath ${BASH_SOURCE})); )"
 f.complete bashenv.root
+eval "bashenv.lib() ( echo $(realpath -P ${BASH_SOURCE}); )"
+f.complete bashenv.lib
 
 path() ( echo ${PATH} | tr ':' '\n'; )
 f.complete path
