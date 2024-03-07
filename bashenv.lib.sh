@@ -110,37 +110,6 @@ f.complete.init() {
 }
 declare -fx f.complete.init
 
-prompt.command.add() {
-    local _f=${1:?'expecting a function'}
-    u.have ${_f} || return $(u.error "function '${_f}' not found")
-    [[ " ${PROMPT_COMMAND[@]} " =~ [[:space:]]${_f//./\.}[[:space:]] ]] || PROMPT_COMMAND+=( ${_f} )
-}
-f.complete prompt.command.add
-prompt.command.add f.complete.init
-
-__f.complete.for.complete() {
-    local _command=$1 _word=$2 _previous_word=$3
-    local -i _position=${COMP_CWORD} _arg_length=${#COMP_WORDS[@]}
-    COMPREPLY=()
-
-    if (( _position == 1)); then
-	# if [[ -z "${_word}" && (( __bashenv_completer_prompted[_position] )) ]] ; then
-	if [[ -z "${_word}" ]] ; then
-	    >&2 echo -n "(required: command) "
-	else
-            COMPREPLY=($(complete -p | command sed -e 's|.* ||'))
-            COMPREPLY=($(compgen -W '${COMPREPLY[@]}' -- "${_word}"))
-	fi
-    elif (( _position > 1 )); then
-	if (( __bashenv_completer_previous_position != _position )) && [[ -z "${_word}" ]] && (( ! __bashenv_completer_prompted[_position] )) ; then
-	    >&2 echo -n "(return) "
-	fi	
-    fi
-    let __bashenv_completer_prompted[_position]=_position
-    let __bashenv_completer_previous_position=_position
-}
-f.complete f.complete.for
-
 # backed myself into a corner here, pause
 f.mkcompleter() {
     : 'make a completer function given a signiture of the form ${fn} required|optional ${arg_name} 'type' 'completion expression' ... '
@@ -480,6 +449,40 @@ u.error() {
     return ${_status}
 }
 f.complete u.error
+
+
+prompt.command.add() {
+    local _f=${1:?'expecting a function'}
+    u.have ${_f} || return $(u.error "function '${_f}' not found")
+    [[ " ${PROMPT_COMMAND[@]} " =~ [[:space:]]${_f//./\.}[[:space:]] ]] || PROMPT_COMMAND+=( ${_f} )
+}
+f.complete prompt.command.add
+prompt.command.add f.complete.init
+
+__f.complete.for.complete() {
+    local _command=$1 _word=$2 _previous_word=$3
+    local -i _position=${COMP_CWORD} _arg_length=${#COMP_WORDS[@]}
+    COMPREPLY=()
+
+    if (( _position == 1)); then
+	# if [[ -z "${_word}" && (( __bashenv_completer_prompted[_position] )) ]] ; then
+	if [[ -z "${_word}" ]] ; then
+	    >&2 echo -n "(required: command) "
+	else
+            COMPREPLY=($(complete -p | command sed -e 's|.* ||'))
+            COMPREPLY=($(compgen -W '${COMPREPLY[@]}' -- "${_word}"))
+	fi
+    elif (( _position > 1 )); then
+	if (( __bashenv_completer_previous_position != _position )) && [[ -z "${_word}" ]] && (( ! __bashenv_completer_prompted[_position] )) ; then
+	    >&2 echo -n "(return) "
+	fi	
+    fi
+    let __bashenv_completer_prompted[_position]=_position
+    let __bashenv_completer_previous_position=_position
+}
+f.complete f.complete.for
+
+
 
 
 ## guard
