@@ -7,25 +7,25 @@ A bash environment (that rests atop bash).
 We all have them. A set of personal utilities and scripts we've written to expedite our workflow(s) or just make our lives easier. Or maybe you've
 gone all in with something like [oh my bash](https://github.com/ohmybash/oh-my-bash) and [gnu stow](https://github.com/aspiers/stow/) to -- you know --
 manage your "symlink farms". Good stuff. Maybe better than this here. Bashenv is the middle ground, a little more machinery than hacking `~/.bash_profile` and
-`~/.bashrc` but a little less than a plugin based ecosystem. Bashenv only a few conventions and primatives to learn. 
+`~/.bashrc` but a little less than a plugin based ecosystem. Bashenv has only a few conventions and primatives to learn. 
 Once you grok the pattern(s), it's easy to "bashenvify" some useful command, commit it to _your_ repo and then pull the changes whereever 
 and whenever you need them. One fork, no pull requests (unless you're a good citizen, good for you) and off you go. You can even skip the fork if you like.
 
 This README is divided inito two parts, a <a href="#start">starting</a> part and a <a href="#usage">usage</a> part. 
 If you want to use `bashenv` as the starting point for your own bash scripts,
 I recommend you <a href="#start-with-git">start with git</a>. You can then commit your changes and additions to your own repository, no coordination required. 
-This is particularly useful if you work on several Linux machines at once. Make an improve on one machine, commit the changes to your git repository and then 
-git pull those everywhere else.
+This is particularly useful if you work on several Linux machines at once. Make an improvement on one machine, commit the changes to your git repository and then 
+git pull those improvements everywhere else.
 
 If git gives you hives or you want something even simpler, <a href="#start-without-git">start without git</a>. 
-A one-liner fetches a [a snapshot](https://github.com/mcarifio/bashenv/archive/refs/heads/main.zip) into your directory of choice.
+A one-liner fetches a [a github snapshot](https://github.com/mcarifio/bashenv/archive/refs/heads/main.zip) into your directory of choice.
 
 
 ## <a id="start">start</a>
 
 
-In the directions below, I assume you're using `bash` 5 or better on a recent linux distro, for example [fedora](https://www.fedora.org/), [ubuntu]() or
-(my new fav) [nixos](). This simplies the directions until I need something more elaborate or on other platforms (such as windows or mac).
+In the directions below, I assume you're using `bash` 5 or better on a recent linux distro, for example [fedora](https://www.fedora.org/), [ubuntu](https://www.ubunru.org/) or
+(my new fav) [nixos](https://www.nixos.org/). This simplies the directions until I need something more elaborate or on other platforms (such as windows or mac).
 I also assume github for the repository hosting and that you've mastered git and github authenication. (Which I haven't. When I know more I'll
 update this document.) You can forego git. I don't recommend it. Bashenv is meant to be extended with _your_ stuff. Git makes that much easier.
 But as long as you download `bashenv` to a directory, say `~/bashenv` and "hook it up" to your `~/.bash_profile` and `~/.bashrc` respectively,
