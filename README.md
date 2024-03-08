@@ -237,13 +237,23 @@ With git however you can add or modify bashenv scripts, commit the changes, push
 
 ## RAQ (Randomly Asked Questions)
 
-* There are better shells to invest in, e.g. `zsh`, `elvish`, `xonsh`, `nushell` and so forth. Why bother with this? <br>
-  Bash is the default shell and you'll land in it often. A few simple patterns go a long, long way. 
-  But yes, bash is imperfect as a shell _and_ as a programming language. But it's great strength is ubiquity.
+* Question: There are better shells to invest in, e.g. `zsh`, `elvish`, `xonsh`, `nushell` and so forth. Why bother with this? 
+  AnswerL Bash is the default shell and you'll land in it often. A few simple patterns go a long, long way. 
+  But yes, bash is imperfect as a shell _and_ as a programming language. But it's ubiquitious.
   
-* If I'm going to start automating things, bash is the wrong language. <br>
-  Busted again. Except that I've noticed that I can whip up a quick bash function to automate something in about 5 minutes. And I can give that function a name that makes sense to me, that I can remember and
-  that the bash shell will help complete when my memory is hazy.
+* Question: If I'm going to start automating things, bash is the wrong language. 
+  Answer: Busted again. Except that I've noticed that I can whip up a quick bash function to automate something in about 5 minutes. And I can give that function a name that makes sense to me, that I can remember and
+  that the bash shell will help complete when my memory is hazy. Which is about 10 minutes after researching some new command.
+  
+* Question: Use bash history. Answer: Yes, but this isn't either/or. The functions I've tended to write fall into a few patterns:
+  + I change default arguments to a command
+  + I contextualize arguments to a command
+  + I bash complete a command differently from the original authors.
+  + I immortalize one liners.
+  + I bulletproof chatgpt answers.
+  + I avoid confusing bash constructs like regular expression matching using `=~`. I can stop googling `awk match`.
+  
+  
 
 
 
