@@ -118,8 +118,7 @@ dnf.install unzip bsdtar curl
 ```
 
 Then download and unzip `bashenv` to `~/bashenv` utilizing a bash helper function `unzip.url`:
-`
-``bash
+```bash
 unzip.url() ( curl -sSL  ${1:?'url?'} | bsdtar -C /tmp -xf - && mv -v /tmp/bashenv-main ${2:-~/bashenv}; )
 unzip.url https://github.com/mcarifio/bashenv/archive/refs/heads/main.zip
 ```
