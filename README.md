@@ -24,7 +24,7 @@ A one-liner fetches a [a github snapshot](https://github.com/mcarifio/bashenv/ar
 ## <a id="start">start</a>
 
 
-In the directions below, I assume you're using `bash` 5 or better on a recent linux distro, for example [fedora](https://www.fedora.org/), [ubuntu](https://www.ubunru.org/) or
+In the directions below, I assume you're using `bash` 5 or better on a recent linux distro, for example [fedora](https://www.fedora.org/), [ubuntu](https://www.ubuntu.org/) or
 (my new fav) [nixos](https://www.nixos.org/). This simplies the directions until I need something more elaborate or on other platforms (such as windows or mac).
 I also assume github for the repository hosting and that you've mastered git and github authenication. (Which I haven't. When I know more I'll
 update this document.) You can forego git. I don't recommend it. Bashenv is meant to be extended with _your_ stuff. Git makes that much easier.
