@@ -93,7 +93,7 @@ dnf.install() (
 
 
 
-### <a id="start-with-git">with git</a>
+### <a id="start-with-git">start with git</a>
 
 Install `git` and friends:
 
@@ -109,7 +109,7 @@ $p gh repo fork https://github.com/mcarifio/bashenv --remote --clone --upstream-
 $p cd bashenv ## ... creating ~/bashenv and positioning to it
 ```
 
-### <a id="start-without-git">without git</a>
+### <a id="start-without-git">start without git</a>
 
 Install `unzip`, `bsdtar` and `curl`:
 
@@ -118,10 +118,10 @@ dnf.install unzip bsdtar curl
 ```
 
 Then download and unzip `bashenv` to `~/bashenv` utilizing a bash helper function `unzip.url`:
-
+`
 ``bash
 unzip.url() ( curl -sSL  ${1:?'url?'} | bsdtar -C /tmp -xf - && mv -v /tmp/bashenv-main ${2:-~/bashenv}; )
-unzip.url https://github.com/mcarifio/bashenv/archive/refs/heads/main.zip ~/bashenv
+unzip.url https://github.com/mcarifio/bashenv/archive/refs/heads/main.zip
 ```
 
 ### post download
@@ -134,9 +134,12 @@ Install the additional supporting command line tools using the means you prefer,
 ```bash
 dnf.install direnv tree just
 ```
+TODO mike@carif.io: fix this section
+
 Alternatively:
+
 ```bash
-sudo pj/bin/start.sh prerequisites
+sudo pj/bin/start.sh prerequisites 
 ```
 
 
@@ -234,8 +237,13 @@ With git however you can add or modify bashenv scripts, commit the changes, push
 
 ## RAQ (Randomly Asked Questions)
 
-* There are better shells to invest in, e.g. `zsh`, `elvish`, `xonsh` and so forth. Why bother with this? Bash is the default shell and you'll land in it often. A few simple patterns go a long, long way. 
-But yes, bash is imperfect as a shell _and_ as a programming language. But it's great strength is ubiquity.
+* There are better shells to invest in, e.g. `zsh`, `elvish`, `xonsh`, `nushell` and so forth. Why bother with this? <br>
+  Bash is the default shell and you'll land in it often. A few simple patterns go a long, long way. 
+  But yes, bash is imperfect as a shell _and_ as a programming language. But it's great strength is ubiquity.
+  
+* If I'm going to start automating things, bash is the wrong language. <br>
+  Busted again. Except that I've noticed that I can whip up a quick bash function to automate something in about 5 minutes. And I can give that function a name that makes sense to me, that I can remember and
+  that the bash shell will help complete when my memory is hazy.
 
 
 
