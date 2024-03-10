@@ -146,7 +146,19 @@ f.complete example.plus1
 f.apply() (
     local _f=${1:?'expecting a function'}; shift
     ${_f} "$@"
-); declare -fx f.apply
+)
+f.complete f.apply
+
+
+# readline;
+readline.add() (
+    local _key_sequence=${1:?'expecting a key sequence'}
+    local _function=${2:?'expecting a bash function'}
+    grep --quiet --no-messages --fixed-strings \"${_key_sequence}\" ~/.inputrc || printf '"%s": %s\n' ${_key_sequence} ${_function} >> ~/.inputrc
+)
+f.complete readline.add
+
+
 
 
 # u.map
@@ -934,8 +946,4 @@ pyz() {
 gnome.restart() (
     busctl --user call org.gnome.Shell /org/gnome/Shell org.gnome.Shell Eval s 'Meta.restart("Restarting…")'
 ); declare -fx gnome.restart
-
-
-
-
 

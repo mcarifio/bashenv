@@ -6,7 +6,7 @@ bashenv.profile() {
     source "${_bashenv_lib}" || { >&2 echo "'${_bashenv_lib}' not found"; return 1; }
     u.map.tree source "$(bashenv.root)/.bash_profile.d"
     u.map.tree guard "$(bashenv.root)/.bash_profile.d"
-    path.add.all $(home)/opt/*/current/bin $(home)/.config/*/bin $(home)/bin $(home)/.local/bin
+    path.add.all $(home)/opt/*/current/bin $(home)/.config/*/bin $(home)/bin $(home)/.local/bin $(bashenv.root)/bin
 }
 declare -fx bashenv.profile
 bashenv.profile
