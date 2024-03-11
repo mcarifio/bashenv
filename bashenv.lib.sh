@@ -151,12 +151,13 @@ f.complete f.apply
 
 
 # readline;
-readline.add() (
+readline.bind() (
     local _key_sequence=${1:?'expecting a key sequence'}
     local _function=${2:?'expecting a bash function'}
-    grep --quiet --no-messages --fixed-strings \"${_key_sequence}\" ~/.inputrc || printf '"%s": %s\n' ${_key_sequence} ${_function} >> ~/.inputrc
+    # grep --quiet --no-messages --fixed-strings \"${_key_sequence}\" >> ~/.inputrc
+    bind -x $(printf '"%s":%s' ${_key_sequence} ${_function})
 )
-f.complete readline.add
+f.complete readline.bind
 
 
 

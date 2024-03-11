@@ -1,1 +1,2 @@
-readline.add "C-Ml" _sgpt_bash
+bind -x '"C-xl":_sgpt_bash'
+
