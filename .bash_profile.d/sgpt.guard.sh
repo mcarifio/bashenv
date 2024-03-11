@@ -8,7 +8,7 @@ f.complete sgpt
 _sgpt_readline() {
     [[ -z "${READLINE_LINE}" ]] && return 0
     # >&2 echo ${READLINE_LINE}
-    READLINE_LINE="$(sgpt --shell  --no-interaction <<< \"${READLINE_LINE}\") ## sgpt '${READLINE_LINE}'"
+    READLINE_LINE="$(sgpt --shell  --no-interaction <<< \"${READLINE_LINE}\") ## sgpt '${READLINE_LINE}' "
     READLINE_POINT=${#READLINE_LINE}
 }
 declare -fx _sgpt_readline

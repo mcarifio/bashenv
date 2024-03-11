@@ -1,6 +1,6 @@
 # bashenv
 
-A bash environment (that rests atop bash).
+A bash environment (that rests atop bash 5).
 
 ## summary
 

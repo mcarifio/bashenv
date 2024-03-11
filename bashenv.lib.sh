@@ -326,7 +326,8 @@ path.add() {
     : '${folder}... ## adds ${folder} to PATH iff not already there'
     for _a in "$@"; do
 	[[ -z "${_a}" ]] && continue
-	local _p=$(realpath -sm ${_a})
+	local _p=$(realpath -sm "${_a}")
+	[[ -d "${_a}" ]] || continue
 	case ":${PATH}:" in
             *:"${_p}":*) ;;
             *) PATH="${_p}:$PATH"
