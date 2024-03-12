@@ -97,7 +97,7 @@ dnf.install() (
 
 
 
-### <a id="start-with-git">start with git</a>
+### <a id="start-with-git">Start With Git</a>
 
 Install `git` and friends:
 
@@ -113,7 +113,7 @@ $p gh repo fork https://github.com/mcarifio/bashenv --remote --clone --upstream-
 $p cd bashenv ## ... creating ~/bashenv and positioning to it
 ```
 
-### <a id="start-without-git">start without git</a>
+### <a id="start-without-git">Start Without Git</a>
 
 Install `unzip`, `bsdtar` and `curl`:
 
@@ -127,7 +127,7 @@ unzip.url() ( curl -sSL  ${1:?'url?'} | bsdtar -C /tmp -xf - && mv -v /tmp/bashe
 unzip.url https://github.com/mcarifio/bashenv/archive/refs/heads/main.zip
 ```
 
-### post download
+### Post Download
 
 At this point you have populated `~/bashenv` with bash scripts. Time to install any addition packages `bashenv` needs and then
 customize `~/.bash_profile` and `~/.bashrc` respectively.
@@ -161,11 +161,11 @@ with the bashenv `guard` function.  So `guard git.gurard.sh` only sourced if git
 
 The layout is a work in progress and subject to change. But understanding the layout aids navigation.
 
-## hacking
+## Hacking
 
 I use emacs. You should use what suits you. But it should be emacs.
 
-## more
+## More
 
 * [pj/doc/README.md](pj/doc/README.md) is the entry into the documentation.
 * [pj/doc/todo.md](pj/doc/todo.md) lists action items and questions.
@@ -173,7 +173,7 @@ I use emacs. You should use what suits you. But it should be emacs.
 
 
 
-## <a id="usage">usage</a>
+## <a id="usage">Usage</a>
 
 You're through the hard part. Using bashenv is easy. When you create a login session in bash, bash sources `~/.bash_profile`. When you create a new shell, bash sources `~/.bashrc`.
 A login session is also a new shell, therefore your source both.
@@ -185,7 +185,7 @@ But generally there's little need.
 Because you have to explicitly export a function after defining it using the exotic `declare -fx ${function}`, functions are often sourced (and sourced again and again and again) via `~/.bashrc`.
 With just an extra declaration this is completely unnecessary. You can have convenience _and_ start subshells quickly with bashenv. (But really with just judicious use of bash.)
 
-### <a id="usage-without-git">usage without git</a>
+### <a id="usage-without-git"Usage Without Git</a>
 
 Set aside your existing `~/.bash_profile` and `~/.bashrc` in `~/.bashenv-recover` and then link to `bashenv/.bash_profile` and `bashenv/.bashrc` respectively:
 
@@ -198,7 +198,7 @@ ln -srf ~/bashenv/.bashrc
 
 You're done! You have bashenv on your next bash login session. To get it immediately: `source ~/.bash_profile && source ~/.bashrc`
 
-### <a id="usage-with-git">usage with git</a>
+### <a id="usage-with-git">Usage With Git</a>
 
 Usage with git is configured like usage without git; you just read it.
 
