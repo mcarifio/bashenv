@@ -36,3 +36,9 @@ f.complete gh.repo.delete
 # }
 # f.complete gh.env
 
+gh.session() {
+    source <(gh completion -s $(u.shell 2>/dev/null || echo bash))
+}
+f.complete gh.session
+gh.session
+

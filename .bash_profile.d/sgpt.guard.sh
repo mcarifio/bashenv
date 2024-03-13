@@ -12,3 +12,10 @@ _sgpt_readline() {
     READLINE_POINT=${#READLINE_LINE}
 }
 declare -fx _sgpt_readline
+
+sgpt.session() {
+    bind -x '"\C-xl"':_sgpt_readline
+}
+f.complete sgpt.session
+sgpt.session
+

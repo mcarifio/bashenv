@@ -9,11 +9,11 @@ zlib.category() (
 )
 f.complete zlib.category
 
-zlib.is-compressed() (
+function zlib.compressed? (
     : 'zlib.is-compressed ${pathname} # sets $? to 0 iff ${pathname} is compressed'
     file -b ${1?'expecting a pathname'} | grep --quiet 'compressed data'
 )
-f.complete zlib.is-compressed
+f.complete zlib.compressed?
 
 zlib.format() (
     : 'zlib.format ${pathname} # |> returns the category of a pathname, e.g. foo.rs.pdf.xz returns pdf, foo.pdf returns pdf'
@@ -61,8 +61,11 @@ f.complete zlib.target
 zlib.mv() (
     : 'zlib.mv ${_src} [${_target}] # mv src to target. default target is ~/Documents/e/2sort'
     local _pathname="${1:?'expecting a pathname'}"
-    local _part="${_pathname}.part"
-    [[ -f "${_part}" ]] && return $(u.error "${_part} indicates ${_pathname} download not complete")
+
+    # uncompleted zlibrary downloads have a *.part working file which is removed on completion.
+    # skip uncompleted downloads
+    local _part="$(echo ${_pathname}.*.part)"
+    [[ -f "${_part}" ]] && return $(u.error "${_part} indicates ${_pathname} download not complete, skipping...")
     mv -v "${_src}" $(zlib.target "${2:-''}" "${1:?'expecting a pathname'}")
 )
 f.complete zlib.mv

@@ -506,8 +506,7 @@ f.complete f.complete.for
 
 guard.for() {
     : 'guard.for ${command}... # '
-    running.bash || return 1
-    u.have.all "$@" || return 1
+    u.have.all "$@" || return 0 ## $(u.error "missing one of $@")
 }; declare -fx guard.for
 
 guard() {
@@ -521,7 +520,23 @@ guard() {
     fi
     u.call ${_for}.env "$@" || >&2 echo "${_for}.env => $?, continuing..."
     return 0
-}; declare -fx guard
+}
+declare -fx guard
+
+
+session.functions() (
+    declare -Fpx |cut -f3 -d' '|grep -e '\.session$'
+)
+declare -fx session.functions
+
+session.start() {
+    for f in $(session.functions); do $f; done
+}
+declare -fx session.start
+
+
+
+
 
 _template() ( echo ${FUNCNAME}; ); declare -fx _template
  
@@ -795,9 +810,6 @@ declare -fx zlib.mv
 for c in kind kubectl glab lab; do u.have ${c} && source <(${c} completion bash); done
 for c in /usr/share/bash-completion/completions/{docker,dhclient,nmcli,nmap,ip}; do u.have ${c} && source ${c}; done
 
-if u.have podman ; then
-    podman.remove-images() { podman rmi -f $(docker images -f "dangling=true" -q); }; declare -fx podman.remove-images
-fi
 
 
 
@@ -810,20 +822,8 @@ gnome.snapshot() {
   command gnome-snapshot --area --file=${_snapshot}
   ln -srf ${_snapshot} ~/Pictures/snapshot/latest.png
   gimp ~/Pictures/snapshot/latest.png
-}; declare -fx gnome.snapshot
-
-
-# packer -autocomplete-install || true
-if u.have packer; then
-   complete -C /usr/bin/packer packer
-fi
-   
-
-# oci config
-if u.have oci; then
-   export OCI_CLI_SUPPRESS_FILE_PERMISSIONS_WARNING=True
-   export OCI_CLI_CONFIG_FILE=${HOME}/.config/cloud/oci/config
-fi
+}
+f.complete gnome.snapshot
 
 dispatch() {
     local _action=${1:-start} ; shift || true
@@ -838,32 +838,6 @@ sa.add.user() {
 }
 declare -fx sa.add.user
 
-if u.have bcompare; then
-   bcompare() { QT_GRAPHICSSYSTEM=native command bcompare "$@"; }
-   declare -fx bcompare
-fi
-
-
-if u.have copyq; then
-  copyq() {
-     QT_QPA_PLATFORM=xcb command copyq $*
-  }; declare -fx copyq
-fi
-
-if u.have alacritty; then
-  sudo.alacritty() (
-    local _title=${1:?'expecting a title'}; shift
-    sudo -E alacritty --title "${_title}" --option window.dimensions.{lines=50,columns=300} --command "$@"
-  ); declare -fx sudo.alacrity
-
-  watch.input() (
-    sudo.alacritty ${FUNCNAME} /mopt/showmethekey/current/bin/showmethekey-cli &
-  ); declare -fx watch.input
-
-  watch.dmesg() (
-    sudo.alacritty ${FUNCNAME} dmesg -HT --color=always --follow &
-  ); declare -fx watch.dmesg
-fi
     
 
 # returns 0 iff command is running
@@ -901,27 +875,13 @@ declare -fx mnt.iso
 
 url.exists() ( curl --HEAD --silent ${1:?'expecting a url'} &> /dev/null; ); declare -fx url.exists
 
-# a better whois, note the spelling
-wh0is() (
-    local _name=${1:?'expecting a domain name, e.g. carif.io'}
-    if whois ${_name} &> /dev/null; then
-        echo "${_name} registered."
-        local _url="http://${_name}"        
-        url.exists "${_url}" && type -t b.personal &> /dev/null && b.personal "${_url}"
-    else
-        echo "${_name} available."
-    fi	
-); declare -fx wh0is
 
 
-
-
-
-
-function u.f-defined? {
+function f.defined? {
   : 'f.defined? ${function} ... # true if all functions are defined'
   type -t -- "$@" > /dev/null
-}; declare -fx u.f-defined?
+}
+declare -fx f.defined?
 
 sa.shutdown() (
     for _h in "$@"; do
@@ -933,15 +893,6 @@ sa.shutdown() (
 sa.shutdown.all() ( dnf.off milhouse clubber; ); declare -fx sa.shutdown.all
 
 tbird.logged() ( NSPR_LOG_MODULES=SMTP:4,IMAP:4 NSPR_LOG_FILE=/tmp/thunderbird-$$.log thunderbird; ); declare -fx tbird.logged
-
-pyz() {
-    local -r _url=${1:?'expecting a url'} ; shift
-    wget ${_url} || return 1
-    local -r _pyz=$(basename ${_url})
-    python ${_pyz} "$@"
-} ; declare -fx pyz
-
-    
 
 
 # https://www.linuxuprising.com/2020/07/how-to-restart-gnome-shell-from-command.html
