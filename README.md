@@ -151,15 +151,23 @@ direnv allow ~/bashenv
 
 ## Project Layout
 
-The project layout consists of two parts: the "project" part `pj/` and the actual content of `bashenv` in `.bash_profile.d/**`, `.bashrc.d/**` and `.bash_completion.d/**` respectively.
+The project layout consists of two parts: the "project" part `pj/` and the actual content of `bashenv` in `.bash_profile.d/**`.
+The scripts in `~/bashenv/.bash_profile.d` are sourced (or guarded, more on that below) to define a set of bash functions.
+This includes creating a `${something}.session` function which `~/.bashrc` will eventually call. 
 
 The project "support" is by folder, e.g. `pj/bin` has
 local scripts like `start.sh` and `pj`. You can add your scripts there as well.
-The content folders `.bash_profile.d/**`, `.bashrc.d/**` and `.bash_completion.d/**` are all sourced by `.bash_profile` and `.bashrc` respectively. File follow a naming convention.
-`${file}.source.sh` is always sourced. `${command}.guard.sh` are sourced depending on the "guard". For example, `git.guard.sh` is only sourced if the command `git` is in the PATH
-with the bashenv `guard` function.  So `guard git.gurard.sh` only sourced if git is available, otherwise it's silently skipped. You can always `source ${file}.guard.sh`. The check is then skipped. 
 
-The layout is a work in progress and subject to change. But understanding the layout aids navigation.
+The files in `.bash_profile.d/**` follow a naming convention.
+`${file}.source.sh` is always sourced. `${command}.guard.sh` is sourced depending on the "guard". For example, `git.guard.sh` is only sourced if the command `git` is in the PATH.
+Otherwise it's silently skipped. You can think of `*.guard.sh` as the set union of what you might have on your machine and is used only if it's actually installed.
+You can always `source ${file}.guard.sh`. The guard is then bypassed.
+
+Each `${command}.{guard,source}.sh` file will define an exported function `${command}.session`, for example `git.session`. This function is called by `session.start()` and
+does what `.bashrc` would do. Generally is includes sourcing function definitions that are _not_ exported and binding `readline` functions. Making these functions makes it easy to
+to replay what `.bashrc` would do. It's also helpful to customize a command all in a single file, e.g. `git.guard.sh`. 
+
+These conventions are a work in progress and subject to change. But understanding the layout aids navigation and use.
 
 ## Hacking
 
@@ -178,12 +186,10 @@ I use emacs. You should use what suits you. But it should be emacs.
 You're through the hard part. Using bashenv is easy. When you create a login session in bash, bash sources `~/.bash_profile`. When you create a new shell, bash sources `~/.bashrc`.
 A login session is also a new shell, therefore your source both.
 
-Bashenv traffics in bash functions which are all loaded from `~/bashenv/.bash_profiled.d/**.sh` and `~/.bashrc.d/**.sh`. Bash functions are underappreciated and underutilized. In particular,
-just like environment variables they can be exported and therefore visible to all subshells without redefinion or reloading. You can, of course, load a new definition for the same name in subshell.
-But generally there's little need.
+Bashenv traffics in bash functions which are all loaded from `~/bashenv/.bash_profiled.d/**.sh`. Bash functions are underappreciated and underutilized. In particular,
+just like environment variables they can be exported and therefore visible to all subshells without redefinion or reloading. You can, of course, load a new definition for the same name in subshell. But generally there's little need.
 
-Because you have to explicitly export a function after defining it using the exotic `declare -fx ${function}`, functions are often sourced (and sourced again and again and again) via `~/.bashrc`.
-With just an extra declaration this is completely unnecessary. You can have convenience _and_ start subshells quickly with bashenv. (But really with just judicious use of bash.)
+Because you have to explicitly export a function after defining it using the exotic `declare -fx ${function}`, functions are often sourced (and sourced again and again and again) via `~/.bashrc`. With just an extra declaration this is completely unnecessary. You can have convenience _and_ start subshells quickly with bashenv. (But really with just judicious use of bash.)
 
 ### <a id="usage-without-git"Usage Without Git</a>
 
@@ -200,7 +206,7 @@ You're done! You have bashenv on your next bash login session. To get it immedia
 
 ### <a id="usage-with-git">Usage With Git</a>
 
-Usage with git is configured like usage without git; you just read it.
+Usage with git is configured like usage without git; you just did it above.
 
 With git however you can add or modify bashenv scripts, commit the changes, push the changes and pull them to other machines.
 
