@@ -191,7 +191,7 @@ just like environment variables they can be exported and therefore visible to al
 
 Because you have to explicitly export a function after defining it using the exotic `declare -fx ${function}`, functions are often sourced (and sourced again and again and again) via `~/.bashrc`. With just an extra declaration this is completely unnecessary. You can have convenience _and_ start subshells quickly with bashenv. (But really with just judicious use of bash.)
 
-### <a id="usage-without-git"Usage Without Git</a>
+### <a id="usage-without-git">Usage Without Git</a>
 
 Set aside your existing `~/.bash_profile` and `~/.bashrc` in `~/.bashenv-recover` and then link to `bashenv/.bash_profile` and `bashenv/.bashrc` respectively:
 
