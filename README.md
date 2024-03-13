@@ -164,10 +164,11 @@ Otherwise it's silently skipped. You can think of `*.guard.sh` as the set union 
 You can always `source ${file}.guard.sh`. The guard is then bypassed.
 
 Each `${command}.{guard,source}.sh` file will define an exported function `${command}.session`, for example `git.session`. This function is called by `session.start()` and
-does what `.bashrc` would do. Generally is includes sourcing function definitions that are _not_ exported and binding `readline` functions. Making these functions makes it easy to
+does what `.bashrc` would do. Generally this includes sourcing function definitions that are _not_ exported and binding `readline` functions. Making these functions makes it easy to
 to replay what `.bashrc` would do. It's also helpful to customize a command all in a single file, e.g. `git.guard.sh`. 
 
-These conventions are a work in progress and subject to change. But understanding the layout aids navigation and use.
+These conventions are a work in progress and subject to change. But understanding the layout aids navigation and use. Basically you're buying into a slew of global, exported functions loaded when you start a login shell. These functions are all exported to subshells. Some of the functions follow patterns for later use such as `${command}.session`. But
+the conventions are simple and frankly promote a copy-and-adapt style. 
 
 ## Hacking
 
