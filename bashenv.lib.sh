@@ -314,6 +314,16 @@ f.complete bashenv.lib
 path() ( echo ${PATH} | tr ':' '\n'; )
 f.complete path
 
+path.name() {
+    : '${_name} ${_pathname} ## export ${_name} iff ${_pathname} exists'
+    local _name=${1:?'expecting an env name'}
+    local _pathname=${2:?'expecting a readable pathname'}
+    [[ -r "${_pathname}" ]] && export ${_name}=${_pathname} || return $(u.error "${_pathname} not readable.")
+}
+f.complete path.name
+
+
+
 path.login() (
     : '#> Enumerates interesting directories under $(home) to be added to PATH'
     printf '%s:' $(home)/opt/*/current/bin $(home)/.config/*/bin ~/.local/bin
