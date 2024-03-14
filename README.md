@@ -218,6 +218,37 @@ Usage with git is configured like usage without git; you just did it above.
 
 With git however you can add or modify bashenv scripts, commit the changes, push the changes and pull them to other machines.
 
+
+## Scripting Patterns
+
+tbs scripting patterns
+
+## Pragma(tics)
+
+### git
+
+I generally do much of my dev work on a (somewhat beefy) daily driver machine. I have several "satellite" hosts that run various linux variants, virtual machines and
+containers. The satellites are more sacrificial than `beefy`, but not fully stateless (think pets, not cattle, but I treat them coldly.) 
+I will `git clone beefy:bashenv` from each of the satillites to simplify configuration all around. If I fix a bug discovered on the satellite, 
+I want to commit the changes back to `beefy` (and then on to github). `beefy:bashenv/.git/config`
+needs this stanza to accept commits:
+
+```
+[receive]
+        denyCurrentBranch=updateInstead
+```
+
+The error message associated with the configuration default is cryptic and discusses "unsafe" repositories. I haven't managed to bolix any
+of the repos yet, but ymmv, caviat emptor.
+
+### ~/.config/**
+
+A lot of useful configuration is kept in `~/.config/**` by command, for example `~/.config/git` for git or `~/.config/aws` for aws and so forth.
+Since these directories can contain credentials or complicated state (in the case of say `~/.config/google-chrome`), I haven't incorporated
+them into `bashenv`, but no solution is adequate without this. My current "solution" is a git repo in `~/.config` which the satellites pull from.
+This repo is _not_ in github and as a solution it's brittle. The contents of `~/.config/**` wasn't meant to be shared but to be synthesized on each
+host (I think).
+
 ## RAQ (Randomly Asked Questions)
 
 * Question: There are better shells to invest in, e.g. `zsh`, `fish`, `elvish`, `xonsh`, `nushell` and so forth. Why bother with this? 
@@ -225,7 +256,7 @@ With git however you can add or modify bashenv scripts, commit the changes, push
   But yes, bash is imperfect as a shell _and_ as a programming language. It's also ubiquitious and unavoidable.
   
 * Question: If I'm going to start automating things, bash is the wrong language. 
-  Answer: Busted again. Except that I've noticed that I can whip up a quick bash function to automate something in about 5 minutes. 
+  Answer: Busted. Except that I've noticed that I can whip up a quick bash function to automate something in about 5 minutes. 
   Especially if a I start with a bash function that is similar or close. 
   And I can give that function a name that makes sense to me, that I can remember and
   that the bash shell will help complete when my memory is hazy. Which is about 10 minutes after researching some new command.
@@ -239,7 +270,11 @@ With git however you can add or modify bashenv scripts, commit the changes, push
   + I bulletproof chatgpt answers.
   + I avoid confusing bash constructs like regular expression matching using `=~`. I can stop googling `awk match`.
   
+* Question: Configuation depends on system files, for example `/etc/hosts`. Answer: Busted. In my particular case, I have a local
+  dns server via my router but hostname completions use `/etc/hosts` by default and "widening the scope" for this takes work and time
+  I don't currently have. It also introduces networking and network management into the mix. Which isn't bad. But beyond bash functions.
   
+
 
 
 
