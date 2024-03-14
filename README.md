@@ -1,6 +1,6 @@
 # bashenv
 
-A bash environment (that rests atop bash 5).
+A low ceremony bash5 environment for personal customizations. And a horrible summary.
 
 ## Summary
 
@@ -19,6 +19,7 @@ git pull those improvements everywhere else.
 
 If git gives you hives or you want something even simpler, <a href="#start-without-git">start without git</a>. 
 A one-liner fetches a [a github snapshot](https://github.com/mcarifio/bashenv/archive/refs/heads/main.zip) into your directory of choice.
+You can then forego git _or_ you can control the sources using the tool of your choice (svn, mercurial, perforce, etc).
 
 
 ## <a id="start">Start</a>
@@ -27,13 +28,13 @@ A one-liner fetches a [a github snapshot](https://github.com/mcarifio/bashenv/ar
 In the directions below, I assume you're using `bash` 5 or better on a recent linux distro, for example [fedora](https://www.fedora.org/), [ubuntu](https://www.ubuntu.org/) or
 (my new fav) [nixos](https://www.nixos.org/). This simplies the directions until I need something more elaborate or on other platforms (such as windows or mac).
 I also assume github for the repository hosting and that you've mastered git and github authenication. (Which I haven't. When I know more I'll
-update this document.) You can forego git. I don't recommend it. Bashenv is meant to be extended with _your_ stuff. Git makes that much easier.
+update this document.) You can forego git. I don't recommend it. Bashenv is meant to be extended with _your_ stuff. Git makes that easier.
 But as long as you download `bashenv` to a directory, say `~/bashenv` and "hook it up" to your `~/.bash_profile` and `~/.bashrc` respectively,
 you're good to go.
 
 You start once (on a given host). After that, when you `cd` to the `bashenv` directory -- wherever it landed -- and `direnv` should re-establish your 
 local dev environment. And if you don't like what `.envrc` does, adapt it or even turn it off with `direnv block ~/bashenv`. With the
-sources, `bashenv` is yours.
+sources and some bash expertise, `bashenv` is yours.
 
 
 ## Context
@@ -59,7 +60,8 @@ $p stat ~/bashenv ## ... and no local ~/bashenv
 stat: cannot statx '~/bashenv': No such file or directory
 ```
 
-I'm synthesizing these instructions on fedora 39, logged in as user `mcarifio` within bash 5.2 with the intent of putting `${USER}`'s `bashenv` in `~/bashenv`. 
+Following the bouncing command line above, you see that I'm synthesizing these instructions on fedora 39, 
+logged in as user `mcarifio` within bash 5.2 with the intent of putting `${USER}`'s `bashenv` in `~/bashenv`. 
 You'll have to do some on-the-fly mental gymnastics if your local box varies significantly from this.
 You need to have some local commands installed using your preferred means: git, gh, realpath, bash of course and so forth.
 For example, here's `git` installed via `dnf`. 
@@ -95,6 +97,8 @@ dnf.install() (
 )
 ```
 
+Alternatively, the [universal package tool (upt)](https://github.com/sigoden/upt/tree/main) can abstract away some installation details.
+But you have to install it separately.
 
 
 ### <a id="start-with-git">Start With Git</a>
@@ -102,7 +106,7 @@ dnf.install() (
 Install `git` and friends:
 
 ```bash
-dnf.install git{,-extras} gh
+dnf.install git{,-extras} gh ## upt install -y git{,-extras} gh
 ```
 
 Fork `bashenv` so you can customize your fork later and clone the fork. I'll use [`gh`](https://cli.github.com/manual/) for that:
@@ -118,7 +122,7 @@ $p cd bashenv ## ... creating ~/bashenv and positioning to it
 Install `unzip`, `bsdtar` and `curl`:
 
 ```bash
-dnf.install unzip bsdtar curl
+dnf.install unzip bsdtar curl ## upt install -y unzip bsdtar curl 
 ```
 
 Then download and unzip `bashenv` to `~/bashenv` utilizing a bash helper function `unzip.url`:
@@ -127,7 +131,7 @@ unzip.url() ( curl -sSL  ${1:?'url?'} | bsdtar -C /tmp -xf - && mv -v /tmp/bashe
 unzip.url https://github.com/mcarifio/bashenv/archive/refs/heads/main.zip
 ```
 
-### Post Download
+### <a id="post-download">Post Download</a>
 
 At this point you have populated `~/bashenv` with bash scripts. Time to install any addition packages `bashenv` needs and then
 customize `~/.bash_profile` and `~/.bashrc` respectively.
@@ -135,7 +139,7 @@ customize `~/.bash_profile` and `~/.bashrc` respectively.
 Install the additional supporting command line tools using the means you prefer, for example:
 
 ```bash
-dnf.install direnv tree just
+dnf.install direnv tree just ## upt install -y direnv tree just
 ```
 
 Alternatively:
@@ -149,45 +153,48 @@ I recommend `direnv` to organize your programming environment. Enable it:
 direnv allow ~/bashenv
 ```
 
-## Project Layout
+## <a id="project-layout-and-conventions">Project Layout and Conventions</a>
 
-The project layout consists of two parts: the "project" part `pj/` and the actual content of `bashenv` in `.bash_profile.d/**`.
-The scripts in `~/bashenv/.bash_profile.d` are sourced (or guarded, more on that below) to define a set of bash functions.
+Bashenv's project layout consists of two parts: the "project" part `pj/` and the actual content of `bashenv` in `profile.d/**`.
+The scripts in `~/bashenv/profile.d` are sourced (or "guarded", more on that below) to define a set of bash functions.
 This includes creating a `${something}.session` function which `~/.bashrc` will eventually call. 
 
 The project "support" is by folder, e.g. `pj/bin` has
 local scripts like `start.sh` and `pj`. You can add your scripts there as well.
+Generally nothing in `pj/**` is sourced by `.bash_profile` and `pj/bin` is not on `PATH` (except via `direnv`).
 
-The files in `.bash_profile.d/**` follow a naming convention.
-`${file}.source.sh` is always sourced. `${command}.guard.sh` is sourced depending on the "guard". For example, `git.guard.sh` is only sourced if the command `git` is in the PATH.
-Otherwise it's silently skipped. You can think of `*.guard.sh` as the set union of what you might have on your machine and is used only if it's actually installed.
-You can always `source ${file}.guard.sh`. The guard is then bypassed.
+The files in `profile.d/**` are sourced by `~/.bash_profile` on login. They define environment variables, add to `PATH` and define many exported bash functions.
+The files follow a naming convention. `${file}.source.sh` files are always sourced. `${command}.guard.sh` files are sourced depending on the "guard", the presences
+of a command. For example, `git.guard.sh` is only sourced if the command `git` is in the PATH.
+Otherwise it's silently skipped. You can think of `*.guard.sh` as the set union of what you might have on your machine. But only those with the underlying command
+installed are used. You can always `source ${file}.guard.sh`. The guard is then bypassed.
 
 Each `${command}.{guard,source}.sh` file will define an exported function `${command}.session`, for example `git.session`. This function is called by `session.start()` and
 does what `.bashrc` would do. Generally this includes sourcing function definitions that are _not_ exported and binding `readline` functions. Making these functions makes it easy to
 to replay what `.bashrc` would do. It's also helpful to customize a command all in a single file, e.g. `git.guard.sh`. 
 
 These conventions are a work in progress and subject to change. But understanding the layout aids navigation and use. Basically you're buying into a slew of global, exported functions loaded when you start a login shell. These functions are all exported to subshells. Some of the functions follow patterns for later use such as `${command}.session`. But
-the conventions are simple and frankly promote a copy-and-adapt style. 
+the conventions are simple and promote a copy-and-adapt style. `profile.d/_template.sh` provides a good starting place for your scripts, e.g. if you want a guard for the command `foo` you can start with `cp _template.sh foo.guard.sh` and modify `foo.guard.sh`.
 
 ## Hacking
 
 I use emacs. You should use what suits you. But it should be emacs.
 
+<!-- 
 ## More
 
 * [pj/doc/README.md](pj/doc/README.md) is the entry into the documentation.
 * [pj/doc/todo.md](pj/doc/todo.md) lists action items and questions.
-
+-->
 
 
 
 ## <a id="usage">Usage</a>
 
 You're through the hard part. Using bashenv is easy. When you create a login session in bash, bash sources `~/.bash_profile`. When you create a new shell, bash sources `~/.bashrc`.
-A login session is also a new shell, therefore your source both.
+A login session is also a new shell, therefore you actually source both.
 
-Bashenv traffics in bash functions which are all loaded from `~/bashenv/.bash_profiled.d/**.sh`. Bash functions are underappreciated and underutilized. In particular,
+Bashenv traffics in bash functions which are all loaded from `~/bashenv/profile.d/**.sh`. Bash functions are underappreciated and underutilized. In particular,
 just like environment variables they can be exported and therefore visible to all subshells without redefinion or reloading. You can, of course, load a new definition for the same name in subshell. But generally there's little need.
 
 Because you have to explicitly export a function after defining it using the exotic `declare -fx ${function}`, functions are often sourced (and sourced again and again and again) via `~/.bashrc`. With just an extra declaration this is completely unnecessary. You can have convenience _and_ start subshells quickly with bashenv. (But really with just judicious use of bash.)
@@ -213,17 +220,19 @@ With git however you can add or modify bashenv scripts, commit the changes, push
 
 ## RAQ (Randomly Asked Questions)
 
-* Question: There are better shells to invest in, e.g. `zsh`, `elvish`, `xonsh`, `nushell` and so forth. Why bother with this? 
+* Question: There are better shells to invest in, e.g. `zsh`, `fish`, `elvish`, `xonsh`, `nushell` and so forth. Why bother with this? 
   Answer: Bash is usually the default shell and you'll land in it often. A few simple patterns go a long, long way. 
-  But yes, bash is imperfect as a shell _and_ as a programming language. But it's ubiquitious.
+  But yes, bash is imperfect as a shell _and_ as a programming language. It's also ubiquitious and unavoidable.
   
 * Question: If I'm going to start automating things, bash is the wrong language. 
-  Answer: Busted again. Except that I've noticed that I can whip up a quick bash function to automate something in about 5 minutes. Especially if a I start with a bash function that is similar or close. 
+  Answer: Busted again. Except that I've noticed that I can whip up a quick bash function to automate something in about 5 minutes. 
+  Especially if a I start with a bash function that is similar or close. 
   And I can give that function a name that makes sense to me, that I can remember and
   that the bash shell will help complete when my memory is hazy. Which is about 10 minutes after researching some new command.
   
-* Question: Unneccessary. Use bash history. Answer: Yes, but this isn't either/or. The functions I've tended to write fall into a few patterns:
+* Question: This is unneccessary. Use bash history. Answer: Yes, but this isn't either/or. The functions I've tended to write fall into a few patterns:
   + I change the default arguments to a command
+  + I hide `sudo`.
   + I contextualize arguments to a command
   + I bash complete a command differently from the original authors.
   + I immortalize one liners.
