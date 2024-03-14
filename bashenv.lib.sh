@@ -554,7 +554,7 @@ _template() ( echo ${FUNCNAME}; ); declare -fx _template
 u.map.tree() {
     local _action=${1:?'expecting an action, e.g. source or guard'}
     local _folder=${2:?'expecting a folder'}
-    [[ -d "${_folder}" ]] || { >&2 echo "${_folder} is not a folder"; return 1; }
+    [[ -d "${_folder}" ]] || return 0
     u.map ${_action} $(find "${_folder}" -type f -regex "[^#]+\.${_action}\.sh\$")        
 }
 __u.map.tree.complete0() {
