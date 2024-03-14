@@ -534,15 +534,15 @@ guard() {
 declare -fx guard
 
 
-session.functions() (
+bashenv.session.functions() (
     declare -Fpx |cut -f3 -d' '|grep -e '\.session$'
 )
-declare -fx session.functions
+declare -fx bashenv.session.functions
 
-session.start() {
-    for f in $(session.functions); do $f; done
+bashenv.session.start() {
+    for f in $(bashenv.session.functions); do $f; done
 }
-declare -fx session.start
+declare -fx bashenv.session.start
 
 
 

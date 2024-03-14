@@ -210,6 +210,13 @@ ln -srf ~/bashenv/.bash_profile
 ln -srf ~/bashenv/.bashrc
 ```
 
+If you want to take a more incremental approach you can add bashenv loading to the bottom of `~/.bash_profile` and `~/.bashrc` respectively:
+
+```bash
+echo '[[ -r ~/bashenv/.bash_profile ]] && source ~/bashenv/.bash_profile` >> ~/.bash_profile
+echo '[[ -r ~/bashenv/.bashrc ]] && source ~/bashenv/.bashrc` >> ~/.bashrc
+```
+
 You're done! You have bashenv on your next bash login session. To get it immediately: `source ~/.bash_profile && source ~/.bashrc`
 
 ### <a id="usage-with-git">Usage With Git</a>
