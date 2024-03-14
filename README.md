@@ -274,6 +274,11 @@ host (I think).
   dns server via my router but hostname completions use `/etc/hosts` by default and "widening the scope" for this takes work and time
   I don't currently have. It also introduces networking and network management into the mix. Which isn't bad. But beyond bash functions.
   
+* Question: As soon as I start modifying and adding files in `~/bashenv/profile.d`, I will diverge from this repository and pulling from the
+  fork will just screw up my own repository, yes? Answer: Unfortunately yes, I think that's right. The function `bashenv.profile` in `~/.bash_profile`
+  will look for `.sh` files in directory `profile-${USER}.d` as well as `profile.d`. This helps when you have several usernames as clients, e.g.
+  `mcarifio` or `tester`. But it's unrealistic to dodge changes in `profile.d` especially if you make local modifications to forked files. In the worst
+  case pulling from the fork might silently swallow your modifications. Low ceremony has a price.
 
 
 
