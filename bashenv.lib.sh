@@ -515,23 +515,26 @@ f.complete f.complete.for
 
 
 guard.for() {
-    : 'guard.for ${command}... # '
-    u.have.all "$@" || return 0 ## $(u.error "missing one of $@")
+    : 'guard.for ${command}... # returns 0 iff all ${commands} are on PATH '
+    u.have.all "$@"
 }; declare -fx guard.for
 
-guard() {
-    : 'guard ${pathname} [${command}] # source ${pathname} iff ${command} resolves'
+_guard() {
+    : '_guard ${pathname} [${command}] # source ${pathname} iff ${command} resolves'
     local _pathname=${1:-'expecting a pathname'}; shift
     local _for=${2:-$(path.basename ${_pathname})}; shift
     guard.for ${_for} || return 0
-    if ! source ${_pathname} "$@"; then
-	>&2 echo "${_pathname} => $?, continuing..."
-	return 0
-    fi
-    u.call ${_for}.env "$@" || >&2 echo "${_for}.env => $?, continuing..."
-    return 0
+    source ${_pathname} "$@" || return $(u.error "${_pathname} => $?")
+    u.call ${_for}.env "$@" || return $(u.error "${_for}.env => $?")
 }
-declare -fx guard
+declare -fx _guard
+guard() {
+    : 'guard ${pathname} [${command}] # source ${pathname} iff ${command} resolves. print errors but ignores return values'
+    # guard has a private helper _guard
+    _${FUNCNAME} "$@" || true
+}
+f.complete guard
+
 
 
 bashenv.session.functions() (
