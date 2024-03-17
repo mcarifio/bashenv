@@ -667,9 +667,9 @@ declare -fx u.all-hosts # hping3
 
 
 # sudo dnf install -y uuid
-if u.have sos; then
-   sos.r() { sudo sos report --batch --case-id="${SUDO_USER}-$(uuidgen)" --description "${FUNCNAME}" $*; }; declare -fx sos.r
-fi
+# if u.have sos; then
+#    sos.r() { sudo sos report --batch --case-id="${SUDO_USER}-$(uuidgen)" --description "${FUNCNAME}" $*; }; declare -fx sos.r
+# fi
 
 # go repl
 yaegi() { rlwrap command yaegi $@; }
@@ -679,8 +679,7 @@ declare -fx yaegi # rlwrap
 # pip from the current python directly; coordinate afterwards with asdf and bash
 # hack
 if u.have asdf; then
-    asdf.pipi() { python -m pip install -U $*; asdf reshim python; hash -r; }
-    declare -fx asdf.pipi
+    asdf.pipi() { python -m pip install -U $*; asdf reshim python; hash -r; }; declare -fx asdf.pipi
 fi
 
 

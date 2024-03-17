@@ -4,35 +4,41 @@ export ASDF_DATA_DIR=~/opt/asdf/current
 source ${ASDF_DATA_DIR}/asdf.sh
 
 # is plugin
-function asdf.have-plugin {
+function asdf.plugin.have (
     asdf plugin-list | grep --quiet -e "^${1:?'expecting a plugin'}\$" &> /dev/null
-}
-declare -fx asdf.have-plugin
+)
+declare -fx asdf.plugin.have
 
 
-asdf.plugin-add() {
+asdf.plugin.add() (
     local _pkg=${1:?'expecting a plugin'}
     local _from=${2:-}
     asdf plugin-add ${_pkg} ${_from}
-}
-declare -fx asdf.plugin-add
+)
+declare -fx asdf.plugin.add
 
-asdf.install() {
+asdf.install() (
     local _pkg=${1:?'expecting a pkg'}
     local _version=${2:-latest}
     asdf install ${_pkg} ${_version}
     asdf global ${_pkg} ${_version}
+    asdf reshim ${_pkg}
     hash -r ${_pkg}
-}
+)
 declare -fx asdf.install
 
+asdf.remove.past() (
+    local _pkg=${1:?'expecting a pkg'}
+    for v in $(asdf list ${_pkg}|head -n-1); do asdf uninstall ${_pkg} $v; done
+)
+declare -fx asdf.remove.past
 
 # asdf.plugin-add chezmoi https://github.com/joke/asdf-chezmoi.git
 # asdf.plugin-add cheat https://github.com/jmoratilla/asdf-cheat-plugin.git
 
 # Don't install pypy using asdf, it breaks python itself. See ~/opt/pypy/current/bin/pypy.
 # python3
-if asdf.have-plugin python; then
+if asdf.plugin.have python; then
     # https://github.com/danhper/asdf-python/
     # asdf plugin add python
     export ASDF_PYTHON_DEFAULT_PACKAGES_FILE=${ASF_DATA_DIR}/.default-python-packages
@@ -45,7 +51,7 @@ fi
 
 
 # nodejs
-if asdf.have-plugin nodejs; then
+if asdf.plugin.have nodejs; then
     # https://github.com/asdf-vm/asdf-nodejs
     # asdf plugin add nodejs https://github.com/asdf-vm/asdf-nodejs.git
     export ASDF_NPM_DEFAULT_PACKAGES_FILE=${ASDF_DATA_DIR}/.default-npm-packages
@@ -56,7 +62,7 @@ fi
 
 
 # go
-if asdf.have-plugin go; then
+if asdf.plugin.have go; then
     # go bash completion?
     export PATH+=:$(go env GOPATH)/bin
     # see .default-golang-pkgs for go install ${pkg}@latest
@@ -66,7 +72,7 @@ fi
 asdf.go-install() { xargs -n1 -I% go install % < ${ASDF_GOLANG_DEFAULT_PACKAGES_FILE}; }
 f.complete asdf.go-install
 
-if asdf.have-plugin yq ; then
+if asdf.plugin.have yq ; then
     yq.session() { source <(yq shell-completion bash); }
     declare -fx yq.session
     yq.session
@@ -74,7 +80,7 @@ fi
 
 
 
-if asdf.have-plugin deno; then
+if asdf.plugin.have deno; then
     path.add $(asdf where deno)/bin
     deno.session() { source <(deno completions bash); }
     declare -fx deno.session
@@ -82,7 +88,7 @@ if asdf.have-plugin deno; then
 fi
 
 
-if asdf.have-plugin plz ; then
+if asdf.plugin.have plz ; then
     plz.session() { source <(plz --completion_script); }
     declare -fx plz.session
     plz.session
@@ -99,9 +105,8 @@ asdf.platform-update() {
     asdf update
     asdf plugin update --all
     for _pkg in $(cut -f1 -d ' ' ~/.tool-versions); do
-        ( asdf.install ${_pkg} && asdf reshim ${_pkg} ) || true 
+        asdf.install ${_pkg} || true 
     done
-    hash -r
 }
 f.complete asdf.platform-update
 

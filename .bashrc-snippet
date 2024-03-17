@@ -1,3 +1,0 @@
-# User specific aliases and functions
-[[ function = $(type -t source.bashrc.d) ]] && source.bashrc.d || >&2 echo "source.bashrc.d undefined?"
-[[ function = $(type -t source.bash_completion.d) ]] && source.bash_completion.d || >&2 echo "source.bash_completion.d undefined?"

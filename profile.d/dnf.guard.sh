@@ -73,3 +73,25 @@ fc.upgrade() (
     dnf system-upgrade reboot
 )
 f.complete fc.upgrade
+
+dnf.id.last() (
+    dnf history list last|tail -n1|cut -d'|' -f1
+); declare -fx dnf.id.last
+
+dnf.missing() (
+    for _p in "$@"; do
+        rpm -q ${_p} > /dev/null || echo -n "${_p} "
+    done
+)
+declare -fx dnf.missing
+
+dnf.install() (
+    local _missing=$(dnf.missing "$@")
+    if [[ -n "${_missing}" ]] ; then
+        dnf upgrade --nobest --skip-broken
+        dnf install --nobest --skip-broken ${_missing}
+    fi
+)
+declare -fx dnf.install
+
+

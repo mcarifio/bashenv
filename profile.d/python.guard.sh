@@ -18,4 +18,13 @@ pyz() {
 }
 f.complete pyz
 
+python.pip() (
+    python -m pip install -U pip
+    python -m pip install -U "$@"
+)
+f.complete python.pip
+
+
+
+
     
