@@ -14,7 +14,7 @@ _sgpt_readline() {
 declare -fx _sgpt_readline
 
 sgpt.session() {
-    bind -x '"\C-xl"':_sgpt_readline
+    bind -x '"\C-xl"':_sgpt_readline || u.error
 }
 f.complete sgpt.session
 sgpt.session

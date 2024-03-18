@@ -1,7 +1,9 @@
 bun.session() {
   local _tmp=$(mktemp -d)
-  2>/dev/null bun completions ${_tmp}
-  source ${_tmp}/*.$(u.shell) && rm -rf ${_tmp}
+  2>/dev/null command bun completions ${_tmp}
+  source ${_tmp}/*.$(u.shell) || u.error
+  rm -rf ${_tmp} 
 }
-f.complete bun.session
+declare -fx bun.session
 bun.session
+

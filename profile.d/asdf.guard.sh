@@ -73,7 +73,7 @@ asdf.go-install() { xargs -n1 -I% go install % < ${ASDF_GOLANG_DEFAULT_PACKAGES_
 f.complete asdf.go-install
 
 if asdf.plugin.have yq ; then
-    yq.session() { source <(yq shell-completion bash); }
+    yq.session() { source <(yq shell-completion bash) || u.error; }
     declare -fx yq.session
     yq.session
 fi
@@ -82,21 +82,21 @@ fi
 
 if asdf.plugin.have deno; then
     path.add $(asdf where deno)/bin
-    deno.session() { source <(deno completions bash); }
+    deno.session() { source <(deno completions bash) || u.error; }
     declare -fx deno.session
     deno.session
 fi
 
 
 if asdf.plugin.have plz ; then
-    plz.session() { source <(plz --completion_script); }
+    plz.session() { source <(plz --completion_script) || u.error; }
     declare -fx plz.session
     plz.session
 fi
 
 asdf.session() {
     local _asdf_bash=${ASDF_DATA_DIR:-~/opt/asdf/current}/completions/asdf.bash
-    [[ -r "${_asdf_bash}" ]] && source "${_asdf_bash}"
+    [[ -r "${_asdf_bash}" ]] && source "${_asdf_bash}" || u.error
 }
 declare -fx asdf.session
 asdf.session

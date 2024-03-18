@@ -19,7 +19,7 @@ __bashenv_dotnet.install.ubuntu() ( apt install dotnet; )
 declare -fx __bashenv_dotnet.install.ubuntu
 
 dotnet.session() {
-    complete -F __bashenv_dotnet_bash_complete dotnet
+    complete -F __bashenv_dotnet_bash_complete dotnet || u.error
 }
 declare -fx dotnet.session
 dotnet.session
