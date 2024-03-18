@@ -45,5 +45,14 @@ git.clcd() {
 f.complete git.clcd
 
 
-
-
+git.unzip() (
+    set -Eeu -o pipefail
+    local _url="${1:?'expecting a url to a zip file'}"
+    local _here=${2:-${PWD}}
+    local _parts=${3:-'/*/*'}
+    local _tmpdir=$(mktemp -d --suffix=-${FUNCNAME})
+    curl -sSL "${_url}" | bsdtar -C ${_tmpdir} -xf -
+    mv ${_tmpdir}${_parts} $(path.md ${_here})
+    rm -rf ${_tmpdir}
+)
+declare -fx git.unzip
