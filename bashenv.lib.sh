@@ -559,7 +559,7 @@ bashenv.session.functions() (
 declare -fx bashenv.session.functions
 
 bashenv.session.start() {
-    for f in $(bashenv.session.functions); do $f || u.error; done
+    for f in $(bashenv.session.functions); do $f || u.error "$f failed"; done
 }
 declare -fx bashenv.session.start
 
