@@ -21,7 +21,7 @@ u.error() (
     printf >&2 '{status: %s, message: "%s", trace:"' ${_status} "$@"
     for _f in ${FUNCNAME[@]}; do
         local _where=( $(declare -F ${_f}) )
-        printf >&2 '%s:%s@%s ' ${_where[2]:-main} ${_where[1]} ${_where[0]:-0}
+        printf >&2 '%s:%s@%s ' ${_where[2]:-main} ${_where[1]:-main} ${_where[0]:-0}
     done
     printf >&2 "\"}\n"
     return ${_status}
