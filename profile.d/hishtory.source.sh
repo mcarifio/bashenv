@@ -6,6 +6,6 @@ path.add "$(home)/.hishtory"
 hishtory.session() {
     source $(home)/.hishtory/config.sh
 }
-f.complete history.session
+f.complete hishtory.session
 hishtory.session
 
