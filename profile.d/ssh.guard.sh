@@ -135,8 +135,7 @@ ssh.terminator.all() (
 )
 f.complete ssh.terminator.all
 
-# ssh.env() {
-#     # echo ${FUNCNAME}
-#     return 0 
-# }; f.complete ssh.env
-
+ssh.env() {
+    touch ${HOME}/hushlogin
+}
+declare -fx ssh.env
