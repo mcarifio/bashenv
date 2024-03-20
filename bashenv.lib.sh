@@ -13,22 +13,33 @@
 declare -Ax __bashenv_loaded=()
 
 u.error() (
-    : '${command} || return $(u.error this is a message)'
     local -i _status=$?
-    local -a _frame=($(caller 0))
-    local _f=${_frame[1]}
+    : '${command} || return $(u.error this is a message)'
+
+    set -Eeuo pipefail
     shopt -s extdebug
-    #                ${name} ${lineno} ${pathname}
-    local _where=( $(declare -F ${_f}) )
-    printf >&2 '{in: %s:%s@%s, status: %s, message: %s}\n' ${_where[2]} ${_where[1]} ${_f} ${_status} "$@"
+    printf >&2 '{status: %s, message: "%s", trace:"' ${_status} "$@"
+    for _f in ${FUNCNAME[@]}; do
+        local _where=( $(declare -F ${_f}) )
+        printf >&2 '%s:%s@%s ' ${_where[2]:-main} ${_where[1]} ${_where[0]:-0}
+    done
+    printf >&2 "\"}\n"
     return ${_status}
 )
 declare -fx u.error
 
+test.u.err() (
+    test.u.err1
+)
+declare -fx test.u.err
+test.u.err1() (
+    false || return $(u.error "${FUNCNAME} stack trace")
+)
+declare -fx test.u.err1
+
 f.tbs() {
     : '#> caller to be supplied, returns 1'
-    echo >&2 ${FUNCNAME[-1]} tbs
-    return 1
+    fail && return $(u.error "tbs ${FUNCNAME}")
 }
 declare -fx f.tbs
 
