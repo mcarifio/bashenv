@@ -1,13 +1,15 @@
 [[ -f /sys/fs/cgroup/cgroup.controllers ]] || >&2 echo "/sys/fs/cgroup/cgroup.controllers not found. cgroups version 1? affects podman"
-# alias docker=podman
-podman.remove-images() (
+podman.remove.images() (
     podman rmi -f $(podmaqn images -f "dangling=true" -q)
 )
-f.complete podman.remove-images
+f.complete podman.remove.images
 
 podman.env() (
-    # use podman as docker, all users
-    [[ -x /usr/bin/podman && ! -f /usr/bin/docker ]] && sudo ln -sr /usr/bin/{podman,docker} || true
+    : 'alias podman as docker with a pathname sym link. works for immutable systems like nixos as well'
+    set -Eeuo pipefail
+    local _podman=$(type -p podman)
+    local _docker="${HOME}/.local/bin/docker"
+    ln -srf "${_podman}" "${_docker}" || return $(u.error "cannot alias '${_docker}' as '${_podman}'")
 )
 declare -fx podman.env
 
