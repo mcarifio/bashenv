@@ -936,9 +936,9 @@ declare -fx f.defined?
 
 sa.shutdown() (
     for _h in "$@"; do
-        ssh root@${_h} { dnf upgrade -y && shutdown -h now }
+        ssh root@${_h} { dnf upgrade -y && /usr/sbin/shutdown -h now }
     done
-    sudo dnf upgrade -y && sudo shutdown -h now
+    sudo dnf upgrade -y && sudo /usr/sbin/shutdown -h now
 )
 declare -fx sa.shutdown
 

@@ -5,12 +5,26 @@
 ec() {
    : 'run emacsclient after starting emacs.service'
    # run the background service iff it isn't active
-   # local _service=emacs-modified
-   local _service=emacs
-   systemctl --user --quiet is-active ${_service} || systemctl --user start ${_service} || { journalctl --user-unit ${_service}; return 0; }
-   emacsclient --reuse-frame --nowait "$@"
+   # https://askubuntu.com/questions/1499139/how-to-run-emacs-daemon-as-a-systemd-service-with-wayland-on-ubuntu-22-04
+   # local _service=emacs
+   emacs.server
+   emacsclient --reuse-frame --no-wait "$@"
 }
 f.complete ec
+
+emacs.server() (
+   set -Eeuo pipefail
+   local _service=${1:-emacs-modified}
+   if ! systemctl --user --quiet is-enabled ${_service}; then
+       local _unit="$(home)/.config/systemd/user/${_service}.service"
+       [[ -r "${_unit}" ]] || ln -sr "$(here)/${_service}.service" "${_unit}"
+       systemctl --user enable --now ${_service} || return $(u.error "${FUNCNAME} cannot enable ${_service}")
+   fi
+   systemctl --user --quiet is-active ${_service} || systemctl --user start ${_service} ||
+       return $(u.error "${FUNCNAME} cannot start ${_service}")   
+)
+
+
 
 
 emc() (
@@ -68,3 +82,8 @@ f.complete doom
 
 export EDITOR='emacsclient -t'
 export VISUAL='emacsclient -t'
+
+emacs.env() (
+    emacs.server
+)
+declare -fx emacs.env

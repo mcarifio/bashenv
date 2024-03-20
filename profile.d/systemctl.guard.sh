@@ -1,6 +1,7 @@
 systemctl() (
     : '$@ #> systemctl command with implied sudo'
-    sudo $(type -p ${FUNCNAME}) "$@"
+    # Not yet clear to me which commands require root.
+    command ${FUNCNAME} "$@" || sudo /usr/bin/systemctl "$@"
 )
 # use systemctl's completion function (_systemctl). it's a complicated function.
 f.complete systemctl _systemctl
