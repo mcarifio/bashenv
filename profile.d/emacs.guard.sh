@@ -7,7 +7,7 @@ ec() {
    # run the background service iff it isn't active
    # https://askubuntu.com/questions/1499139/how-to-run-emacs-daemon-as-a-systemd-service-with-wayland-on-ubuntu-22-04
    # local _service=emacs
-   emacs.server
+   emacs.server || return $(u.error "cannot start emacs server")
    emacsclient --reuse-frame --no-wait "$@"
 }
 f.complete ec
@@ -83,7 +83,9 @@ f.complete doom
 export EDITOR='emacsclient -t'
 export VISUAL='emacsclient -t'
 
-emacs.env() (
-    emacs.server
-)
+emacs.env() {
+    # set -Eeuo pipefail
+    emacs.server || return $(u.error "${FUNCNAME} cannot start emacs server")
+    loginctl enable-linger ${USER}
+}
 declare -fx emacs.env
