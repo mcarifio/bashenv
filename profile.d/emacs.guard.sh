@@ -17,7 +17,7 @@ emacs.server() (
    local _service=${1:-emacs-modified}
    if ! systemctl --user --quiet is-enabled ${_service}; then
        local _unit="$(home)/.config/systemd/user/${_service}.service"
-       [[ -r "${_unit}" ]] || ln -s "$(u.here)/${_service}.service" "$(path.md $(dirname ${_unit}))/$(basename ${_unit})"
+       [[ -r "${_unit}" ]] || ln -s "$(path.md $(u.here)/${_service}.service" "$(path.md $(dirname ${_unit})))/$(basename ${_unit})"
        systemctl --user enable --now ${_service} || return $(u.error "${FUNCNAME} cannot enable ${_service}")
    fi
    systemctl --user --quiet is-active ${_service} || systemctl --user start ${_service} ||
