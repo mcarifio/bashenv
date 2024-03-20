@@ -5,10 +5,11 @@ podman.remove-images() (
 )
 f.complete podman.remove-images
 
-docker() (
-    command podman "$@"
+podman.env() (
+    [[ -x /usr/bin/podman && ! -f /usr/bin/docker ]] && sudo ln -sr /usr/bin/{podman,docker} || true
 )
-f.complete docker
+declare -fx podman.env
+
 
 
 

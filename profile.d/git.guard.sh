@@ -8,7 +8,7 @@ git.url.folder() (
     [[ "${_url}" =~ ^([^@]*@)?([^:]+):([^/]+)/(.*)\.git$ ]] && { echo ${_suffix}/${BASH_REMATCH[2]}/${BASH_REMATCH[3]}/${BASH_REMATCH[4]}/${BASH_REMATCH[4]}; return 0; }
     echo ${_suffix}/${_url}    
 )
-f.complete url.git.folder
+declare -fx url.git.folder
 
 
 # TODO mike@carif.io 02/20/24: probably obsolete
@@ -23,7 +23,7 @@ git.pn2url() (
   # git clone ${_url} ${_work_dir}
   echo ${_url}
 )
-f.complete git.pn2url
+declare -fx git.pn2url
 
 
 
@@ -31,7 +31,7 @@ f.complete git.pn2url
 git.repopath() (
     dirname $(find ${_here} -name .git -type d -minpath 2 -maxpath 2);
 )
-f.complete git.repopath
+declare -fx git.repopath
 
 git.clcd() {
     : 'git.clcd ${url} [${folder}] # clone ${url} into ${folder} and cd to it'
@@ -42,7 +42,7 @@ git.clcd() {
     [[ -r ${_folder}/.envrc ]] && u.have dotenv && dotenv allow ${_folder}
     cd ${_folder}
 }
-f.complete git.clcd
+declare -fx git.clcd
 
 
 git.unzip() (

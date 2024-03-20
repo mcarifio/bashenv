@@ -14,7 +14,9 @@ bash.source() (
     local _where=( $(declare -F ${1:?'expecting a function'}) )
     echo ${_where[2]}
 )
-f.complete bash.source
+declare -fx bash.source
+
+
 
 
 bash.reload() {

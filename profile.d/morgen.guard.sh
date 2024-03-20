@@ -7,13 +7,13 @@ f.complete morgen.api.key
 morgen.run() (
     gio launch /var/lib/snapd/snap/morgen/current/meta/gui/morgen.desktop
 )
-f.complete morgen
+f.complete morgen.run
 
 morgen.env() {
     # echo ${FUNCNAME}
-    return 0 
+    : || true
 }
-f.complete morgan.env
+declare -fx morgan.env
 
 # source (not guard) systemctl.guard.sh, snap.guard.sh, this file and run morgen.install()
 morgen.install() (

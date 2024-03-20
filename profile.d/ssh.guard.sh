@@ -1,12 +1,14 @@
 ssh.scan() {
-  for ip in $(arp.scan $@); do ssh ${ip} id > /dev/null && echo ${ip}; done
+    set -Eeuo pipefail
+    for ip in $(arp.scan $@); do ssh ${ip} id > /dev/null && echo ${ip}; done
 }
 f.complete ssh.scan
 
 
 ssh.keygen() (
     : 'ssh.keygen [--trace] [-m=PEM] [--file=some/path/name] [--comment="${string}"] [--password="${password}"] ...'
-    set -uEeo pipefail; shopt -s nullglob
+    set -uEeo pipefail
+    shopt -s nullglob
     local _file="${PWD}/${FUNCNAME}"
     local _comment="${HOSTNAME}:${_file}"
     local _password=''
@@ -40,6 +42,7 @@ f.complete ssh.keygen
 # ssh when ~/.ssh/config.d/hosts.d/${_remote_host}.host.conf isn't around.
 ssh.mkpair() (
     : 'ssh.mkpair [${_remote_host:-tbs} [${_remote_user:-${USER}}]] |> create key in ${HOME}/.ssh/keys.d/quad, copy .pub to clipboard'
+    set -Eeuo pipefail
     local _remote_host="${1:-tbs}"
     local _remote_user="${2:-${USER}}"
     local _keyfile="${HOME}/.ssh/keys.d/quad/${USER}@${HOSTNAME}4${_remote_user}@${_remote_host}_id_rsa"
@@ -52,6 +55,7 @@ f.complete ssh.mkpair
 
 
 ssh.User() (
+    set -Eeuo pipefail
     if [[ "$1" =~ ^([^@]*)@ ]] ; then
         echo ${BASH_REMATCH[1]}
     else
@@ -70,6 +74,7 @@ ssh.HostName() (
 f.complete ssh.HostName
 
 ssh.IdentityFile() (
+    set -Eeuo pipefail
     local _remote_user=$1
     local _remote_host=$2
     local _f=~/.ssh/keys.d/quad/${USER}@${HOSTNAME}4${_remote_user}@${_remote_host}_id_rsa
@@ -79,7 +84,7 @@ ssh.IdentityFile() (
     local _f=~/.ssh/keys.d/quad/${_remote_host}_id_rsa
     [[ -r ${_f} ]] && { echo ${_f}; return 0; }
 )
-f.complete IdentityFile
+f.complete ssh.IdentityFile
 
 ssh.ssh0() (
     : 'ssh.ssh [${user}@]?${host} $*'
@@ -96,6 +101,7 @@ f.complete ssh.ssh0
 
 ssh.i() (
     : 'ssh.i [${user}:-${USER}]@${host} $* ## ssh to destination with an explicit IdentityFile based on the destination itself'
+    set -Eeuo pipefail
     local _destination=${1:?'expecting a destination'}; shift
     local _host=${_destination#*@} _user=${_destination%@*}
     [[ -z "${_user}" ]] && _user=${USER}
@@ -111,18 +117,21 @@ f.complete ssh.i
 
 
 ssh.x() (
+    set -Eeuo pipefail
     local -r _host=${1:?'expecting a host'}; shift
     ssh -fY ${_host} env GDK_BACKEND=x11 "$@"
 )
 f.complete ssh.x
 
 ssh.terminator() (
+    set -Eeuo pipefail
     local -r _host=${1:?'expecting a host'}; shift
     ssh.x ${_host} terminator --hidden --title=\${USER}@\${HOSTNAME} --name=\${USER}@\${HOSTNAME} "$@"
 ); f.complete ssh.terminator
 
 ssh.terminator.all() (
-    for _host in "$@"; do ssh.terminator ${_host} ; done
+    set -Eeuo pipefail
+    u.map ssh.terminator "$@"
 )
 f.complete ssh.terminator.all
 

@@ -42,7 +42,7 @@ dnf.lock-kernel() (
     local _v=${1:-$(uname -r)}
     sudo dnf versionlock kernel-${_v} kernel-{core,modules,devel,tools,abi-stablelists}-${_v}
 )
-f.complete dnf.local-kernel
+f.complete dnf.lock-kernel
 
 # what package does a command come from?
 dnf.for() (

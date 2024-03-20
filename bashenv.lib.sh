@@ -12,6 +12,19 @@
 # name -> date
 declare -Ax __bashenv_loaded=()
 
+u.error() (
+    : '${command} || return $(u.error this is a message)'
+    local -i _status=$?
+    local -a _frame=($(caller 0))
+    local _f=${_frame[1]}
+    shopt -s extdebug
+    #                ${name} ${lineno} ${pathname}
+    local _where=( $(declare -F ${_f}) )
+    printf >&2 '{in: %s:%s@%s, status: %s, message: %s}\n' ${_where[2]} ${_where[1]} ${_f} ${_status} "$@"
+    return ${_status}
+)
+declare -fx u.error
+
 f.tbs() {
     : '#> caller to be supplied, returns 1'
     echo >&2 ${FUNCNAME[-1]} tbs
@@ -51,7 +64,7 @@ f.complete() {
     : '${fn} [__${fn}.complete] # export ${fn} for subshells and connect to a completion fn __${fn}.complete iff it exists'
     local _f=${1:?'expecting a function'}
     local _fc=__${_f}.complete
-    f.exists ${_f} || return 1
+    f.exists ${_f} || return $(u.error "no function '${_f}'")
     declare -gfx ${_f}
     __bashenv_loaded[${_f}]=$(date)
     f.exists ${_fc} || return 0
@@ -390,7 +403,7 @@ path.hpn() (
     echo -n ${HOSTNAME}:
     realpath -Lms ${1:-${PWD}}
 )
-f.complete path.fpn
+f.complete path.hpn
 u.map.mkall path.hpn
 
 # path.basename
@@ -470,14 +483,6 @@ __u.call.complete() {
 }
 f.complete u.call
 
-u.error() {
-    : '${command} || return $(u.error this is a message)'
-    local -i _status=$?
-    local -a _frame=($(caller 0))
-    printf >&2 '{in: %s, status: %s, message: %s}\n' ${_frame[1]} ${_status} "$@"
-    return ${_status}
-}
-f.complete u.error
 
 prompt.command.add() {
     local _f=${1:?'expecting a function'}
@@ -536,6 +541,7 @@ guard() {
 }
 f.complete guard
 
+# bashenv.*
 bashenv.session.functions() (
     declare -Fpx | cut -f3 -d' ' | grep -e '\.session$'
 )
@@ -545,6 +551,12 @@ bashenv.session.start() {
     for f in $(bashenv.session.functions); do $f || u.error; done
 }
 declare -fx bashenv.session.start
+
+bashenv.update() (
+    : '# git pull the latest changes'
+    git -C $(bashenv.root) pull;
+)
+declare -fx bashenv.update
 
 _template() (echo ${FUNCNAME})
 declare -fx _template
@@ -621,6 +633,15 @@ gnome.restart() (
     busctl --user call org.gnome.Shell /org/gnome/Shell org.gnome.Shell Eval s 'Meta.restart("Restarting…")'
 )
 declare -fx gnome.restart
+
+u.folder() (
+    : '[${_folder}] #> return the folder name'
+    set -Eeuo pipefail
+    local _folder="$(realpath -Ls ${1:-${PWD}})"
+    echo "${_folder##*/}"
+)
+declare -fx u.folder
+
 
 u.here() (printf $(realpath -Ls $(dirname ${BASH_SOURCE[${1:-1}]})))
 declare -fx u.here

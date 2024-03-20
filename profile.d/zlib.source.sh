@@ -1,5 +1,5 @@
 zlib.category() (
-    : 'zlib.category ${pathname} # |> returns the category of a pathname, e.g. foo.rs.pdf.xz returns rs'
+    : '${pathname} # |> returns the category of a pathname, e.g. foo.rs.pdf.xz returns rs'
     local _one="${1:?'expecting a pathname'}"
     # remove dirname
     _one=${_one%%*/}
@@ -8,6 +8,17 @@ zlib.category() (
     (( ${#_cat[@]} > 2 )) && echo ${_cat[1]};
 )
 f.complete zlib.category
+
+
+zlib.categorize.folder() (
+    set -Eeuo pipefail
+    local _folder="${1:-${PWD}}"
+    local _category="${2:-$(u.folder ${_folder})}"
+    for f in  $(find "${_folder}" -name \*.pdf || -name \*.epub ! -name \*.${_category}.*); do
+        mv -v "$f" "${f%%.*}.${_category}.${f##*.}"
+    done
+)
+f.complete zlib.categorize.folder
 
 function zlib.compressed? (
     : 'zlib.is-compressed ${pathname} # sets $? to 0 iff ${pathname} is compressed'
