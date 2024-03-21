@@ -1,0 +1,31 @@
+[Unit]
+Description=Emacs text editor
+Documentation=info:emacs man:emacs(1) https://gnu.org/software/emacs/
+# https://man.archlinux.org/man/systemd.unit.5#SPECIFIERS
+# installed emacs 29, don't have to worry about DISPLAY and XAUTHORITY
+# sudo dnf copr enable bhavin192/emacs-pretest && sudo dnf upgrade -y emacs
+# emacs --version
+# GNU Emacs 29.0.91
+# Copyright (C) 2023 Free Software Foundation, Inc.
+# GNU Emacs comes with ABSOLUTELY NO WARRANTY.
+# You may redistribute copies of GNU Emacs
+# under the terms of the GNU General Public License.
+# For more information about these matters, see the file named COPYING.
+After=graphical-session.target
+
+[Service]
+# Type=forking
+# Type=notify
+Type=idle
+Environment="PATH=$PATH:/usr/bin:/nix/var/nix/profiles/default/bin"
+# ExecStartPost=/bin/sleep 10
+ExecStart=/nix/var/nix/profiles/default/bin/emacs --fg-daemon
+ExecStop=/nix/var/nix/profiles/default/bin/emacsclient --eval "(save-some-buffers t)" --eval "(kill-emacs)"
+# The location of the SSH auth socket varies by distribution, and some
+# set it from PAM, so don't override by default.
+# Environment=SSH_AUTH_SOCK=%t/keyring/ssh
+Restart=on-failure
+
+[Install]
+# WantedBy=default.target
+WantedBy=graphical-session.target
