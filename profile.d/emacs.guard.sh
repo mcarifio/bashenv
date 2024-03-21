@@ -15,11 +15,22 @@ f.complete ec
 emacs.server() (
    set -Eeuo pipefail
    local _service=${1:-emacs-modified}
+
+   # Is the service enabled?
    if ! systemctl --user --quiet is-enabled ${_service}; then
+       # Service isn't enabled. Let's do so.
+       # Symlink a service unit definition into systemd's "user" folder ~/.config/systemd/user/.
+       # The .service file is distro specific (nixos, fedora, etc) b/c I don't know enough systemd to customize a single one.
        local _unit="$(home)/.config/systemd/user/${_service}.service"
        [[ -r "${_unit}" ]] || ln -s "$(u.here)/${_service}-$(os-release.id).service" "$(path.mp ${_unit})"
+
+       # Enable the service and start it.
        systemctl --user enable --now ${_service} || return $(u.error "${FUNCNAME} cannot enable ${_service}")
    fi
+
+   # Is the service running (active)? If not, try starting it manually.
+   # This should be rare but covers the case where the user has manually stopped the service and
+   #  forgotten to restart it.
    systemctl --user --quiet is-active ${_service} || systemctl --user start ${_service} ||
        return $(u.error "${FUNCNAME} cannot start ${_service}")   
 )
@@ -28,7 +39,8 @@ emacs.server() (
 
 
 emc() (
-    : '${_name} [${config_pathname}] # start emacs'
+    : '${_name} [${config_pathname}] # start emacs "by name" e.g. "maxemacs"'
+    set -Eeuo pipefail
     local _name=${1:?'expecting a name, e.g. maxemacs'} && shift
     local _init_directory="${1:-~/.config/${_name}}" && shift
     
@@ -50,11 +62,9 @@ __emc.complete() {
 	COMPREPLY=( compgen -d  )	    
 	(( __previous_position != _position )) && >&2 echo -n "(f.exists takes a single argument) "
     else
-	>&2 
+	>&2 echo "not yet implemented"
     fi
     let __previous_position=_position
-
-
 }
 f.complete emc
 
@@ -85,7 +95,7 @@ export VISUAL='emacsclient -t'
 
 emacs.env() {
     # set -Eeuo pipefail
-    emacs.server || return $(u.error "${FUNCNAME} cannot start emacs server")
+    emacs.server || return $(u.error "${FUNCNAME} cannot start emacs server (via emacs.server())")
     loginctl enable-linger ${USER}
 }
 declare -fx emacs.env

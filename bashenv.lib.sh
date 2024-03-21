@@ -10,7 +10,17 @@
 #   - the first line of the function definition is : 'text' which acts as a docstring
 
 # name -> date
+unset __bashenv_loaded || true
 declare -Ax __bashenv_loaded=()
+
+f.x() {
+    : '${_f}... # export functions ${_f}...'
+    for _f in "$@"; do
+        declare -fx ${_f} && __bashenv_loaded[${_f}]=$(date) || u.error "${_f} not exported"
+    done
+}
+f.x f.x
+
 
 u.error() (
     local -i _status=$?
@@ -26,22 +36,22 @@ u.error() (
     printf >&2 "\"}\n"
     return ${_status}
 )
-declare -fx u.error
+f.x u.error
 
 test.u.err() (
     test.u.err1
 )
-declare -fx test.u.err
+f.x test.u.err
 test.u.err1() (
     false || return $(u.error "${FUNCNAME} stack trace")
 )
-declare -fx test.u.err1
+f.x test.u.err1
 
 f.tbs() {
     : '#> caller to be supplied, returns 1'
     fail && return $(u.error "tbs ${FUNCNAME}")
 }
-declare -fx f.tbs
+f.x f.tbs
 
 # f.exists
 f.exists.sig() (echo ${FUNCNAME%.sig} req _f bash+function no_default)
@@ -114,7 +124,7 @@ f.complete.4() {
     local _one=${_frame[1]}
     echo ${_one:2:-9}
 }
-declare -fx f.complete.4
+f.x f.complete.4
 
 f.complete.for() (
     local _command=${1:?'expecting a command'}
@@ -127,7 +137,7 @@ f.complete.init() {
     declare -ig __bashenv_positionals_start=-1
     declare -g __bashenv_completer=""
 }
-declare -fx f.complete.init
+f.x f.complete.init
 
 # backed myself into a corner here, pause
 f.mkcompleter() {
@@ -141,13 +151,13 @@ f.mkcompleter() {
         ${FUNCNAME}.generate ${_args[$p]} ${_args[$((p + 1))]} "${_args[$((p + 2))]}" "${_args[$((p + 3))]}"
     done
 }
-declare -fx f.mkcompleter
+f.x f.mkcompleter
 
 f.mkcompleter.generate() {
     local _need="${1:?'expected need'}" _name="${3:?'expected type'}" _type="${3:?'expected type'}" _expression="${3:?'expected expression'}"
     echo -n ${_need} ${_name} "${_type}" "${_expression}"
 }
-declare -fx f.mkcompleter.generate
+f.x f.mkcompleter.generate
 
 # f.mkcompleter f.exists required 'bashenv function' 'f.loaded.match'
 # f.mkcompleter u.map required 'bashenv function' 'f.loaded.match' rest int none
@@ -461,15 +471,15 @@ path.mp() (
     local _p=$(printf "%s/%s" $(path.md $1/..) ${1##*/})
     printf ${_p}
 )
-declare -fx path.mp
+f.x path.mp
 path.mpt() (
     local _p=$(printf "%s/%s" $(md $1/..) ${1##*/})
     touch ${_p}
     printf ${_p}
 )
-declare -fx path.mpt
+f.x path.mpt
 path.mpcd() (cd $(dirname $(mp ${1:?'expecting a pathname'})))
-declare -fx path.mpcd
+f.x path.mpcd
 
 # u.have
 u.have() (
@@ -532,7 +542,7 @@ guard.for() {
     : 'guard.for ${command}... # returns 0 iff all ${commands} are on PATH '
     u.have.all "$@"
 }
-declare -fx guard.for
+f.x guard.for
 
 _guard() {
     : '_guard ${pathname} [${command}] # source ${pathname} iff ${command} resolves'
@@ -544,7 +554,7 @@ _guard() {
     source ${_pathname} "$@" || return $(u.error "${_pathname} => $?")
     u.call ${_for}.env "$@" || return $(u.error "${_for}.env => $?")
 }
-declare -fx _guard
+f.x _guard
 guard() {
     : 'guard ${pathname} [${command}] # source ${pathname} iff ${command} resolves. print errors but ignores return values'
     # guard has a private helper _guard
@@ -556,21 +566,21 @@ f.complete guard
 bashenv.session.functions() (
     declare -Fpx | cut -f3 -d' ' | grep -e '\.session$'
 )
-declare -fx bashenv.session.functions
+f.x bashenv.session.functions
 
 bashenv.session.start() {
     for f in $(bashenv.session.functions); do $f || u.error "$f failed"; done
 }
-declare -fx bashenv.session.start
+f.x bashenv.session.start
 
 bashenv.update() (
     : '# git pull the latest changes'
     git -C $(bashenv.root) pull;
 )
-declare -fx bashenv.update
+f.x bashenv.update
 
 _template() (echo ${FUNCNAME})
-declare -fx _template
+f.x _template
 
 # u.map.tree
 u.map.tree() {
@@ -587,13 +597,13 @@ __u.map.tree.complete0() {
 f.complete u.map.tree
 
 u.or() (echo "$@" | cut -d' ' -f1)
-declare -fx u.or
+f.x u.or
 
 u.shell() {
     : '#> this shell, always bash. But the SHELL env variable can be unreliable'
     basename $(realpath /proc/$$/exe)
 }
-declare -fx u.shell
+f.x u.shell
 
 # Set window or tab title in shell, useful for organization.
 # Note, a different way to set the running title is 'export TITLE="${somethings}".
@@ -608,7 +618,7 @@ _title() (
         printf "\e]0;%s\a" "$*"
     fi
 )
-declare -fx _title
+f.x _title
 
 # dmesg --follow # will follow messages
 dmesg() (
@@ -643,7 +653,7 @@ gnome.restart() (
     : 'https://www.linuxuprising.com/2020/07/how-to-restart-gnome-shell-from-command.html, only works for X'
     busctl --user call org.gnome.Shell /org/gnome/Shell org.gnome.Shell Eval s 'Meta.restart("Restarting…")'
 )
-declare -fx gnome.restart
+f.x gnome.restart
 
 u.folder() (
     : '[${_folder}] #> return the folder name'
@@ -651,14 +661,14 @@ u.folder() (
     local _folder="$(realpath -Ls ${1:-${PWD}})"
     echo "${_folder##*/}"
 )
-declare -fx u.folder
+f.x u.folder
 
 
 u.here() (printf $(realpath -Ls $(dirname ${BASH_SOURCE[${1:-1}]})))
-declare -fx u.here
+f.x u.here
 
 u.where() { realpath -Lms ${1:-${BASH_SOURCE}}/..; }
-declare -fx u.where
+f.x u.where
 u.map.mkall u.where # u.where.all
 
 u.xwalk() {
@@ -668,7 +678,7 @@ u.xwalk() {
     shift || true
     find -L ${_top} -path \*/enabled.d/\*.${_ext} -type f -executable -exec '{}' $* \;
 }
-declare -fx u.xwalk
+f.x u.xwalk
 
 u.mkurl() {
     local _self=${FUNCNAME[0]}
@@ -676,27 +686,27 @@ u.mkurl() {
     local _pn=${2:?'expecting a pathname'}
     printf "#!/usr/bin/env xdg-open\n%s" ${_url} | install -m 0755 /dev/stdin ${_pn}
 }
-declare -fx u.mkurl
+f.x u.mkurl
 
 # never can remember the entire name
 if u.have com.github.johnfactotum.Foliate; then
     foliate() { command com.github.johnfactotum.Foliate $* & }
     # from epel
     # nb: there are snap and flatpak installs as well. they suck.
-    declare -fx foliate # dnf install foliate
+    f.x foliate # dnf install foliate
 fi
 
 u.all-hosts() (arp $@ | tail -n+2 | cut -c1-25 | sort | uniq)
-declare -fx u.all-hosts # hping3
+f.x u.all-hosts # hping3
 
 # sudo dnf install -y uuid
 # if u.have sos; then
-#    sos.r() { sudo sos report --batch --case-id="${SUDO_USER}-$(uuidgen)" --description "${FUNCNAME}" $*; }; declare -fx sos.r
+#    sos.r() { sudo sos report --batch --case-id="${SUDO_USER}-$(uuidgen)" --description "${FUNCNAME}" $*; }; f.x sos.r
 # fi
 
 # go repl
 yaegi() { rlwrap command yaegi $@; }
-declare -fx yaegi # rlwrap
+f.x yaegi # rlwrap
 
 # pip from the current python directly; coordinate afterwards with asdf and bash
 # hack
@@ -706,18 +716,18 @@ if u.have asdf; then
         asdf reshim python
         hash -r
     }
-    declare -fx asdf.pipi
+    f.x asdf.pipi
 fi
 
 # pdf renaming
 pdf.creationdate() { pdfinfo "$1" | grep '^CreationDate:' | awk '{print $6}'; }
-declare -fx pdf.creationdate # dnf install pdfinfo
+f.x pdf.creationdate # dnf install pdfinfo
 
 pdf.author() {
     local _author=$(pdfinfo "$1" | grep '^Author:' - | awk '{print $3}' - &>/dev/null)
     echo ${_author,,}
 }
-declare -fx pdf.author
+f.x pdf.author
 
 pdf.add-date() {
     local _date=$(pdf.creationdate $1)
@@ -729,7 +739,7 @@ pdf.add-date() {
     mv $1 ${_target}
     echo ${_target}
 }
-declare -fx pdf.add-date
+f.x pdf.add-date
 
 pn.deparen() {
     for f in "$@"; do
@@ -738,7 +748,7 @@ pn.deparen() {
         mv "$f" "${_f}" && printf "%s " "${_f}"
     done
 }
-declare -fx pn.deparen
+f.x pn.deparen
 
 pdf.mv() {
     # if [[ -r "$1" ]]; then
@@ -757,7 +767,7 @@ pdf.mv() {
 
     mv -v "${_src}" "$(md ${_location})/${_prefix}-${_date}.pdf"
 }
-declare -fx pdf.mv
+f.x pdf.mv
 
 zlib.title() {
     local _title=${1:?'expecting a pathname'}
@@ -769,7 +779,7 @@ zlib.title() {
     _title=${_title// /-}
     echo ${_title}
 }
-declare -fx zlib.title
+f.x zlib.title
 
 zlib.lastname0() {
     if [[ "$1" =~ [[:space:]]by[[:space:]][a-zA-Z]+[[:space:]]([a-zA-Z]+) ]]; then
@@ -808,7 +818,7 @@ zlib.date() {
         echo ${BASH_REMATCH[1],,}
     fi
 }
-declare -fx zlib.date
+f.x zlib.date
 
 zlib.mv() (
     # zlib.mv ${_src} ${_dir} [${_title} [${_lastname} [${_yyyy}]]]
@@ -862,7 +872,7 @@ zlib.mv() (
         echo >&2 "${_dest}"
     fi
 )
-declare -fx zlib.mv
+f.x zlib.mv
 
 for c in kind kubectl glab lab; do u.have ${c} && source <(${c} completion bash); done
 for c in /usr/share/bash-completion/completions/{docker,dhclient,nmcli,nmap,ip}; do u.have ${c} && source ${c}; done
@@ -884,20 +894,20 @@ dispatch() {
     shift || true
     ${_action} $*
 }
-declare -fx dispatch
+f.x dispatch
 
 sa.add.user() {
     : 'add.user doomemacs 2000 "passwd"'
     sudo adduser -G wheel -m -u ${2:?'expecting a uid'} ${1:?'expecting a username'}
     [[ -n "${3:-}" ]] && sudo passwd --stdin ${1} <<<"${3}"
 }
-declare -fx sa.add.user
+f.x sa.add.user
 
 # returns 0 iff command is running
 is.running() {
     (($(ps aux | grep -F " ${1:?'expecting a command'} " | wc -l) > 1))
 }
-declare -fx is.running
+f.x is.running
 
 # singleton ${cmdline} # runs command iff not yet running
 u.singleton() {
@@ -907,14 +917,14 @@ u.singleton() {
     ${_cmd} "$@"
     echo $!
 }
-declare -fx u.singleton
+f.x u.singleton
 
 # arp.scan -I eno1 > /etc/dsh/lan
 # pdsh -g lan id
 arp.scan() {
     sudo arp-scan -l $@ | tail -n+3 | head -n-3 | cut -f1 | sort | uniq
 }
-declare -fx arp.scan
+f.x arp.scan
 
 mnt.iso() {
     : 'mnt.iso .iso [/optional/mountpoint/prefix] # mount .iso as a loopback device'
@@ -923,16 +933,16 @@ mnt.iso() {
     sudo install -o ${USER} -g ${USER} -d ${_mountpoint}
     sudo mount -o loop ${_iso} ${_mountpoint}
 }
-declare -fx mnt.iso
+f.x mnt.iso
 
 url.exists() (curl --HEAD --silent ${1:?'expecting a url'} &>/dev/null)
-declare -fx url.exists
+f.x url.exists
 
 function f.defined? {
     : 'f.defined? ${function} ... # true if all functions are defined'
     type -t -- "$@" >/dev/null
 }
-declare -fx f.defined?
+f.x f.defined?
 
 sa.shutdown() (
     for _h in "$@"; do
@@ -940,16 +950,16 @@ sa.shutdown() (
     done
     sudo dnf upgrade -y && sudo /usr/sbin/shutdown -h now
 )
-declare -fx sa.shutdown
+f.x sa.shutdown
 
 sa.shutdown.all() (dnf.off milhouse clubber)
-declare -fx sa.shutdown.all
+f.x sa.shutdown.all
 
 tbird.logged() (NSPR_LOG_MODULES=SMTP:4,IMAP:4 NSPR_LOG_FILE=/tmp/thunderbird-$$.log thunderbird)
-declare -fx tbird.logged
+f.x tbird.logged
 
 # https://www.linuxuprising.com/2020/07/how-to-restart-gnome-shell-from-command.html
 gnome.restart() (
     busctl --user call org.gnome.Shell /org/gnome/Shell org.gnome.Shell Eval s 'Meta.restart("Restarting…")'
 )
-declare -fx gnome.restart
+f.x gnome.restart
