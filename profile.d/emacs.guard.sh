@@ -1,15 +1,16 @@
 # dnf install -y emacs
-# systemctl --user enable --now emacs-modified
-# journalctl --user-unit emacs
+# systemctl --user enable --now emacs-modified-$(os-release.id)
+# journalctl --user --unit emacs-modified--$(os-release.id)
 # loginctl enable-linger ${USER}
-ec() {
-   : 'run emacsclient after starting emacs.service'
-   # run the background service iff it isn't active
-   # https://askubuntu.com/questions/1499139/how-to-run-emacs-daemon-as-a-systemd-service-with-wayland-on-ubuntu-22-04
-   # local _service=emacs
-   emacs.server || return $(u.error "cannot start emacs server")
-   emacsclient --reuse-frame --no-wait "$@"
-}
+ec() (
+    : '[${_pathname}] ## run emacsclient after starting emacs.service'
+    set -Eeuo pipefail
+    # run the background service iff it isn't active
+    # https://askubuntu.com/questions/1499139/how-to-run-emacs-daemon-as-a-systemd-service-with-wayland-on-ubuntu-22-04
+    # local _service=emacs
+    emacs.server || return $(u.error "cannot start emacs server")
+    emacsclient --reuse-frame --no-wait "$@"
+)
 f.complete ec
 
 emacs.server() (
