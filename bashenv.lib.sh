@@ -189,6 +189,7 @@ readline.bind() (
 )
 f.complete readline.bind
 
+# TODO mike@carif.io: rename u.map to f.map
 # u.map
 u.map() {
     : '${f} ${item} ... # apply $f to each item in the list echoing the result'
@@ -443,7 +444,7 @@ f.complete path.basename
 
 # path.md
 path.md() (
-    : '${folder} #> make a directory and return its pathname, e.g cp foo $(path.md /tmp/foo)/bar'
+    : '${folder} #> make a directory (md) and return its pathname, e.g cp foo $(path.md /tmp/foo)/bar'
     local _d=$(path.pn $1)
     [[ -d "$_d" ]] || mkdir -p ${_d}
     printf "%s" ${_d}
@@ -457,6 +458,7 @@ f.complete path.md
 
 # path.mkcd
 path.mkcd() {
+    : '${_folder} # make folder (directory) ${_folder} if needed and then cd to it.'
     local _d=$(path.md $1)
     [[ -z "${_d}" ]] || cd -Pe ${_d}
 }
@@ -468,21 +470,30 @@ __path.mkcd.complete() {
 f.complete path.mkcd
 
 path.mp() (
+    : '{_p} # make $(dirname ${_p}) if needed and return the entire pathname to the caller. Executed for side effect.'
     local _p=$(printf "%s/%s" $(path.md $1/..) ${1##*/})
     printf ${_p}
 )
 f.x path.mp
+
+# path.mpt not really needed, touch $(path.mp foo) is just as clean.
 path.mpt() (
-    local _p=$(printf "%s/%s" $(md $1/..) ${1##*/})
-    touch ${_p}
+    : '${_pn} # touch ${_pn} creating the path as needed along the way. Echo the final pathname.'
+    set -Eeuo pipefail
+    local _pn="$(path.mp ${1:?'expecting a pathname'})" || return $(u.error "Cannot create pathname $1")
+    touch ${_pn}
     printf ${_p}
 )
 f.x path.mpt
-path.mpcd() (cd $(dirname $(mp ${1:?'expecting a pathname'})))
+
+path.mpcd() (cd $(dirname $(path.mp ${1:?'expecting a pathname'})))
 f.x path.mpcd
 
 # u.have
+# u.have is the heart of guard()
 u.have() (
+    : '${command} # succeeds iff ${command} is defined.'
+    set -Eeuo pipefail
     type &>/dev/null ${1?:'expecting a command'} || return 1
 )
 f.complete u.have
@@ -490,7 +501,7 @@ u.map.mkall u.have # u.have.all
 
 # u.call
 u.call() {
-    : '${command} ... #> run a command against arguments'
+    : '${command} ... #> run a command against arguments, skip if ${command} nonexistant.'
     local _f=${1:?'expecting a command'}
     shift
     u.have ${_f} || return 0
@@ -557,7 +568,7 @@ _guard() {
 f.x _guard
 guard() {
     : 'guard ${pathname} [${command}] # source ${pathname} iff ${command} resolves. print errors but ignores return values'
-    # guard has a private helper _guard
+    # guard has a private helper _guard which simplifies the calling expression.
     _${FUNCNAME} "$@" || true
 }
 f.complete guard
