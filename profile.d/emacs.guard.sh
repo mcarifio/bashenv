@@ -5,21 +5,22 @@
 ec() (
     : '[${_pathname}] ## run emacsclient after starting emacs.service'
     set -Eeuo pipefail
+    local _emacs_service=emacs-modified-$(os-release.id)
     # run the background service iff it isn't active
     # https://askubuntu.com/questions/1499139/how-to-run-emacs-daemon-as-a-systemd-service-with-wayland-on-ubuntu-22-04
     # local _service=emacs
-    emacs.server || return $(u.error "cannot start emacs server")
+    emacs.server ${_emacs_service} || return $(u.error "cannot start emacs service ${_emacs_service}")
     emacsclient --reuse-frame --no-wait "$@"
 )
 f.complete ec
 
 emacs.server() (
    set -Eeuo pipefail
-   local _service=${1:-emacs-modified-$(os-release.id)}
+   local _service=${1:?'expecting a service name'}
 
    # Is the service enabled?
    if ! systemctl --user --quiet is-enabled ${_service}; then
-       # Service isn't enabled. Let's do so.
+       # Service isn't enabled. Let's do so. This might override the user's policy.
        # Symlink a service unit definition into systemd's "user" folder ~/.config/systemd/user/.
        # The .service file is distro specific (nixos, fedora, etc) b/c I don't know enough systemd to customize a single one.
        local _unit="$(home)/.config/systemd/user/${_service}.service"
@@ -35,7 +36,7 @@ emacs.server() (
    systemctl --user --quiet is-active ${_service} || systemctl --user start ${_service} ||
        return $(u.error "${FUNCNAME} cannot start ${_service}")   
 )
-
+f.x emacs.server
 
 
 
@@ -91,12 +92,12 @@ doom() (
 f.complete doom
 
 
-export EDITOR='emacsclient -t'
-export VISUAL='emacsclient -t'
+export EDITOR='emacsclient --no-wait --reuse-frame' # assuming emacsclient will fall back to -nw?
+export VISUAL='emacsclient --no-wait --reuse-frame'
 
-emacs.env() {
-    # set -Eeuo pipefail
+emacs.env() (
+    set -Eeuo pipefail
     emacs.server || return $(u.error "${FUNCNAME} cannot start emacs server (via emacs.server())")
     loginctl enable-linger ${USER}
-}
-declare -fx emacs.env
+)
+f.x emacs.env
