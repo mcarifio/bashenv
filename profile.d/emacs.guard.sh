@@ -5,16 +5,13 @@
 ec() (
     : '[${_pathname}] ## run emacsclient after starting emacs.service'
     set -Eeuo pipefail
-    local _emacs_service=emacs-modified-$(os-release.id)
-    # run the background service iff it isn't active
-    # https://askubuntu.com/questions/1499139/how-to-run-emacs-daemon-as-a-systemd-service-with-wayland-on-ubuntu-22-04
-    # local _service=emacs
-    emacs.server ${_emacs_service} || return $(u.error "cannot start emacs service ${_emacs_service}")
+    emacs.server || return $(u.error "emacs daemon not started")
     emacsclient --reuse-frame --no-wait "$@"
 )
 f.complete ec
 
-emacs.server() (
+_emacs.server() (
+    : ' ${service} ## starts emacs systemd service ${service}'
    set -Eeuo pipefail
    local _service=${1:?'expecting a service name'}
 
@@ -36,8 +33,9 @@ emacs.server() (
    systemctl --user --quiet is-active ${_service} || systemctl --user start ${_service} ||
        return $(u.error "${FUNCNAME} cannot start ${_service}")   
 )
+f.x _emacs.server
+emacs.server() ( _${FUNCNAME} emacs-modified-$(os-release.id); )
 f.x emacs.server
-
 
 
 emc() (
@@ -96,8 +94,9 @@ export EDITOR='emacsclient --no-wait --reuse-frame' # assuming emacsclient will 
 export VISUAL='emacsclient --no-wait --reuse-frame'
 
 emacs.env() (
+    : '[${_pathname}] ## run emacsclient after starting emacs.service'
     set -Eeuo pipefail
-    emacs.server || return $(u.error "${FUNCNAME} cannot start emacs server (via emacs.server())")
+    emacs.server || return $(u.error "cannot start emacs service in login shell $$")
     loginctl enable-linger ${USER}
 )
 f.x emacs.env
