@@ -590,7 +590,20 @@ bashenv.update() (
 )
 f.x bashenv.update
 
-_template() (echo ${FUNCNAME})
+bashenv.reload() {
+    : '## simulate login'
+    local _bash_profile="$(home)/.bash_profile"
+    source "${_bash_profile}" || return $(u.error "source ${_bash_profile} failed.")
+    local _bashrc="$(home)/.bashrc"
+    source "${_bashrc}" || return $(u.error "source ${_bashrc} failed.")
+}
+f.x bashenv.reload
+
+_template() (
+    : 'add args here ## add comments here'
+    set -Eeuo pipefail
+    false || return $(u.error "${FUNCNAME} tbs")
+)
 f.x _template
 
 # u.map.tree

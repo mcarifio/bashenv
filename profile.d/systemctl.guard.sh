@@ -18,4 +18,4 @@ systemctl.env() {
     # echo ${FUNCNAME}
     return 0 
 }
-declare -fx systemctl.env
+f.x systemctl.env

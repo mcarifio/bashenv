@@ -2,7 +2,7 @@
 
 A low ceremony bash5 environment for personal customizations. And a horrible summary.
 
-## Summary
+## <a id="summary">Summary</a>
 
 We all have them. A set of personal utilities and scripts we've written to expedite our workflow(s) or just make our lives easier. Or maybe you've
 gone all in with something like [oh my bash](https://github.com/ohmybash/oh-my-bash) and [gnu stow](https://github.com/aspiers/stow/) to -- you know --
@@ -14,12 +14,11 @@ and whenever you need them. One fork, no pull requests (unless you're a good cit
 This README is divided into two parts, a <a href="#start">starting</a> part and a <a href="#usage">usage</a> part. 
 If you want to use `bashenv` as the starting point for your own bash scripts, I recommend you <a href="#start-with-git">start with git</a>. 
 You can then commit your changes and additions to your own repository, no coordination required. 
-This is particularly useful if you work on several Linux machines at once. Make an improvement on one machine, commit the changes to your git repository and then 
-git pull those improvements everywhere else.
+This is particularly useful if you work on several Linux machines at once. Make an improvement on one machine, commit the changes to your git repository and then git pull those improvements everywhere else.
 
 If git gives you hives or you want something even simpler, <a href="#start-without-git">start without git</a>. 
 A one-liner fetches a [a github snapshot](https://github.com/mcarifio/bashenv/archive/refs/heads/main.zip) into your directory of choice.
-You can then forego git _or_ you can control the sources using the tool of your choice (svn, mercurial, perforce, etc).
+You can then forego git _or_ you can control the sources using the tool of your choice (svn, mercurial, perforce, fossil, etc).
 
 
 ## <a id="start">Start</a>
@@ -37,7 +36,7 @@ local dev environment. And if you don't like what `.envrc` does, adapt it or eve
 sources and some bash expertise, `bashenv` is yours.
 
 
-## Context
+## <a id="context">Context</a>
 
 Let's place the directions below in context:
 
@@ -163,20 +162,27 @@ The project "support" is by folder, e.g. `pj/bin` has
 local scripts like `start.sh` and `pj`. You can add your scripts there as well.
 Generally nothing in `pj/**` is sourced by `.bash_profile` and `pj/bin` is not on `PATH` (except via `direnv`).
 
-The files in `profile.d/**` are sourced by `~/.bash_profile` on login. They define environment variables, add to `PATH` and define many exported bash functions.
-The files follow a naming convention. `${file}.source.sh` files are always sourced. `${command}.guard.sh` files are sourced depending on the "guard", the presences
-of a command. For example, `git.guard.sh` is only sourced if the command `git` is in the PATH.
-Otherwise it's silently skipped. You can think of `*.guard.sh` as the set union of what you might have on your machine. But only those with the underlying command
-installed are used. You can always `source ${file}.guard.sh`. The guard is then bypassed.
+The files in `profile.d/**` are sourced by `~/.bash_profile` on login.
+They define environment variables, add to `PATH` and define many exported bash functions.
+The files follow a naming convention. `${file}.source.sh` files are always sourced.
+`${command}.guard.sh` files are sourced depending on the "guard", the presence
+of a command. For example, `git.guard.sh` is only sourced if the command `git` is on the PATH.
+Otherwise it's silently skipped. You can think of `*.guard.sh` as the set union of what commands
+you might have on your machine. But only those with the underlying command
+installed are actually loaded. You can always `source ${file}.guard.sh`. The guard is then bypassed.
+For example you could source `git.guard.sh` and it would define bash functions like `git.unzip`.
+You could even invoke `git.unzip`. But it will fail without the underlying `git` command itself.
 
-Each `${command}.{guard,source}.sh` file will define an exported function `${command}.session`, for example `git.session`. This function is called by `session.start()` and
-does what `.bashrc` would do. Generally this includes sourcing function definitions that are _not_ exported and binding `readline` functions. Making these functions makes it easy to
-to replay what `.bashrc` would do. It's also helpful to customize a command all in a single file, e.g. `git.guard.sh`. 
+Many `${command}.{guard,source}.sh` files will define an exported function `${command}.session`, for example `git.session`. This function is called by `session.start()` and
+does what `.bashrc` generally does. This might include sourcing function definitions that are _not_ exported and
+binding `readline` functions. Session functions makes it easy to
+to replay what `.bashrc` would do with the added benefit that
+customizations are concentrated in a single file, e.g. `git.guard.sh`. 
 
 These conventions are a work in progress and subject to change. But understanding the layout aids navigation and use. Basically you're buying into a slew of global, exported functions loaded when you start a login shell. These functions are all exported to subshells. Some of the functions follow patterns for later use such as `${command}.session`. But
 the conventions are simple and promote a copy-and-adapt style. `profile.d/_template.sh` provides a good starting place for your scripts, e.g. if you want a guard for the command `foo` you can start with `cp _template.sh foo.guard.sh` and modify `foo.guard.sh`.
 
-## Hacking
+## <a id="hacking">Hacking</a>
 
 I use emacs. You should use what suits you. But it should be emacs.
 
@@ -191,13 +197,12 @@ I use emacs. You should use what suits you. But it should be emacs.
 
 ## <a id="usage">Usage</a>
 
-You're through the hard part. Using bashenv is easy. When you create a login session in bash, bash sources `~/.bash_profile`. When you create a new shell, bash sources `~/.bashrc`.
-A login session is also a new shell, therefore you actually source both.
+You're through the hard part. Using bashenv is easy. When you create a login session in bash, bash sources `~/.bash_profile`. When you create a new shell, bash sources `~/.bashrc`. Since a login shell is also a new shell, you source both. (The bash rules are actually somewhat more
+complicated than this. I'm waving my hands here.)
 
-Bashenv traffics in bash functions which are all loaded from `~/bashenv/profile.d/**.sh`. Bash functions are underappreciated and underutilized. In particular,
-just like environment variables they can be exported and therefore visible to all subshells without redefinion or reloading. You can, of course, load a new definition for the same name in subshell. But generally there's little need.
+Bashenv traffics in bash functions which are all loaded from `~/bashenv/profile.d/**.sh`. Bash functions are underappreciated and underutilized. In particular, just like environment variables they can be exported and therefore visible to all subshells without redefinion or reloading. You can, of course, load a new definition for the same name in subshell. But generally there's little need.
 
-Because you have to explicitly export a function after defining it using the exotic `declare -fx ${function}`, functions are often sourced (and sourced again and again and again) via `~/.bashrc`. With just an extra declaration this is completely unnecessary. You can have convenience _and_ start subshells quickly with bashenv. (But really with just judicious use of bash.)
+Because you have to explicitly export a function after defining it using the exotic `declare -fx ${function}`, functions are often sourced (and sourced again and again and again) via `~/.bashrc`. With just an extra declaration this is completely unnecessary. You can have convenience _and_ start subshells quickly with bashenv. But I'm not claiming credit for this. Just learn `declare -fx`.
 
 ### <a id="usage-without-git">Usage Without Git</a>
 
@@ -230,15 +235,52 @@ With git however you can add or modify bashenv scripts, commit the changes, push
 
 tbs scripting patterns
 
+Bashenv is a thought process. You install a package, say `procs` and explore it. Over time you start to incorporate it into your
+workflow in a terminal. Let's suppose you installed with `asdf` rather than `dnf`, so you need to load the bash completion functions.
+This leads to `profile.d/procs.guard.sh`:
+
+```bash
+procs.session() { source <(procs --gen-completion-out bash); }
+f.x procs.session
+```
+Why? You only want to load `procs.guard.sh` if `procs` is installed. You want to load completions for convenience.
+`procs` emits the bash code itself and it's function definitions are local, not global (`declare -fx`).
+So you need to load the completion function(s) on each new session. But (and this can be confusing) `procs.session()` itself
+is exported so that `bashenv.session.start()` can find it.
+
+Let's suppose the default columns for `procs` are not to your liking or you want different columns in different circumstances.
+Now you start giving these variants (function) names, e.g. `procs.systemd` or `procs.node`:
+
+```bash
+procs.systemd() (
+   set -Eeuo pipefail
+   local _process=${FUNCNAME##.*}
+   procs --tree --watch ${_process} "$@"  ## completely made up
+)
+f.x procs.systemd
+
+procs.node() (
+   set -Eeuo pipefail
+   local _process=${FUNCNAME##.*}
+   procs --tree --watch ${_process} --watch-interval=10 "$@" 
+
+)
+f.x procs.node
+```
+Couldn't you do this (say) with bash scripts in `~/.local/bin`? Yup. Do so if that's your preference. But personally I like
+`type procs.node` to remind myself of pertinent details about `procs`. But you do you.
+
 ## Pragma(tics)
 
 ### git
 
-I generally do much of my dev work on a (somewhat beefy) daily driver machine. I have several "satellite" hosts that run various linux variants, virtual machines and
-containers. The satellites are more sacrificial than `beefy`, but not fully stateless (think pets, not cattle, but I treat them coldly.) 
-I will `git clone beefy:bashenv` from each of the satillites to simplify configuration all around. If I fix a bug discovered on the satellite, 
-I want to commit the changes back to `beefy` (and then on to github). `beefy:bashenv/.git/config`
-needs this stanza to accept commits:
+I generally do much of my dev work on a (somewhat beefy) daily driver machine. I have several "satellite" hosts that
+run various linux variants, virtual machines and containers. The satellites are more sacrificial than `beefy`, but not fully stateless
+(think pets, not cattle, but I treat them coldly.) 
+I will `git clone beefy:bashenv` from each of the satillites to simplify configuration all around.
+If I fix a bug discovered on the satellite, 
+I want to commit the changes back to `beefy` (and then on to github). To do this,
+`beefy:bashenv/.git/config` needs this stanza to accept commits from the satillites:
 
 ```
 [receive]
@@ -250,17 +292,34 @@ of the repos yet, but ymmv, caviat emptor.
 
 ### ~/.config/**
 
-A lot of useful configuration is kept in `~/.config/**` by command, for example `~/.config/git` for git or `~/.config/aws` for aws and so forth.
+A lot of useful configuration is kept in `~/.config/**` by command, for example `~/.config/git` for git
+or `~/.config/aws` for aws and so forth.
 Since these directories can contain credentials or complicated state (in the case of say `~/.config/google-chrome`), I haven't incorporated
-them into `bashenv`, but no solution is adequate without this. My current "solution" is a git repo in `~/.config` which the satellites pull from.
-This repo is _not_ in github and as a solution it's brittle. The contents of `~/.config/**` wasn't meant to be shared but to be synthesized on each
-host (I think).
+them into `bashenv`, but no solution is really adequate without it. My current "solution" is a git repo in `~/.config` which the satellites pull from. This repo isn't public and the approach is brittle at best. The contents of `~/.config/**` often aren't meant to be shared but to be synthesized on each host (I think). Some applications seem to view this data as opaque user specific content which you touch at your peril
+(I'm looking at you Chrome).
 
-## RAQ (Randomly Asked Questions)
+## <a id="history">History</a>
+
+I've done a few variants of bashenv for my own use, mostly by trying to graft "modules" into bash with function naming conventions.
+That's why you see function names like `f.x` (function export) or `emacs.server` (start emacs as a daemon).
+Bash doesn't have modules. It doesn't even have (function) closures. There's only so much you can do here.
+But I continue to ignore the memo. This will work, surely. Just. One. More. Function.
+
+Despite the caviats, I find this stanza helpful when faced with a new install or new container:
+
+```bash
+$p git clone ${repo} ~/bashenv ## get the bits
+source ~/bashenv/bin/bashenv.sh ## install it
+```
+When things break, I fix them. Each satillite benefits from the improvements. But I also let my daily needs drive the improvements
+and fixes, [yagni](https://en.wikipedia.org/wiki/You_aren%27t_gonna_need_it).
+
+## <a id="raq">RAQ</a> (Randomly Asked Questions)
 
 * Question: There are better shells to invest in, e.g. `zsh`, `fish`, `elvish`, `xonsh`, `nushell` and so forth. Why bother with this? 
   Answer: Bash is usually the default shell and you'll land in it often. A few simple patterns go a long, long way. 
-  But yes, bash is imperfect as a shell _and_ as a programming language. It's also ubiquitious and unavoidable.
+  But yes, bash is imperfect as a shell _and_ as a programming language. It's also ubiquitious and unavoidable. Walk away.
+  I won't see you go.
   
 * Question: If I'm going to start automating things, bash is the wrong language. 
   Answer: Busted. Except that I've noticed that I can whip up a quick bash function to automate something in about 5 minutes. 
