@@ -1,6 +1,6 @@
 # bashenv
 
-A low ceremony bash5 environment for personal customizations. And a horrible summary.
+A low ceremony bash 5 environment for personal customizations. And a horrible summary.
 
 ## <a id="summary">Summary</a>
 
@@ -281,10 +281,10 @@ Couldn't you do this (say) with bash scripts in `~/.local/bin`? Yup. Do so if th
 I generally do much of my dev work on a (somewhat beefy) daily driver machine. I have several "satellite" hosts that
 run various linux variants, virtual machines and containers. The satellites are more sacrificial than `beefy`, but not fully stateless
 (think pets, not cattle, but I treat them coldly.) 
-I will `git clone beefy:bashenv` from each of the satillites to simplify configuration all around.
+I will `git clone beefy:bashenv` from each of the satellites to simplify configuration all around.
 If I fix a bug discovered on the satellite, 
 I want to commit the changes back to `beefy` (and then on to github). To do this,
-`beefy:bashenv/.git/config` needs this stanza to accept commits from the satillites:
+`beefy:bashenv/.git/config` needs this stanza to accept commits from the satellites:
 
 ```
 [receive]
@@ -316,7 +316,7 @@ $p git clone ${repo} ~/bashenv ## get the bits
 source ~/bashenv/bin/bashenv.sh ## install it
 ```
 
-When things break, I fix them. Each satillite benefits from the improvements. But I also let my daily needs drive the improvements
+When things break, I fix them. Each sategllite benefits from the improvements. But I also let my daily needs drive the improvements
 and fixes, [yagni](https://en.wikipedia.org/wiki/You_aren%27t_gonna_need_it).
 
 ## <a id="raq">RAQ</a> (Randomly Asked Questions)
