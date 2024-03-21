@@ -14,7 +14,7 @@ f.complete ec
 
 emacs.server() (
    set -Eeuo pipefail
-   local _service=${1:-emacs-modified}
+   local _service=${1:-emacs-modified-$(os-release.id)}
 
    # Is the service enabled?
    if ! systemctl --user --quiet is-enabled ${_service}; then
@@ -22,7 +22,7 @@ emacs.server() (
        # Symlink a service unit definition into systemd's "user" folder ~/.config/systemd/user/.
        # The .service file is distro specific (nixos, fedora, etc) b/c I don't know enough systemd to customize a single one.
        local _unit="$(home)/.config/systemd/user/${_service}.service"
-       [[ -r "${_unit}" ]] || ln -s "$(u.here)/${_service}-$(os-release.id).service" "$(path.mp ${_unit})"
+       [[ -r "${_unit}" ]] || ln -s "$(u.here)/${_service}.service" "$(path.mp ${_unit})"
 
        # Enable the service and start it.
        systemctl --user enable --now ${_service} || return $(u.error "${FUNCNAME} cannot enable ${_service}")

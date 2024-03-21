@@ -268,7 +268,7 @@ procs.node() (
 f.x procs.node
 ```
 
-So the dot in the function names like `f.x` are something like `${category}.${action}`, e.g. `procs.node`. And it has nice
+So the dot in the function names like `f.x` are something like `${category}.${action}`, e.g. `procs.node`. And this convention has a nice
 default behavior that completion for `procs` includes the command itself and all the bashenv additions. Don't fight the tools.
 
 Couldn't you do this (say) with bash scripts in `~/.local/bin`? Yup. Do so if that's your preference. But personally I like
