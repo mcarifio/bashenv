@@ -19,8 +19,8 @@ After=graphical-session.target
 Type=idle
 Environment="PATH=$PATH:/usr/bin:/nix/var/nix/profiles/default/bin"
 # ExecStartPost=/bin/sleep 10
-ExecStart=emacs --fg-daemon
-ExecStop=emacsclient --eval "(save-some-buffers t)" --eval "(kill-emacs)"
+ExecStart=/usr/bin/emacs --fg-daemon
+ExecStop=/usr/bin/emacsclient --eval "(save-some-buffers t)" --eval "(kill-emacs)"
 # The location of the SSH auth socket varies by distribution, and some
 # set it from PAM, so don't override by default.
 # Environment=SSH_AUTH_SOCK=%t/keyring/ssh

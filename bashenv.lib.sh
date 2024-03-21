@@ -458,7 +458,7 @@ __path.mkcd.complete() {
 f.complete path.mkcd
 
 path.mp() (
-    local _p=$(printf "%s/%s" $(md $1/..) ${1##*/})
+    local _p=$(printf "%s/%s" $(path.md $1/..) ${1##*/})
     printf ${_p}
 )
 declare -fx path.mp
