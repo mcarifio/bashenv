@@ -267,6 +267,10 @@ procs.node() (
 )
 f.x procs.node
 ```
+
+So the dot in the function names like `f.x` are something like `${category}.${action}`, e.g. `procs.node`. And it has nice
+default behavior that completion for `procs` includes the command itself and all the bashenv additions. Don't fight the tools.
+
 Couldn't you do this (say) with bash scripts in `~/.local/bin`? Yup. Do so if that's your preference. But personally I like
 `type procs.node` to remind myself of pertinent details about `procs`. But you do you.
 
@@ -311,6 +315,7 @@ Despite the caviats, I find this stanza helpful when faced with a new install or
 $p git clone ${repo} ~/bashenv ## get the bits
 source ~/bashenv/bin/bashenv.sh ## install it
 ```
+
 When things break, I fix them. Each satillite benefits from the improvements. But I also let my daily needs drive the improvements
 and fixes, [yagni](https://en.wikipedia.org/wiki/You_aren%27t_gonna_need_it).
 
@@ -344,7 +349,7 @@ and fixes, [yagni](https://en.wikipedia.org/wiki/You_aren%27t_gonna_need_it).
   fork will just screw up my own repository, yes? Answer: Unfortunately yes, I think that's right. The function `bashenv.profile` in `~/.bash_profile`
   will look for `.sh` files in directory `profile-${USER}.d` as well as `profile.d`. This helps when you have several usernames as clients, e.g.
   `mcarifio` or `tester`. But it's unrealistic to dodge changes in `profile.d` especially if you make local modifications to forked files. In the worst
-  case pulling from the fork might silently swallow your modifications. Low ceremony has a price.
+  case pulling from the fork might silently swallow your modifications. Low ceremony can have a high price.
 
 
 
