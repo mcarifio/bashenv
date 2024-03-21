@@ -6,7 +6,7 @@ ec() (
     : '[${_pathname}] ## run emacsclient after starting emacs.service'
     set -Eeuo pipefail
     emacs.server || return $(u.error "emacs daemon not started")
-    emacsclient --reuse-frame --no-wait "$@"
+    [[ -n "${DISPLAY}" ]] && emacsclient --reuse-frame --no-wait --timeout=20 --quiet "$@" || emacsclient --tty --timeout=20 --quiet "$@"
 )
 f.complete ec
 
@@ -90,8 +90,8 @@ doom() (
 f.complete doom
 
 
-export EDITOR='emacsclient --no-wait --reuse-frame' # assuming emacsclient will fall back to -nw?
-export VISUAL='emacsclient --no-wait --reuse-frame'
+export EDITOR="ec"
+export VISUAL="${EDITOR}"
 
 emacs.env() (
     : '[${_pathname}] ## run emacsclient after starting emacs.service'
