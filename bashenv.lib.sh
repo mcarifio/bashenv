@@ -21,7 +21,6 @@ f.x() {
 }
 f.x f.x
 
-
 u.error() (
     local -i _status=$?
     : '${command} || return $(u.error this is a message)'
@@ -900,6 +899,16 @@ f.x zlib.mv
 
 for c in kind kubectl glab lab; do u.have ${c} && source <(${c} completion bash); done
 for c in /usr/share/bash-completion/completions/{docker,dhclient,nmcli,nmap,ip}; do u.have ${c} && source ${c}; done
+
+if ! u.have which; then
+    # 2>/dev/null unalias which
+    # used by scheme.source.sh
+    which() (
+        (alias; declare -f) | /usr/bin/env which --tty-only --read-alias --read-functions --show-tilde --show-dot -- $@
+    )
+    f.x which
+fi
+
 
 # dnf install gcc-toolset-11
 # src1 /opt/rh/gcc-toolset-11/enable

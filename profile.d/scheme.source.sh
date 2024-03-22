@@ -1,4 +1,4 @@
-_template.parsed() (
+scheme.parsed() (
     : '## template function that parses flags'
     set -uEeo pipefail
     shopt -s nullglob
@@ -26,7 +26,7 @@ _template.parsed() (
 )
 
 # TODO mike@carif.io: logic needs fixing
-___template.parsed.complete() {
+__scheme.parsed.complete() {
     local _command=$1 _word=$2 _previous_word=$3
     local -i _position=${COMP_CWORD} _arg_length=${#COMP_WORDS[@]}
     declare -ig _arg_start _arg_rest
@@ -55,14 +55,17 @@ ___template.parsed.complete() {
     let __previous_position=_position
 }
 
-f.complete _template.parsed
+f.complete scheme.parsed
+
+scheme() ( $(which racket guile) "$@" || u.error "${FUNCNAME} not found"; )
+f.complete scheme
 
 
-_template.env() {
+scheme.env() {
     u.error "${FUNCNAME} tbs"
 }
-f.complete _template.env
+f.complete scheme.env
 
-_template.session() {
+scheme.session() {
     u.error "${FUNCNAME} tbs"
 }
