@@ -48,16 +48,19 @@ zlib.target() (
     # map the category to a directory name e.g. .rs.pdf => ~/Document/e/pl/rs
     local _category=$(zlib.category "${2:?'expecting a pathname'}")
     local _prefix="${3:-${HOME}/Documents/e}"
-    local _notfound="${4:-2sort/${_category}}"
+    # local _notfound="${4:-2sort/${_category}}"
+    local _notfound="${4:-${PWD}}"
     if [[ -n "${_category}" ]]; then
 	# Find the first subdirectory under ${_prefix} named ${_category}. That's the target.
 	local _target=$( 2>/dev/null find "${_prefix}" -name "${_category}" -type d -print -quit )
+        [[ -z "${_target}" ]] && _target=$( 2>/dev/null find "${_prefix}" -name "${_category}" -type l -xtype d -print -quit )
 	# Find the target? Print it. Otherwise print the default, a directory with names to be sorted.
 	if [[ -n "${_target}" ]] ; then
 	    echo "${_target}"
 	else
 	    local _folder="${_prefix}/${_notfound}"
 	    [[ -d "${_folder}" ]] || mkdir -p "${_folder}"
+            >&2 echo "${_category} not yet in ${_prefix}, skipping..."
 	    echo "${_folder}"
 	fi	
     else
