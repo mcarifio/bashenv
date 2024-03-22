@@ -59,10 +59,12 @@ f.complete _template.parsed
 
 
 _template.env() {
-    u.error "${FUNCNAME} tbs"
+    # >&2 echo  "${FUNCNAME} tbs"
+    :
 }
 f.complete _template.env
 
 _template.session() {
-    u.error "${FUNCNAME} tbs"
+    # >&2 echo "${FUNCNAME} tbs"
+    :
 }
