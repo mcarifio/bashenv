@@ -312,11 +312,13 @@ But I continue to ignore the memo. This will work, surely. Just. One. More. Func
 Despite the caviats, I find this stanza helpful when faced with a new install or new container:
 
 ```bash
-$p git clone ${repo} ~/bashenv ## get the bits
+$p sudo dnf install -y git{,-extras} direnv make ## install the prerequisites
+$p git clone https://github.com/mcarifio/bashenv ## get the bits
 source ~/bashenv/bin/bashenv.sh ## install it
+bashenv.doctor ## check the install
 ```
 
-When things break, I fix them. Each sategllite benefits from the improvements. But I also let my daily needs drive the improvements
+When things break, I fix them. Each satellite benefits from the improvements. But I also let my daily needs drive the improvements
 and fixes, [yagni](https://en.wikipedia.org/wiki/You_aren%27t_gonna_need_it).
 
 ## <a id="raq">RAQ</a> (Randomly Asked Questions)

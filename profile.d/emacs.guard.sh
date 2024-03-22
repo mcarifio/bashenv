@@ -23,9 +23,9 @@ _emacs.server() (
        local _unit="$(home)/.config/systemd/user/${_service}.service"
        [[ -r "${_unit}" ]] || ln -s "$(u.here)/${_service}.service" "$(path.mp ${_unit})"
 
-       # populate ~/.emacs.d/ with initial contents .el by .el iff it's not already there. hacky
+       # populate ~/.emacs.d/ with initial contents but don't override existing files.
        for _el in $(u.here)/.emacs.d/*.el; do
-           &> /dev/null ln --backup --symbolic ${_el} $(home)/.emacs.d/
+           &> /dev/null ln --symbolic ${_el} $(home)/.emacs.d/
        done
 
        # Enable the service and start it.
