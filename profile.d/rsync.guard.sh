@@ -19,7 +19,9 @@ rsync.local() (
     local _to=$(${FUNCNAME}.target "${_from}")
 
     set -x
-    command rsync --update --human-readable --itemize-changes --fsync --archive --verbose --partial --progress --relative --backup --ignore-errors --links --mkpath --xattrs --times --hard-links "$@" "${_from}"/ "${_to}"
+    command rsync --update --human-readable --itemize-changes --fsync --archive --verbose --partial \
+            --progress --relative --backup --ignore-errors --links --mkpath --xattrs --times --hard-links --ignore-existing \
+            "$@" "${_from}"/ "${_to}"
 )
 f.complete rsync.local
 
