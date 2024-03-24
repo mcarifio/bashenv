@@ -1,4 +1,4 @@
-# usage: source _template.guard.sh [--install] [--verbose] [--trace]
+# usage: source duckdb.guard.sh [--install] [--verbose] [--trace]
 _guard=$(path.basename ${BASH_SOURCE})
 declare -A _option=([install]=0 [verbose]=0 [summarize]=0 [trace]=0)
 _undo=''
@@ -25,11 +25,13 @@ if (( ${_option[install]} )); then
     if u.have ${_guard}; then
         >&2 echo ${_guard} already installed
     else
-        u.bad "${BASH_SOURCE} --install # not implemented"
+        # asdf plugin-list --urls
+        asdf.install --url=https://github.com/jtzero/asdf-duckdb.git
+        duckdb --version
     fi
 fi
 
-_template.parsed() (
+_duckdb.parsed() (
     : '## template function that parses flags'
     set -uEeo pipefail
     shopt -s nullglob
@@ -57,21 +59,23 @@ _template.parsed() (
 )
 
 # TODO mike@carif.io: logic needs fixing
-___template.parsed.complete() {
+___duckdb.parsed.complete() {
     :
 }
 
-f.complete _template.parsed
+f.complete _duckdb.parsed
 
 
-_template.env() {
+duckdb.env() {
     # >&2 echo  "${FUNCNAME} tbs"
     :
 }
-f.complete _template.env
+f.x duckdb.env
 
-_template.session() {
+duckdb.session() {
     # >&2 echo "${FUNCNAME} tbs"
     :
 }
+f.x duckdb.session
+duckdb.session
 

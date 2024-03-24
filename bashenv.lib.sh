@@ -16,7 +16,7 @@ declare -Ax __bashenv_loaded=()
 f.x() {
     : '${_f}... # export functions ${_f}...'
     for _f in "$@"; do
-        declare -fx ${_f} && __bashenv_loaded[${_f}]=$(date) || u.error "${_f} not exported"
+        declare -fx ${_f} && __bashenv_loaded[${_f}]=$(date) || return $(u.error "${_f} not exported")
     done
 }
 f.x f.x
@@ -200,21 +200,8 @@ f.complete readline.bind
 # u.map
 u.map() {
     : '${f} ${item} ... # apply $f to each item in the list echoing the result'
-    # _options=$(getopt --name ${FUNCNAME} --shell bash --longoptions=accumulator: -- "$@") || return $?
-    # eval set -- "${_options}"
-    for _a in "$@"; do
-        case "${_a}" in
-        --)
-            shift
-            break
-            ;;
-        *) break ;;
-        esac
-        shift
-    done
-    local _f=${1:?'expecting a function'}
-    shift
-    for _a in "$@"; do ${_f} ${_a} || return $?; done
+    local _f=${1:?'expecting a function'}; shift
+    for _a in "$@"; do ${_f} ${_a} || return $(u.error "${_f} ${_a}"); done
 }
 __u.map.complete() {
     local _command=$1 _word=$2 _previous_word=$3
@@ -271,7 +258,7 @@ f.complete f.loaded
 # f.loaded.match
 f.loaded.match() {
     : '${prefix:-""} #> echo all bashenv functions matching ${prefix} '
-    f.loaded | \grep "^$1"
+    f.loaded | command grep -e "^$1"
 }
 __f.loaded.match.complete() {
     local _command=$1 _word=$2 _previous_word=$3
@@ -317,9 +304,9 @@ f.complete f.doc
 
 running.bash() {
     : '# return 0 iff you are in bash (your parent process is the bash shell)'
-    realpath /proc/$$/exe | grep -Eq 'bash$' || return 1
+    realpath /proc/$$/exe | command grep --silent -e 'bash$'
 }
-f.complete running.bash
+f.x running.bash
 
 home() (
     : '[${user}:-${USER}] #> the login directory of the ${user}.'
@@ -559,7 +546,7 @@ f.complete f.complete.for
 
 guard.for() {
     : 'guard.for ${command}... # returns 0 iff all ${commands} are on PATH '
-    u.have.all "$@"
+    u.have "${1:?'expecting a command'}"
 }
 f.x guard.for
 
@@ -582,17 +569,38 @@ guard() {
 f.complete guard
 
 # bashenv.*
-bashenv.exe.install() (
+
+
+bashenv.install.exe() (
     set -Eeuo pipefail
     local _url=${1:-'expecting a url'}
     local _target="${2:-$(path.mp \"${HOME}/.local/bin/$(basename \"${_url}\")\")}"
     wget "${_url}" -O "${_target}"
     chmod +x "${_target}"
 )
-f.complete bashenv.exe.install
+f.complete bashenv.install.exe
+
+bashenv.install.zip() (
+    : '${_url} ${_folder} ## fetch and unzip a remote zip file, moving all executables to ${_folder}'
+    set -Eeuo pipefail
+    local _url=${1:-'expecting a url'}
+    local _folder="${2:-$(path.mp \"${HOME}/.local/bin\")}"
+    # _tmp, a working folder in /tmp, to unzip ${_url}
+    local _tmp="$(mktemp --suffix=${FUNCNAME})"
+    # _tmp always removed regardless of success
+    trap -- "rm -rf ${_tmp}; trap - RETURN;" RETURN
+    curl -sSL "${_url}" | bsdtar -C "${_tmp}" -s '|[^/]*/||' -xf -
+    for _f in "${_tmp}/*"; do bashenv.is.elf "${_f}" && install --target-directory="${_folder}" "${_f}"; done
+)
+f.complete bashenv.install.zip
+
 
 bashenv.is.tracing() { grep --silent x <<< $-; }
 f.x bashenv.is.tracing
+
+bashenv.is.elf() ( file --mime-type ${1:?'expecting a pathname'} | grep --silent application/x-executable; )
+f.x bashenv.is.elf
+              
 
 bashenv.session.functions() (
     declare -Fpx | cut -f3 -d' ' | grep -e '\.session$'
@@ -631,7 +639,7 @@ u.map.tree() {
     local _action=${1:?'expecting an action, e.g. source or guard'}
     local _folder=${2:?'expecting a folder'}
     [[ -d "${_folder}" ]] || return 0
-    u.map ${_action} $(find "${_folder}" -type f -regex "[^#]+\.${_action}\.sh\$")
+    for _f in $(find "${_folder}" -type f -regex "[^#]+\.${_action}\.sh\$"); do ${_action} ${_f}; done
 }
 __u.map.tree.complete0() {
     local _command=$1 _word=$2 _previous_word=$3

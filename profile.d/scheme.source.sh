@@ -62,10 +62,13 @@ f.complete scheme
 
 
 scheme.env() {
-    u.error "${FUNCNAME} tbs"
+    # false || return $(u.error "${FUNCNAME} failed")
+    :
 }
 f.complete scheme.env
 
 scheme.session() {
-    u.error "${FUNCNAME} tbs"
+    # false || return $(u.error "${FUNCNAME} failed")
+    :
 }
+f.x scheme.session

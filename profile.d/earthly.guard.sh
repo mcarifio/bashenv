@@ -25,7 +25,8 @@ if (( ${_option[install]} )); then
     if u.have ${_guard}; then
         >&2 echo ${_guard} already installed
     else
-        bashenv.exe.install https://github.com/earthly/earthly/releases/latest/download/earthly-linux-amd64 ${HOME}/.local/bin/${_guard}
+        bashenv.install.exe https://github.com/earthly/earthly/releases/latest/download/earthly-linux-amd64 ${HOME}/.local/bin/${_guard}
+        earthly --bootstrap
         command ${_guard} --version
     fi
 fi
