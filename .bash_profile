@@ -11,6 +11,6 @@ bashenv.profile() {
     u.map.tree guard "$(bashenv.root)/profile-${USER}.d"
 
 }
-declare -fx bashenv.profile
+f.x bashenv.profile
 bashenv.profile
 

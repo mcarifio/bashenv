@@ -2,7 +2,7 @@
 _guard=$(path.basename ${BASH_SOURCE})
 declare -A _option=([install]=0 [verbose]=0 [summarize]=0 [trace]=0)
 _undo=''
-trap -- 'eval ${_undo}; unset _option _trap; trap -- - RETURN' RETURN
+trap -- 'eval ${_undo}; unset _option _undo _guard; trap -- - RETURN' RETURN
 
 if (( ${#@} )) ; then
     for _a in "$@"; do
@@ -25,11 +25,12 @@ if (( ${_option[install]} )); then
     if u.have ${_guard}; then
         >&2 echo ${_guard} already installed
     else
-        u.bad "${BASH_SOURCE} --install # not implemented"
+        bashenv.exe.install https://github.com/earthly/earthly/releases/latest/download/earthly-linux-amd64 ${HOME}/.local/bin/${_guard}
+        command ${_guard} --version
     fi
 fi
 
-_template.parsed() (
+_earthly.parsed() (
     : '## template function that parses flags'
     set -uEeo pipefail
     shopt -s nullglob
@@ -55,23 +56,17 @@ _template.parsed() (
 
     echo ${FUNCNAME} ${_file} ${_comment} ${_password} ${_trace} "$@"    
 )
-
-# TODO mike@carif.io: logic needs fixing
-___template.parsed.complete() {
-    :
-}
-
-f.complete _template.parsed
+f.x _earthly.parsed
 
 
-_template.env() {
+earthly.env() {
     # >&2 echo  "${FUNCNAME} tbs"
     :
 }
-f.complete _template.env
+f.x earthly.env
 
-_template.session() {
+earthly.session() {
     # >&2 echo "${FUNCNAME} tbs"
-    :
+    earthly bootstrap --with-autocomplete
 }
-
+f.x earthly.session

@@ -37,6 +37,14 @@ u.error() (
 )
 f.x u.error
 
+u.bad() {
+    local -i _status=${1:-1}; shift
+    local _message="${1:-\"$(caller 0) returns ${_status}\"}"; shift
+    >&2 printf '%s\n' ${_message}
+    return ${_status}
+}
+f.x u.bad
+
 test.u.err() (
     test.u.err1
 )
@@ -251,6 +259,7 @@ __u.map.mkall.complete() {
     fi
 }
 f.complete u.map.mkall
+
 
 # f.loaded
 f.loaded() {
@@ -573,6 +582,18 @@ guard() {
 f.complete guard
 
 # bashenv.*
+bashenv.exe.install() (
+    set -Eeuo pipefail
+    local _url=${1:-'expecting a url'}
+    local _target="${2:-$(path.mp \"${HOME}/.local/bin/$(basename \"${_url}\")\")}"
+    wget "${_url}" -O "${_target}"
+    chmod +x "${_target}"
+)
+f.complete bashenv.exe.install
+
+bashenv.is.tracing() { grep --silent x <<< $-; }
+f.x bashenv.is.tracing
+
 bashenv.session.functions() (
     declare -Fpx | cut -f3 -d' ' | grep -e '\.session$'
 )
