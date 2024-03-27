@@ -1,6 +1,8 @@
 direnv.session() {
-    source <(direnv hook $(u.shell 2>/dev/null || echo bash)) || u.error
+    source <(direnv hook $(u.shell 2>/dev/null || echo bash)) || return $(u.error "${FUNCNAME} failed")
 }
-declare -fx direnv.session
+f.x direnv.session
 direnv.session
+
+loaded "${BASH_SOURCE}"
 

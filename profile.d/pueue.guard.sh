@@ -10,5 +10,6 @@ pueue.session0() {
     source ${_tmp}/pueue.${_shell}
     rm -rf ${_tmp}
 }
-f.complete pueue.session0
+f.x pueue.session0
 
+loaded "${BASH_SOURCE}"

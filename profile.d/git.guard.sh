@@ -1,3 +1,20 @@
+# usage: [guard | source] git.guard.sh [--install] [--verbose] [--trace]
+_guard=$(path.basename ${BASH_SOURCE})
+declare -A _option=([install]=0 [verbose]=0 [trace]=0)
+_undo=''; trap -- 'eval ${_undo}; unset _option _undo; trap -- - RETURN' RETURN
+local -a _rest=( $(u.parse _option "$@") )
+if (( ${_option[trace]} )) && ! bashenv.is.tracing; then
+    _undo+='set +x;'
+    set -x
+fi
+if (( ${_option[install]} )); then
+    if u.have ${_guard}; then
+        >&2 echo ${_guard} already installed
+    else
+        u.bad "${BASH_SOURCE} --install # not implemented"
+    fi
+fi
+
 # TODO mike@carifio 02/20/24: probably obsolete
 git.url.folder() (
     set -Eeuo pipefail
@@ -56,3 +73,5 @@ git.unzip() (
     rm -rf ${_tmpdir}
 )
 declare -fx git.unzip
+
+loaded "${BASH_SOURCE}"

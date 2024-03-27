@@ -1,11 +1,12 @@
 copyq() (
      QT_QPA_PLATFORM=xcb command copyq "$@"
 )
-f.complete copyq
+f.x copyq
 
 copyq.session() (
-    true || u.error
+    true || return $(u.error "${FUNCNAME} failed")
 )
-f.complete copyq.session
+f.x copyq.session
 copyq.session
 
+loaded "${BASH_SOURCE}"

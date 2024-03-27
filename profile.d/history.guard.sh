@@ -5,13 +5,7 @@ history.prompt() {
      history -c
      history -r
 }
-f.complete history.prompt
-
-
-history.session() {
-    shopt -s histappend
-}
-f.complete history.session
+f.x history.prompt
 
 history.env() {
     : 'history.env [${_size}]'
@@ -19,9 +13,14 @@ history.env() {
     export HISTFILESIZE=$(( 10 * HISTSIZE ))
     export HISTCONTROL=$HISTCONTROL:ignorespace:ignoredups
     PROMPT_COMMAND+=( history.prompt )
-    # a cheat
-    history.session
 }
-f.complete history.env
+f.x history.env
 
+history.session() {
+    shopt -s histappend
+}
+f.x history.session
+history.session
+
+loaded "${BASH_SOURCE}"
 

@@ -7,7 +7,8 @@ f.complete systemctl.start _systemctl
 
 
 systemctl.env() {
-    # echo ${FUNCNAME}
-    return 0 
+    true || return $(u.error "${FUNCNAME} failed")
 }
 f.x systemctl.env
+
+loaded "${BASH_SOURCE}"

@@ -3,5 +3,7 @@ config.memory() (
 )
 f.complete config.memory
 
+loaded "${BASH_SOURCE}"
+
 
 

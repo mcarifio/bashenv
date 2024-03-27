@@ -2,7 +2,7 @@
 podman.remove.images() (
     podman rmi -f $(podmaqn images -f "dangling=true" -q)
 )
-f.complete podman.remove.images
+f.x podman.remove.images
 
 podman.env() (
     : 'alias podman as docker with a pathname sym link. works for immutable systems like nixos as well'
@@ -11,7 +11,9 @@ podman.env() (
     local _docker="${HOME}/.local/bin/docker"
     ln -srf "${_podman}" "${_docker}" || return $(u.error "cannot alias '${_docker}' as '${_podman}'")
 )
-declare -fx podman.env
+f.x podman.env
+
+loaded "${BASH_SOURCE}"
 
 
 

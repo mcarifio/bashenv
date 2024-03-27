@@ -62,13 +62,13 @@ f.complete scheme
 
 
 scheme.env() {
-    # false || return $(u.error "${FUNCNAME} failed")
-    :
+    true || return $(u.error "${FUNCNAME} failed")
 }
 f.complete scheme.env
 
 scheme.session() {
-    # false || return $(u.error "${FUNCNAME} failed")
-    :
+    true || return $(u.error "${FUNCNAME} failed")
 }
 f.x scheme.session
+
+loaded "${BASH_SOURCE}"

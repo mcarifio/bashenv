@@ -1,11 +1,29 @@
 # dnf and decl must come first
 # https://unix.stackexchange.com/questions/403181/how-to-pin-a-package-in-dnf-fedora
 # dnf install 'dnf-command(versionlock)'
+
+# usage: [guard | source] dnf.guard.sh [--install] [--verbose] [--trace]
+_guard=$(path.basename ${BASH_SOURCE})
+declare -A _option=([install]=0 [verbose]=0 [trace]=0)
+_undo=''; trap -- 'eval ${_undo}; unset _option _undo; trap -- - RETURN' RETURN
+local -a _rest=( $(u.parse _option "$@") )
+if (( ${_option[trace]} )) && ! bashenv.is.tracing; then
+    _undo+='set +x;'
+    set -x
+fi
+if (( ${_option[install]} )); then
+    if u.have ${_guard}; then
+        >&2 echo ${_guard} already installed
+    else
+        u.bad "${BASH_SOURCE} --install # not implemented"
+    fi
+fi
+
 dnf() (
     : "sudo dnf ..."
     sudo /usr/bin/dnf "$@" -y --allowerasing
 )
-f.complete dnf
+f.x dnf
 
 dnf.src.rpm() (
   : "${FUNCNAME[0]} \${src.rpm} [\${destination_dir:-$PWD/src.rpm}] # extract source rpm to an (optional) destination directory"
@@ -28,39 +46,40 @@ dnf.src.rpm() (
   for _tar in ${_destdir}/*.tar.* ${_destdir}/*.t?z; do &> /dev/null tar -xaf --one-top-level -C "${_destdir}" "${_tar}"; done
   >&2 ${_src_rpm} extracted to ${_destdir}
 )
-f.complete dnf.src.rpm
+f.x dnf.src.rpm
 
 
 
 dnf.files() (
     : "dnf.files lists all files for a package; see also rpm -ql ${package}"
     command dnf repoquery --installed -l ${1:?'expecting a package'}
-); f.complete dnf.files
+)
+f.x dnf.files
 
 # lock the kernel to a specific version. update in a more controlled way.
 dnf.lock-kernel() (
     local _v=${1:-$(uname -r)}
     sudo dnf versionlock kernel-${_v} kernel-{core,modules,devel,tools,abi-stablelists}-${_v}
 )
-f.complete dnf.lock-kernel
+f.x dnf.lock-kernel
 
 # what package does a command come from?
 dnf.for() (
     rpm -qf $(type -p ${1:?'expecting a command'}) --qf '%{NAME}'
 )
-f.complete dnf.for
+f.x dnf.for
 
 rpm.extract() {
     local _rpm_file=${1:?'expecting an rpm file'}
     rpm2cpio ${_rpm_file} | cpio -idmv
 }
-f.complete rpm.extract
+f.x rpm.extract
 
 dnf.from() (
     : "dnf.from returns the repo id a package originated from"
     dnf repoquery --qf "%{repoid}" ${1:?'expecting a package'}
 )
-f.complete dnf.from
+f.x dnf.from
 
 
 
@@ -72,18 +91,19 @@ fc.upgrade() (
     dnf system-upgrade download -y --nogpgcheck --releasever=${_next_version}
     dnf system-upgrade reboot
 )
-f.complete fc.upgrade
+f.x fc.upgrade
 
 dnf.id.last() (
     dnf history list last|tail -n1|cut -d'|' -f1
-); declare -fx dnf.id.last
+)
+f.x dnf.id.last
 
 dnf.missing() (
     for _p in "$@"; do
         rpm -q ${_p} > /dev/null || echo -n "${_p} "
     done
 )
-declare -fx dnf.missing
+f.x dnf.missing
 
 dnf.install() (
     local _missing=$(dnf.missing "$@")
@@ -92,6 +112,7 @@ dnf.install() (
         dnf install --nobest --skip-broken ${_missing}
     fi
 )
-declare -fx dnf.install
+f.x dnf.install
 
+loaded "${BASH_SOURCE}"
 

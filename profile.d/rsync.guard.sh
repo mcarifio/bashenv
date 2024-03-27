@@ -36,3 +36,4 @@ rsync.default() (
 )
 f.complete rsync.default
 
+loaded "${BASH_SOURCE}"

@@ -3,4 +3,5 @@
 export p=' '
 PS1="${PS1:0:-1}p "
 
+loaded "${BASH_SOURCE}"
 

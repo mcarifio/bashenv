@@ -1,22 +1,10 @@
 # usage: source _template.guard.sh [--install] [--verbose] [--trace]
-_guard=$(path.basename ${BASH_SOURCE})
-declare -A _option=([install]=0 [verbose]=0 [summarize]=0 [trace]=0)
-_undo=''
-trap -- 'eval ${_undo}; unset _option _undo; trap -- - RETURN' RETURN
 
-if (( ${#@} )) ; then
-    for _a in "$@"; do
-        case "${_a}" in
-            # --something=some_value => _option[something]=some_value
-            --*=*) [[ "${_a}" =~ --([^=]+)=(.+) ]] && _option[${BASH_REMATCH[1]}]="${BASH_REMATCH[2]}";;
-            # --something => _option[something]=1
-	    --*) _option[${_a:2}]=1;;
-            --) shift; break;;
-            *) break;;
-        esac
-        shift
-    done
-fi
+# usage: [guard | source] _template.guard.sh [--install] [--verbose] [--trace]
+_guard=$(path.basename ${BASH_SOURCE})
+declare -A _option=([install]=0 [verbose]=0 [trace]=0)
+_undo=''; trap -- 'eval ${_undo}; unset _option _undo; trap -- - RETURN' RETURN
+local -a _rest=( $(u.parse _option "$@") )
 if (( ${_option[trace]} )) && ! bashenv.is.tracing; then
     _undo+='set +x;'
     set -x
@@ -57,5 +45,4 @@ _template.session() {
 }
 f.x _template.session
 
-_template.loaded() ( return 0; )
-f.x _template.loaded
+loaded "${BASH_SOURCE}"

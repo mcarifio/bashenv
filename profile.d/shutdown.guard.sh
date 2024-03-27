@@ -5,6 +5,7 @@ sa.shutdown.others() (
 )
 f.complete sa.shutdown.others
 
+loaded "${BASH_SOURCE}"
 
 
 

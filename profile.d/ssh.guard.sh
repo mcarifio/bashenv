@@ -138,4 +138,6 @@ f.complete ssh.terminator.all
 ssh.env() {
     touch ${HOME}/hushlogin
 }
-declare -fx ssh.env
+f.x ssh.env
+
+loaded "${BASH_SOURCE}"

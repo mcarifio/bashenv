@@ -24,7 +24,7 @@ python.pip() (
 )
 f.complete python.pip
 
-
+loaded "${BASH_SOURCE}"
 
 
     

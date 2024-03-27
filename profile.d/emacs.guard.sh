@@ -2,6 +2,24 @@
 # systemctl --user enable --now emacs-modified-$(os-release.id)
 # journalctl --user --unit emacs-modified--$(os-release.id)
 # loginctl enable-linger ${USER}
+
+_guard=$(path.basename ${BASH_SOURCE})
+declare -A _option=([install]=0 [verbose]=0 [summarize]=0 [trace]=0)
+_undo=''; trap -- 'eval ${_undo}; unset _option _undo; trap -- - RETURN' RETURN
+local -a _rest=( $(u.parse _option "$@") )
+if (( ${_option[trace]} )) && ! bashenv.is.tracing; then
+    _undo+='set +x;'
+    set -x
+fi
+if (( ${_option[install]} )); then
+    if u.have ${_guard}; then
+        >&2 echo ${_guard} already installed
+    else
+        u.bad "${BASH_SOURCE} --install # not implemented"
+    fi
+fi
+
+
 ec() (
     : '[${_pathname}] ## run emacsclient after starting emacs.service'
     set -Eeuo pipefail
@@ -21,7 +39,7 @@ _emacs.server() (
        # Symlink a service unit definition into systemd's "user" folder ~/.config/systemd/user/.
        # The .service file is distro specific (nixos, fedora, etc) b/c I don't know enough systemd to customize a single one.
        local _unit="$(home)/.config/systemd/user/${_service}.service"
-       [[ -r "${_unit}" ]] || ln -s "$(u.here)/${_service}.service" "$(path.mp ${_unit})"
+       [[ -r "${_unit}" ]] || ln -sf "$(u.here)/.config/systemd/user${_service}.service" "$(path.mp ${_unit})"
 
        # populate ~/.emacs.d/ with initial contents but don't override existing files.
        for _el in $(u.here)/.emacs.d/*.el; do
@@ -105,3 +123,5 @@ emacs.env() (
     loginctl enable-linger ${USER}
 )
 f.x emacs.env
+
+loaded "${BASH_SOURCE}"

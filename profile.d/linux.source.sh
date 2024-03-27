@@ -21,4 +21,5 @@ linux.modules.signed() (
 )
 f.complete linux.modules.signed
 
+loaded "${BASH_SOURCE}"
 

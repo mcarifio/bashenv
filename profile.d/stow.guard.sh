@@ -5,3 +5,4 @@ stow.env() {
 }
 f.complete stow.env
 
+loaded "${BASH_SOURCE}"

@@ -15,3 +15,5 @@ snap.install() (
     snap install "$@"
 )
 f.complete snap.install
+
+loaded "${BASH_SOURCE}"

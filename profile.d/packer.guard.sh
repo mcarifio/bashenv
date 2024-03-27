@@ -1,8 +1,8 @@
 packer.session() {
     complete -C /usr/bin/packer packer
 }
-f.complete packer.session
+f.x packer.session
 packer.session
 
-   
+loaded "${BASH_SOURCE}"   
 

@@ -53,5 +53,6 @@ example.forward.f() (
     : 'invokes python ${location}/example.forward.f.py $@'
     forward.f "$@"
 )
-declare -fx example.forward.f
+f.x example.forward.f
 
+loaded "${BASH_SOURCE}"

@@ -11,11 +11,13 @@ _sgpt_readline() {
     READLINE_LINE="$(sgpt --shell  --no-interaction <<< \"${READLINE_LINE}\") ## sgpt '${READLINE_LINE}' "
     READLINE_POINT=${#READLINE_LINE}
 }
-declare -fx _sgpt_readline
+f.x _sgpt_readline
 
 sgpt.session() {
     bind -x '"\C-xl"':_sgpt_readline || u.error
 }
-f.complete sgpt.session
+f.x sgpt.session
 sgpt.session
+
+loaded "${BASH_SOURCE}"
 

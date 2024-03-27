@@ -105,6 +105,5 @@ zlib.categorize.all() (
 )
 f.x zlib.categorize.all
 
-zlib.loaded() ( return 0; )
-f.x zlib.loaded
+loaded "${BASH_SOURCE}"
 

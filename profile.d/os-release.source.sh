@@ -47,3 +47,4 @@ os.release() (
 )
 f.complete os.release
 
+loaded "${BASH_SOURCE}"

@@ -6,6 +6,7 @@ path.add "$(home)/.hishtory"
 hishtory.session() {
     source $(home)/.hishtory/config.sh
 }
-f.complete hishtory.session
+f.x hishtory.session
 hishtory.session
 
+loaded "${BASH_SOURCE}"

@@ -2,3 +2,5 @@
 # dnf install pdsh pdsh-rcmd-ssh pdsh-mod-dshgroup pdsh-mod-genders pdsh-mod-netgroup
 
 export PDSH_RCMD_TYPE=ssh
+
+loaded "${BASH_SOURCE}"

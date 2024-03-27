@@ -1,5 +1,25 @@
 # deno https://bitbucket.org/ciq-mcarifio/ehcm/ts/ehcm.ts # to be supplied
 
+# usage: [guard | source] ehcm.guard.sh [--install] [--verbose] [--trace]
+_guard=$(path.basename ${BASH_SOURCE})
+declare -A _option=([install]=0 [verbose]=0 [trace]=0)
+_undo=''; trap -- 'eval ${_undo}; unset _option _undo; trap -- - RETURN' RETURN
+local -a _rest=( $(u.parse _option "$@" ) )
+if (( ${_option[trace]} )) && ! bashenv.is.tracing; then
+    _undo+='set +x;'
+    set -x
+fi
+if (( ${_option[install]} )); then
+    if u.have ${_guard}; then
+        >&2 echo ${_guard} already installed
+    else
+        u.bad "${BASH_SOURCE} --install # not implemented"
+    fi
+fi
+
+
+
+
 ehcm.template() (
     : 'ehcm.template [${name]] # generate a starting function definition for ${name}'
     local _prefix="${FUNCNAME%.*}"
@@ -14,7 +34,7 @@ ehcm.template() (
     ); f.complete ${_fname}
 EOF
 )
-f.complete ehcm.template
+f.x ehcm.template
 
 
 ehcm.err() (
@@ -24,20 +44,20 @@ ehcm.err() (
     >&2 echo "${_from}: ${_message}"
     return 1
 )
-f.complete ehcm.err
+f.x ehcm.err
 
 ehcm.nyi() (
     : 'ehch.nyi # caller not yet implemented'
     ehcm.err "${FUNCNAME[-1]} not yet implemented" "${BASH_SOURCE}:${BASH_LINENO[-1]}"
 )
-f.complete ehcm.nyi
+f.x ehcm.nyi
 
 ehcm.gsheet.url() (
     : 'ehcm.url # return gsheel url for ehcm'
     set -Eeuo pipefail
     echo "https://docs.google.com/spreadsheets/d/1QnPP6toEMsLidhGXSrKMWuKPB19VpSYYZmAttM51fWQ"
 )
-f.complete ehcm.gsheet.url
+f.x ehcm.gsheet.url
 
 ehcm.append() (
     : 'ehcm.append # add a row to gsheet, tbs'
@@ -45,7 +65,7 @@ ehcm.append() (
     ehch.nyi
     echo "do something"
 )
-f.complete ehcm.append
+f.x ehcm.append
 
 ehcm.distro() (
      : 'ehcm.distro # '
@@ -53,12 +73,14 @@ ehcm.distro() (
     source /etc/os-release
     echo ${ID}-${ID_VERSION}-${arch}
 )
-f.complete ehcm.distro
+f.x ehcm.distro
 
 ehcm.dumpmachine() (
     : 'ehcm.dumpmachine # '
     set -Eeuo pipefail
     gcc -dumpmachine 
 )
-f.complete ehcm.dumpmachine
+f.x ehcm.dumpmachine
+
+loaded "${BASH_SOURCE}"
 

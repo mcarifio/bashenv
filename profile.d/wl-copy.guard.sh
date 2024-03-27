@@ -10,4 +10,6 @@ cb.pn() (
 )
 f.complete cb.pn
 
+loaded "${BASH_SOURCE}"
+
 

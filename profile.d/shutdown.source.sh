@@ -7,3 +7,5 @@ shutdown() (
     sudo shutdown -h now    
 )
 f.complete shutdown
+
+loaded "${BASH_SOURCE}"

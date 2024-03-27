@@ -187,6 +187,24 @@ f.apply() (
 )
 f.complete f.apply
 
+loaded() {
+    : 'make an exported function ${name}.loaded that always succeeds.'
+    local _name="$(path.basename ${1:?'expecting a name'})"
+    local _predicate=${_name}.loaded
+    local _pathname=${_name}.pathname
+    eval "${_predicate}() ( return 0; )"
+    f.x ${_predicate}
+    eval "${_pathname}() (echo $(realpath -s $1); )"
+    f.x ${_pathname}
+}
+f.x loaded
+
+loaded.list() (
+    f.loaded | command grep -e "\.loaded$"
+)
+f.x loaded.list
+
+
 # readline;
 readline.bind() (
     local _key_sequence=${1:?'expecting a key sequence'}
@@ -208,9 +226,9 @@ u.parse() {
     if (( ${#_line[@]} )) ; then
         for _a in "${_line[@]}"; do
             case "${_a}" in
+                --) shift; ((++_position)); break;;
                 # --something=some_value => _options[something]=some_value
                 --*=*) [[ "${_a}" =~ --([^=]+)=(.+) ]] && _options[${BASH_REMATCH[1]}]="${BASH_REMATCH[2]}";;
-                --) shift; ((++_position)); break;;
                 # --something => _options[something]=1
 	        --*) _options[${_a:2}]=1;;
                 *) break;;
@@ -1051,3 +1069,7 @@ gnome.restart() (
     busctl --user call org.gnome.Shell /org/gnome/Shell org.gnome.Shell Eval s 'Meta.restart("Restarting…")'
 )
 f.x gnome.restart
+
+
+# bashenv.loaded || echo "bashenv not loaded"
+loaded "${BASH_SOURCE}"

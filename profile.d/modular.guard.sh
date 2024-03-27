@@ -5,3 +5,5 @@ modular.auth() (
 f.complete modular.auth
 
 path.add ${HOME}/.modular/pkg/packages.modular.com_mojo/bin
+
+loaded "${BASH_SOURCE}"

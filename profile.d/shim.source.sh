@@ -8,3 +8,5 @@ __shim.complete() {
 }
 
 f.complete shim # __shim.complete
+
+loaded "${BASH_SOURCE}"
