@@ -39,7 +39,7 @@ _emacs.server() (
        # Symlink a service unit definition into systemd's "user" folder ~/.config/systemd/user/.
        # The .service file is distro specific (nixos, fedora, etc) b/c I don't know enough systemd to customize a single one.
        local _unit="$(home)/.config/systemd/user/${_service}.service"
-       [[ -r "${_unit}" ]] || ln -sf "$(u.here)/.config/systemd/user${_service}.service" "$(path.mp ${_unit})"
+       [[ -r "${_unit}" ]] || ln -sf "$(u.here)/.config/systemd/${_service}.service" "$(path.mp ${_unit})"
 
        # populate ~/.emacs.d/ with initial contents but don't override existing files.
        for _el in $(u.here)/.emacs.d/*.el; do
