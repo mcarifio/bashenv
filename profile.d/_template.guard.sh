@@ -1,12 +1,3 @@
-# You probably installed this using asdf, not dnf: asdf.plugin+install awscli
-
-# @see: { https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-envvars.html }
-
-# export a pathname as an environment variable iff the pathname is readable by this user.
-# make this a utility function for others to use. But define it before first use
-# (which could prove to be a little confusing).
-
-
 # usage: source _template.guard.sh [--install] [--verbose] [--trace]
 _guard=$(path.basename ${BASH_SOURCE})
 declare -A _option=([install]=0 [verbose]=0 [summarize]=0 [trace]=0)
@@ -38,16 +29,33 @@ if (( ${_option[install]} )); then
     fi
 fi
 
+# not working
+_template.parse() (
+    : '## example: parse callers arglist'
+    set -uEeo pipefail
+    shopt -s nullglob
+    declare -A _template_options=([file]="${PWD}/${FUNCNAME}" [comment]="${HOSTNAME}:and_some_stuff" [trace]=0)
+    local -a _rest=( $(u.parse _template_options --foo=bar --user=${USER} --trace 1 2 3) )
+    printf '%s ' ${FUNCNAME}; declare -p _template_options; printf '%s ' ${_rest[@]}
+)
+
+# TODO mike@carif.io: logic needs fixing
+___template.parse.complete() {
+    :
+}
+
+f.complete _template.parse
 
 
+_template.env() {
+    true || return $(u.error "${FUNCNAME} failed")
+}
+f.x _template.env
 
+_template.session() {
+    true || return $(u.error "${FUNCNAME} failed")
+}
+f.x _template.session
 
-
-# export AWS_CONFIG_FILE=~/.config/aws/config
-path.name AWS_CONFIG_FILE ~/.config/aws/config
-
-# export AWS_SHARED_CREDENTIALS_FILE=~/.config/aws/credentials
-path.name AWS_SHARED_CREDENTIALS_FILE ~/.config/aws/credentials
-
-aws.loaded() ( return 0; )
-f.x aws.loaded
+_template.loaded() ( return 0; )
+f.x _template.loaded

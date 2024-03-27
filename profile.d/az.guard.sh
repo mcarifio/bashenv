@@ -5,7 +5,10 @@
 export AZURE_CONFIG_DIR=${HOME}/.config/azure # ${AZURE_CONFIG_DIR}/config
 
 az.session() {
-    true || u.error
+    true || return $(u.error "${FUNCNAME} failed")
 }
-declare -fx az.session
+f.x az.session
 az.session
+
+az.loaded() ( return 0; )
+f.x az.loaded

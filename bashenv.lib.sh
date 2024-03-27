@@ -196,6 +196,42 @@ readline.bind() (
 )
 f.complete readline.bind
 
+
+
+# u -- utility functions
+
+u.parse() {
+    : 'local -A _my_options=([one]=1 [two]=2); local -a _rest=( $(u.parse _my_options --one=won --three=3 -- x y) ) # see _u.parse.example()'
+    local -n _options=${1:?'expecting an associative array'}; shift
+    local -i _position=0
+    local -a _line=( "$@" )
+    if (( ${#_line[@]} )) ; then
+        for _a in "${_line[@]}"; do
+            case "${_a}" in
+                # --something=some_value => _options[something]=some_value
+                --*=*) [[ "${_a}" =~ --([^=]+)=(.+) ]] && _options[${BASH_REMATCH[1]}]="${BASH_REMATCH[2]}";;
+                --) shift; ((++_position)); break;;
+                # --something => _options[something]=1
+	        --*) _options[${_a:2}]=1;;
+                *) break;;
+            esac
+            shift
+            ((++_position))
+        done
+    fi
+    printf '%s ' ${_line[@]:${_position}}
+}
+f.x u.parse
+
+_u.parse.example() (
+    declare -A _o=([author]=$USER)
+    declare -a _rest=( $(u.parse _o --trace=1 --author=$HOSTNAME+$USER --foo=bar -- one two three) )
+    printf '%s ' ${FUNCNAME}; declare -p _o
+    printf '%s ' ${_rest[@]}
+)
+
+
+
 # TODO mike@carif.io: rename u.map to f.map
 # u.map
 u.map() {

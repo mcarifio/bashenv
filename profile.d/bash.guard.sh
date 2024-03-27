@@ -14,7 +14,7 @@ bash.source() (
     local _where=( $(declare -F ${1:?'expecting a function'}) )
     echo ${_where[2]}
 )
-declare -fx bash.source
+f.x bash.source
 
 
 
@@ -23,14 +23,17 @@ bash.reload() {
     : 'bash.reload ${function} ## reload the source file that defined ${function}'
     source $(bash.source ${1:?'expecting a function'})
 }
-f.complete bash.reload
+f.x bash.reload
 
 bash.shopt() {
     shopt -s cdable_vars autocd
 }
-f.complete bash.shopt
+f.x bash.shopt
 
 
 export _bash_shopt=${BASHOPTS}
 bash.shopt
+
+bash.loaded() ( return 0; )
+f.x bash.loaded
 

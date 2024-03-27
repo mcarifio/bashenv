@@ -103,4 +103,8 @@ zlib.categorize.all() (
 	mv -v ${_f} ${_target}
     done
 )
-f.complete zlib.categorize.all
+f.x zlib.categorize.all
+
+zlib.loaded() ( return 0; )
+f.x zlib.loaded
+
