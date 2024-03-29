@@ -2,7 +2,7 @@
 _guard=$(path.basename ${BASH_SOURCE})
 declare -A _option=([install]=0 [verbose]=0 [trace]=0)
 _undo=''; trap -- 'eval ${_undo}; unset _option _undo; trap -- - RETURN' RETURN
-local -a _rest=( $(u.parse _option "$@" )
+local -a _rest=( $(u.parse _option "$@") )
 if (( ${_option[trace]} )) && ! bashenv.is.tracing; then
     _undo+='set +x;'
     set -x

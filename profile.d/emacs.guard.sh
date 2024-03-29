@@ -23,7 +23,7 @@ f.x emacs.install.ubuntu
 # source ${_guard}.guard.sh --install
 if (( ${_option[install]} )) && ! u.have ${_guard}; then
     emacs.install ${_rest} || return $(u.error "emacs.install failed")
-}
+fi
 
 
 
