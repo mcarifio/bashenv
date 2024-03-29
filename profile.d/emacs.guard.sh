@@ -13,13 +13,16 @@ if (( ${_option[trace]} )) && ! bashenv.is.tracing; then
 fi
 
 # install by distro id
+emacs.install() ( emacs.install.$(os-release.id); )
+f.x emacs.install
 emacs.install.fedora() ( dnf install emacs; )
 f.x emacs.install.fedora
 emacs.install.ubuntu() ( sudo apt upgrade -y; sudo apt install -y emacs; )
 f.x emacs.install.ubuntu
 
+# source ${_guard}.guard.sh --install
 if (( ${_option[install]} )) && ! u.have ${_guard}; then
-    emacs.install.$(os-release.id) ${_rest} || return $(u.error "emacs.install.$(os-release.id) missing or failed")
+    emacs.install ${_rest} || return $(u.error "emacs.install failed")
 }
 
 
