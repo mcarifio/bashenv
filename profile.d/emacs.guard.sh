@@ -11,13 +11,18 @@ if (( ${_option[trace]} )) && ! bashenv.is.tracing; then
     _undo+='set +x;'
     set -x
 fi
-if (( ${_option[install]} )); then
-    if u.have ${_guard}; then
-        >&2 echo ${_guard} already installed
-    else
-        u.bad "${BASH_SOURCE} --install # not implemented"
-    fi
-fi
+
+# install by distro id
+emacs.install.fedora() ( dnf install emacs; )
+f.x emacs.install.fedora
+emacs.install.ubuntu() ( sudo apt upgrade -y; sudo apt install -y emacs; )
+f.x emacs.install.ubuntu
+
+if (( ${_option[install]} )) && ! u.have ${_guard}; then
+    emacs.install.$(os-release.id) ${_rest} || return $(u.error "emacs.install.$(os-release.id) missing or failed")
+}
+
+
 
 
 ec() (
