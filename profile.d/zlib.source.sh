@@ -86,7 +86,7 @@ f.complete zlib.mv
 
 zlib.mv.all() (
     : 'zlib.mv-all *.{pdf,epub} # mv all matching pathnames to a target based on the pathname "category"'
-    for _src in "$@"; do mv -v "${_src}" $(zlib.target '' "${_src}") || true ; done
+    for _src in $([[ -n "$@"]] && echo "$@" || echo *.{pdf,epub}); do mv -v "${_src}" $(zlib.target '' "${_src}") || true ; done
 )
 f.complete zlib.mv
 
