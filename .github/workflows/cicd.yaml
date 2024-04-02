@@ -10,14 +10,15 @@ on:
 jobs:
   run-bats:
     # TODO mike@carif.io: pass this from repo, say .github/workflows/defaults.yaml?
-    runs-on: fedora-latest
+    # fedora-latest doesn't exist. Are you kidding me?
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       # - uses: actions/setup-node@v4
       # - run: npm install -g bats
       - run: |
-             sudo dnf upgrade -y
-             sudo dnf install -y bats tree
+             sudo apt upgrade -y
+             sudo apt install -y bats tree
              id
              tree -aF
              bats -v
