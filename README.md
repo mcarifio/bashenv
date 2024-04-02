@@ -325,7 +325,7 @@ and fixes, [yagni](https://en.wikipedia.org/wiki/You_aren%27t_gonna_need_it).
 
 * Question: There are better shells to invest in, e.g. `zsh`, `fish`, `elvish`, `xonsh`, `nushell` and so forth. Why bother with this? 
   Answer: Bash is usually the default shell and you'll land in it often. A few simple patterns go a long, long way. 
-  But yes, bash is imperfect as a shell _and_ as a programming language. It's also ubiquitious and unavoidable. Walk away.
+  But yes, bash is imperfect as a shell _and_ as a programming language; that's not new news. It's also ubiquitious and unavoidable. Walk away.
   I won't see you go.
   
 * Question: If I'm going to start automating things, bash is the wrong language. 
@@ -344,8 +344,8 @@ and fixes, [yagni](https://en.wikipedia.org/wiki/You_aren%27t_gonna_need_it).
   + I avoid confusing bash constructs like regular expression matching using `=~`. I can stop googling `awk match`.
   
 * Question: Configuation depends on system files, for example `/etc/hosts`. Answer: Busted. In my particular case, I have a local
-  dns server via my router but hostname completions use `/etc/hosts` by default and "widening the scope" for this takes work and time
-  I don't currently have. It also introduces networking and network management into the mix. Which isn't bad. But beyond bash functions.
+  dns server via my router but hostname completions use `/etc/hosts` by default and "widening the scope" for this takes work, time and perhaps
+  even expertise I don't currently have. It also introduces networking and network management into the mix. Which isn't bad. But beyond bash functions.
   
 * Question: As soon as I start modifying and adding files in `~/bashenv/profile.d`, I will diverge from this repository and pulling from the
   fork will just screw up my own repository, yes? Answer: Unfortunately yes, I think that's right. The function `bashenv.profile` in `~/.bash_profile`
@@ -353,7 +353,11 @@ and fixes, [yagni](https://en.wikipedia.org/wiki/You_aren%27t_gonna_need_it).
   `mcarifio` or `tester`. But it's unrealistic to dodge changes in `profile.d` especially if you make local modifications to forked files. In the worst
   case pulling from the fork might silently swallow your modifications. Low ceremony can have a high price.
 
-
+* Question: It seems like bashenv is (and will be) in constant flux. Answer: Maybe. It's certainly a work in progress. I have checked in code that I
+  know doesn't work. But you can too and it (probably) won't break your environment. I think of bashenv as "sparse": one guard or source file doesn't affect
+  another. The only global file that affects everything is `bashenv.lib.sh`. It contains utility functions that have been refactored out. If you can't load
+  that you'll know it first thing when you log in. After that, each guard or source file is independent. The error messages are unsightly but not fatal.
+  
 
 
 
