@@ -3,7 +3,7 @@
 
 name: cicd
 # https://docs.github.com/en/actions/learn-github-actions/contexts#github-context
-run-name: "{run: on: { event: ${{ github.event_name }} }, as: ${{ github.actor }}, workflow: ${{ github.workflow }}, with: {content: ${{ github.repository }}@${{ github.ref }} }, platform: ${{ runner.os }} } } }"
+run-name: "{run: on: { event: ${{ github.event_name }} }, as: ${{ github.actor }}, workflow: ${{ github.workflow }}, with: {content: ${{ github.repository }}@${{ github.ref }} } } } }"
 on:
   push:
     branches: [ main ]
