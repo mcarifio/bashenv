@@ -218,6 +218,7 @@ f.complete readline.bind
 
 # u -- utility functions
 
+# Not working. Doesn't side effect _options associative array.
 u.parse() {
     : 'local -A _my_options=([one]=1 [two]=2); local -a _rest=( $(u.parse _my_options --one=won --three=3 -- x y) ) # see _u.parse.example()'
     local -n _options=${1:?'expecting an associative array'}; shift
@@ -237,7 +238,7 @@ u.parse() {
             ((++_position))
         done
     fi
-    printf '%s ' ${_line[@]:${_position}}
+    # printf '%s ' ${_line[@]:${_position}}
 }
 f.x u.parse
 
