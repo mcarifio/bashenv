@@ -353,10 +353,13 @@ and fixes, [yagni](https://en.wikipedia.org/wiki/You_aren%27t_gonna_need_it).
   `mcarifio` or `tester`. But it's unrealistic to dodge changes in `profile.d` especially if you make local modifications to forked files. In the worst
   case pulling from the fork might silently swallow your modifications. Low ceremony can have a high price.
 
-* Question: It seems like bashenv is (and will be) in constant flux. Answer: Maybe. It's certainly a work in progress. I have checked in code that I
-  know doesn't work. But you can too and it (probably) won't break your environment. I think of bashenv as "sparse": one guard or source file doesn't affect
-  another. The only global file that affects everything is `bashenv.lib.sh`. It contains utility functions that have been refactored out. If you can't load
-  that you'll know it first thing when you log in. After that, each guard or source file is independent. The error messages are unsightly but not fatal.
+* Question: It seems like bashenv is (and will be) in constant flux. Answer: Maybe. The template `_template.guard.sh` seems be solidifying and I've
+  not added many functions to `bashenv.lib.sh`. If anything, I should remove much of the stuff at the bottom of the file.
+  I have checked in code that I know doesn't work. But you can too and it (probably) won't break your environment.
+  I think of bashenv as "sparse": one guard or source file doesn't affect another. The only global file that affects everything is
+  `bashenv.lib.sh`. It contains utility functions that have been factored out. If you can't load
+  that you'll know it first thing when you log in. After that, each guard or source file is independent. The error messages are unsightly but rarely
+  fatal.
   
 
 
@@ -364,7 +367,8 @@ and fixes, [yagni](https://en.wikipedia.org/wiki/You_aren%27t_gonna_need_it).
 
 * Add a precommit hook that applies `shfmt` before committing.
 * Add [bats testing](https://bats-core.readthedocs.io/en/stable/tutorial.html) to each source|guard.
-* Add ci/cd ([github actions](https://docs.github.com/en/actions/learn-github-actions)?) to test _after_ check-in.
+* Add [github actions](https://docs.github.com/en/actions/learn-github-actions) to test _after_ github commits.
+
 
 
 

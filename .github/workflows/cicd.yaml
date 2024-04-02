@@ -1,0 +1,23 @@
+# {content: "https://github.com/actions/starter-workflows/tree/main/ci", doc: "https://docs.github.com/en/actions/quickstart", }
+# TODO: can I add my own stanzas and have gh actions skip them?
+
+name: cicd
+# https://docs.github.com/en/actions/learn-github-actions/contexts#github-context
+run-name: "{run: on: { event: ${{ github.event_name }} }, as: ${{ github.actor }}, workflow: ${{ github.workflow }}, with: {content: ${{ github.repository }}@${{ github.ref }} }, platform: ${{ runner.os }} } } }"
+on:
+  push:
+    branches: [ main ]
+jobs:
+  run-bats:
+    # TODO mike@carif.io: pass this from repo, say .github/workflows/defaults.yaml?
+    runs-on: fedora-latest
+    steps:
+      - uses: actions/checkout@v4
+      # - uses: actions/setup-node@v4
+      # - run: npm install -g bats
+      - run: |
+             sudo dnf upgrade -y
+             sudo dnf install -y bats tree
+             id
+             tree -aF
+             bats -v
