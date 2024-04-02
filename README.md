@@ -360,4 +360,11 @@ and fixes, [yagni](https://en.wikipedia.org/wiki/You_aren%27t_gonna_need_it).
   
 
 
+## <a id="todo">TODO</a>
+
+* Add a precommit hook that applies `shfmt` before committing.
+* Add [bats testing](https://bats-core.readthedocs.io/en/stable/tutorial.html) to each source|guard.
+* Add ci/cd ([github actions](https://docs.github.com/en/actions/learn-github-actions)?) to test _after_ check-in.
+
+
 
