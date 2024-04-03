@@ -367,7 +367,8 @@ and fixes, [yagni](https://en.wikipedia.org/wiki/You_aren%27t_gonna_need_it).
 
 * Add a precommit hook that applies `shfmt` before committing.
 * Add [bats testing](https://bats-core.readthedocs.io/en/stable/tutorial.html) to each source|guard.
-* Add [github actions](https://docs.github.com/en/actions/learn-github-actions) to test _after_ github commits.
+* Refine [github actions](https://docs.github.com/en/actions/learn-github-actions) to test _after_ github commits. Or move
+  to [tekton](https://tekton.dev/docs/).
 
 
 
