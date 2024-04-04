@@ -37,12 +37,22 @@ rdap.exists() (
 f.x rdap.exists
 
 rdap.browse() (
-    : '${_tld} # return 0 iff top level domain ${_tld} exists'
+    : '${_tld} # browse http://${_tld} iff ${_tld} is registered.'
     set -Eeuo pipefail
     local _tld="${1:?'expecting a top level domain e.g. google.com'}"
     rdap.exists ${_tld} && xdg-open http://${_tld} || return $(u.error "${_tld} not registered")
 )
 f.x rdap.browse
+
+rdap.summary() (
+    : '${_tld} # summarize ${_tld} iff ${_tld} is registered.'
+    set -Eeuo pipefail
+    local _tld="${1:?'expecting a top level domain e.g. google.com'}"
+    # rdap --json "${_tld}" | jq .
+    rdap --json "${_tld}" | jq .ldhName
+)
+f.x rdap.summary
+
 
 rdap.env() {
     true || return $(u.error "${FUNCNAME} failed")
