@@ -169,6 +169,18 @@ f.x f.mkcompleter.generate
 # f.mkcompleter f.exists required 'bashenv function' 'f.loaded.match'
 # f.mkcompleter u.map required 'bashenv function' 'f.loaded.match' rest int none
 
+f.folder() (
+    for _d in "$@"; do
+        [[ -d "${_d}" ]] || continue
+        echo "${_d}"
+        return 0
+    done
+    echo >&2 "No folder found in '$@'"
+    return 1
+)
+f.x f.folder
+
+
 # plus1, useful to test u.map next
 example.plus1() (
     : '${number} #> 1 + ${number} # a useful example for u.map'
@@ -541,13 +553,22 @@ f.x path.mpcd
 
 # u.have
 # u.have is the heart of guard()
+# u can have a command in various ways: on PATH, as a flatpak or as a snap (ubutu)
 u.have() (
     : '${command} # succeeds iff ${command} is defined.'
     set -Eeuo pipefail
-    type &>/dev/null ${1?:'expecting a command'} || return 1
+    type &>/dev/null ${1?:'expecting a command'} || flatpak.have ${2:-} || return 1
 )
 f.complete u.have
 u.map.mkall u.have # u.have.all
+
+flatpak.have() (
+    : '${command} # succeeds iff ${command} is defined.'
+    set -Eeuo pipefail
+    [[ -n "${1:-}" ]] && flatpak list | grep --fixed-strings --silent ${1:-}
+)
+f.x flatpak.have
+
 
 # u.call
 u.call() {
@@ -601,7 +622,7 @@ f.complete f.complete.for
 
 guard.for() {
     : 'guard.for ${command}... # returns 0 iff all ${commands} are on PATH '
-    u.have "${1:?'expecting a command'}"
+    u.have "${1:?'expecting a command'}" $2
 }
 f.x guard.for
 
@@ -610,6 +631,8 @@ _guard() {
     local _pathname=${1:-'expecting a pathname'}
     shift
     local _for=${2:-$(path.basename ${_pathname})}
+    shift
+    local _flatpak=${3:-}
     shift
     guard.for ${_for} || return 0
     source ${_pathname} "$@" || return $(u.error "${_pathname} => $?")
@@ -1016,13 +1039,14 @@ is.running() {
 }
 f.x is.running
 
-# singleton ${cmdline} # runs command iff not yet running
+# singleton ${_cmd} ... # runs command ${_cmd} ... once
 u.singleton() {
-    local _cmd=${1:? 'expecting a command'}
-    shift
-    is.running $(type -p ${_cmd}) && return 0
-    ${_cmd} "$@"
-    echo $!
+    local _cmd=${1:? 'expecting a command'}; shift
+    local -u _gate=${_cmd//./_}
+    [[ -n "${!_gate}" ]] && return 0
+    local _result=$(${_cmd} "$@") || $(u.error "${_cmd} $@ => $?")
+    export ${_gate}="${_result}"
+    echo "${_result}"
 }
 f.x u.singleton
 

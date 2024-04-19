@@ -47,7 +47,7 @@ zlib.target() (
     # otherwise generate the target from ${src}
     # map the category to a directory name e.g. .rs.pdf => ~/Document/e/pl/rs
     local _category=$(zlib.category "${2:?'expecting a pathname'}")
-    local _prefix="${3:-${HOME}/Documents/e}"
+    local _prefix="${3:-$(f.folder {/run/media/${USER}/home/${USER},${HOME}}/Documents/e)}"
     # local _notfound="${4:-2sort/${_category}}"
     local _notfound="${4:-${PWD}}"
     if [[ -n "${_category}" ]]; then
