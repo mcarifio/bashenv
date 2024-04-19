@@ -298,14 +298,12 @@ of the repos yet, but ymmv, caviat emptor.
 
 A lot of useful configuration is kept in `~/.config/**` by command, for example `~/.config/git` for git
 or `~/.config/aws` for aws and so forth.
-Since these directories can contain credentials or complicated state (in the case of say `~/.config/google-chrome`), I haven't incorporated
-them into `bashenv`, but no solution is really adequate without it. My current "solution" is a git repo in `~/.config` which the satellites pull from. This repo isn't public and the approach is brittle at best. The contents of `~/.config/**` often aren't meant to be shared but to be synthesized on each host (I think). Some applications seem to view this data as opaque user specific content which you touch at your peril
+Since these directories can contain credentials or complicated state (in the case of say `~/.config/google-chrome`), I haven't incorporated them into `bashenv`, but no solution is really adequate without it. My current "solution" is a git repo in `~/.config` which the satellites pull from. This repo isn't public and the approach is brittle at best. The contents of `~/.config/**` often aren't meant to be shared but to be synthesized on each host (I think). Some applications seem to view this data as opaque user specific content which you touch at your peril
 (I'm looking at you Chrome).
 
 ## <a id="history">History</a>
 
-I've done a few variants of bashenv for my own use, mostly by trying to graft "modules" into bash with function naming conventions.
-That's why you see function names like `f.x` (function export) or `emacs.server` (start emacs as a daemon).
+I've done a few variants of bashenv for my own use, mostly by trying to graft "modules" into bash with function naming conventions. That's why you see function names like `f.x` (function export) or `emacs.server` (start emacs as a daemon).
 Bash doesn't have modules. It doesn't even have (function) closures. There's only so much you can do here.
 But I continue to ignore the memo. This will work, surely. Just. One. More. Function.
 

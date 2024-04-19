@@ -7,3 +7,6 @@ bashenv.session.start
 
 [[ -f /usr/share/bash-prexec ]] && source /usr/share/bash-prexec
 [[ "$(command -v atuin)" ]] && eval "$(atuin init bash)"
+
+[[ -f /usr/share/bash-prexec ]] && source /usr/share/bash-prexec
+[[ "$(command -v atuin)" ]] && eval "$(atuin init bash)"
