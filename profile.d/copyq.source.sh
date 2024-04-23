@@ -11,10 +11,11 @@ copyq.run() (
 )
 
 
-copyq.session() (
+# TODO mike@carif.io: fix this; invoke copyq.run() manually til then.
+copyq._session() (
     copyq.run || return $(u.error "${FUNCNAME} failed") &
 )
-f.x copyq.session
-u.singleton copyq.session
+f.x copyq._session
+# u.singleton copyq.session
 
 loaded "${BASH_SOURCE}"
