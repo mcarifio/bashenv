@@ -8,7 +8,7 @@ source ${ASDF_DATA_DIR}/asdf.sh
 _guard=$(path.basename ${BASH_SOURCE})
 declare -A _option=([install]=0 [verbose]=0 [trace]=0)
 _undo=''; trap -- 'eval ${_undo}; unset _option _undo; trap -- - RETURN' RETURN
-local -a _rest=( $(u.parse _option "$@" ) )
+declare -a _rest=( $(u.parse _option "$@" ) )
 if (( ${_option[trace]} )) && ! bashenv.is.tracing; then
     _undo+='set +x;'
     set -x
@@ -106,12 +106,18 @@ fi
 
 
 # go
-if asdf.plugin.have go; then
+if asdf.plugin.have golang; then
     # go bash completion?
-    export PATH+=:$(go env GOPATH)/bin
+    # export PATH+=:$(go env GOPATH)/bin
+    # path.add $(go env GOPATH)/bin
+    export GOBIN=${HOME}/.local/bin
     # see .default-golang-pkgs for go install ${pkg}@latest
     export ASDF_GOLANG_DEFAULT_PACKAGES_FILE=${ASDF_DATA_DIR}/.default-golang-pkgs
-    asdf.go-install() { xargs -n1 -I% go install % < ${ASDF_GOLANG_DEFAULT_PACKAGES_FILE}; }
+    asdf.go-install() {
+        for _p in $(< ${ASDF_GOLANG_DEFAULT_PACKAGES_FILE}); do
+            GOBIN=${1:-${GOBIN:?'expecting env GOBIN'}} go install ${_p}
+        done
+    }
     f.x asdf.go-install
 fi
 
