@@ -44,11 +44,7 @@ atuin.parse() (
 )
 
 # TODO mike@carif.io: logic needs fixing
-__atuin.parse.complete() {
-    :
-}
-
-f.complete atuin.parse
+f.x atuin.parse
 
 
 atuin.env() {
@@ -57,6 +53,7 @@ atuin.env() {
 f.x atuin.env
 
 atuin.session() {
+    [[ -n "$SSH_CLIENT" ]] && return 0
     [[ -f /usr/share/bash-prexec ]] && source /usr/share/bash-prexec
     source <(atuin init bash) || return $(u.error "${FUNCNAME} failed")
 }
