@@ -1,4 +1,4 @@
-# usage: [guard | source] template.guard.sh [--install] [--verbose] [--trace]
+# usage: [guard | source] flatpak.guard.sh [--install] [--verbose] [--trace]
 
 # Front matter. Parse the source command line. Install by platform if --install,
 # trace (and revert) if --trace.
@@ -31,30 +31,46 @@ if (( ${_option[install]} )) && ! u.have ${_guard}; then
 fi
 
 
-# template itself
+# guard itself
 
 # not working
-_template.parse() (
+_flatpak.parse() (
     : '## example: parse callers arglist'
     set -uEeo pipefail
     shopt -s nullglob
-    declare -A _template_options=([file]="${PWD}/${FUNCNAME}" [comment]="${HOSTNAME}:and_some_stuff" [trace]=0)
-    local -a _rest=( $(u.parse _template_options --foo=bar --user=${USER} --trace 1 2 3) )
-    printf '%s ' ${FUNCNAME}; declare -p _template_options; printf '%s ' ${_rest[@]}
+    declare -A _flatpak_options=([file]="${PWD}/${FUNCNAME}" [comment]="${HOSTNAME}:and_some_stuff" [trace]=0)
+    local -a _rest=( $(u.parse _flatpak_options --foo=bar --user=${USER} --trace 1 2 3) )
+    printf '%s ' ${FUNCNAME}; declare -p _flatpak_options; printf '%s ' ${_rest[@]}
 )
-
-# TODO mike@carif.io: logic needs fixing
-f.x _template.parse
+f.x _flatpak.parse
 
 
-template.env() {
+flatpak.wrap() {
+    : '# wrap each flatpak app with a bash function fp.${id} to simplify invocation. `fp.` prefix assists bash completion'
+    local -A _defined=()
+    for _id in $(flatpak list --app --columns=application); do
+        local _command=${_id##*.}; _command=${_command,,}
+        if (( _defined[${_command}] )); then
+            echo >&2 "${_command} already defined, skipping..."
+        else
+            eval "fp.${_command}()(flatpak run ${_id} \"\$@\";)"
+            f.x fp.${_command}
+            _defined[${_command}]=1
+        fi        
+    done    
+}
+f.x flatpak.wrap
+flatpak.wrap
+
+
+flatpak.env() {
     true || return $(u.error "${FUNCNAME} failed")
 }
-f.x template.env
+f.x flatpak.env
 
-template.session() {
+flatpak.session() {
     true || return $(u.error "${FUNCNAME} failed")
 }
-f.x template.session
+f.x flatpak.session
 
 loaded "${BASH_SOURCE}"
