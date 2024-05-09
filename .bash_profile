@@ -1,4 +1,8 @@
 # .bash_profile
+
+# TODO mike@carif.io: better way to handle this?
+[[ -n "${SSH_CONNECTION}" ]] && return 0
+
 source "$(dirname $(realpath -P ${BASH_SOURCE}))/bashenv.lib.sh" || { >&2 echo "'bashenv.lib.sh' not found"; return 1; }
 path.add.all $(home)/opt/*/current/bin $(home)/.config/*/bin $(home)/bin $(home)/.local/bin $(bashenv.root)/bin
 
