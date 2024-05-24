@@ -1,3 +1,8 @@
+zlib.root() (
+    : '[${_folder}...] # return the first folder that actually exists or '
+    f.folder ${@:-/run/media/${USER}/home/${USER}/Documents/e ${HOME}/Documents/e}; )
+f.x zlib.root
+
 zlib.category() (
     : '${pathname} # |> returns the category of a pathname, e.g. foo.rs.pdf.xz returns rs'
     local _one="${1:?'expecting a pathname'}"
@@ -9,6 +14,13 @@ zlib.category() (
 )
 f.complete zlib.category
 
+zlib.category.pathname() (
+    set -Eeuo pipefail
+    local _cat=${1:?'expecting a category'}
+    local _root=${2:-$(zlib.root)}
+    find ${_root} -type d -name ${_cat}    
+)
+f.complete zlib.category.pathname
 
 zlib.categorize.folder() (
     set -Eeuo pipefail
@@ -42,12 +54,15 @@ f.complete zlib.format
 
 zlib.target() (
     : 'zlib.target ${explicit} ${src} [[${_prefix}] ${_notfound}] # zlib.target foo.rs.pdf.xz #  mv foo.rs.pdf.xz to ~/Documents/e/pl/rs'
+    # Skip pathnames with whitespace or punctuation.
+    [[ "$1" =~ [[:space:]] ]] && return $(u.error "'$1' contains whitespace, skipping...")
+    [[ "$1" =~ [\!\"\#\$\%\&\'\(\)\*\+\,\/\:\;\<\=\>\?\@\[\\\]\^\_\`\{\|\}\~] ]] && return $(u.error "'$1' contains unwanted characters, skipping...")
     # echo the explicit name if it's stated
     [[ -n "$1" ]] && { echo "$1"; return 0; }
     # otherwise generate the target from ${src}
     # map the category to a directory name e.g. .rs.pdf => ~/Document/e/pl/rs
     local _category=$(zlib.category "${2:?'expecting a pathname'}")
-    local _prefix="${3:-$(f.folder {/run/media/${USER}/home/${USER},${HOME}}/Documents/e)}"
+    local _prefix="${3:-$(zlib.root)}"
     # local _notfound="${4:-2sort/${_category}}"
     local _notfound="${4:-${PWD}}"
     if [[ -n "${_category}" ]]; then
@@ -76,6 +91,10 @@ zlib.mv() (
     : 'zlib.mv ${_src} [${_target}] # mv src to target. default target is ~/Documents/e/2sort'
     local _pathname="${1:?'expecting a pathname'}"
 
+    # Skip pathnames with whitespace or punctuation.
+    [[ "${_pathname}" =~ [[:space:]] ]] && return $(u.error "'${_pathname}' contains whitespace, skipping...")
+    [[ "${_pathname}" =~ [\!\"\#\$\%\&\'\(\)\*\+\,\/\:\;\<\=\>\?\@\[\\\]\^\_\`\{\|\}\~] ]] && return $(u.error "'${_pathname}' contains unwanted characters, skipping...")
+
     # uncompleted zlibrary downloads have a *.part working file which is removed on completion.
     # skip uncompleted downloads
     local _part="$(echo ${_pathname}.*.part)"
@@ -88,7 +107,7 @@ zlib.mv.all() (
     : 'zlib.mv-all *.{pdf,epub} # mv all matching pathnames to a target based on the pathname "category"'
     # _args, the command line arguments. Defaults to *.pdf *.epub
     local -a _args=( "$@" ); [[ -z "${_args}" ]] && _args=( $(echo *.pdf *.epub) )
-    for _src in ${_args[@]}; do mv -v "${_src}" $(zlib.target '' "${_src}") || true ; done
+    for _src in ${_args[@]}; do zlib.mv "${_src}" $(zlib.target '' "${_src}") || true ; done
 )
 f.complete zlib.mv
 
