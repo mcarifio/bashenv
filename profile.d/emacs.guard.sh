@@ -43,7 +43,7 @@ f.complete ec
 _emacs.server() (
     : ' ${service} ## starts emacs systemd service ${service}'
    set -Eeuo pipefail
-   local _service=${1:?'expecting a service name'}
+   local _service=${1:-emacs-modified-$(os-release.id).service}
 
    # Is the service enabled?
    if ! systemctl --user --quiet is-enabled ${_service}; then
@@ -65,10 +65,14 @@ _emacs.server() (
    # Is the service running (active)? If not, try starting it manually.
    # This should be rare but covers the case where the user has manually stopped the service and
    #  forgotten to restart it.
-   systemctl --user --quiet is-active ${_service} || systemctl --user start ${_service} ||
-       return $(u.error "${FUNCNAME} cannot start ${_service}")   
+   if systemctl --user --quiet is-active ${_service} ; then
+       systemctl --user start ${_service} || return $(u.error "${FUNCNAME} cannot start ${_service}")
+   fi
+   # TODO mike@carif.io: look for errors in emacs daemon log and announce errors. how?
+   journalctl --user --boot 0 --unit ${_service} # grep something   
 )
 f.x _emacs.server
+
 emacs.server() ( _${FUNCNAME} emacs-modified-$(os-release.id); )
 f.x emacs.server
 
