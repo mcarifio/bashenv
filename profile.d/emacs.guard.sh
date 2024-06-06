@@ -68,10 +68,17 @@ _emacs.server() (
    if systemctl --user --quiet is-active ${_service} ; then
        systemctl --user start ${_service} || return $(u.error "${FUNCNAME} cannot start ${_service}")
    fi
-   # TODO mike@carif.io: look for errors in emacs daemon log and announce errors. how?
-   journalctl --user --boot 0 --unit ${_service} # grep something   
 )
 f.x _emacs.server
+
+
+emacs.server.log() (
+    set -Eeuo pipefail
+    local _service=${1:-emacs-modified-$(os-release.id).service}
+    journalctl --user --boot 0 --unit ${_service} # grep something
+)
+f.x emacs.server.log
+
 
 emacs.server() ( _${FUNCNAME} emacs-modified-$(os-release.id); )
 f.x emacs.server
