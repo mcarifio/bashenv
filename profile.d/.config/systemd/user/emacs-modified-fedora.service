@@ -7,9 +7,18 @@ Requires=graphical-session.target
 # Type=forking
 # Type=notify
 Type=idle
-# ExecStartPost=/bin/sleep 10
-ExecStart=/usr/bin/emacs --fg-daemon
+
+# enable/start emacs as a daemon
+# systemctl --user enable --now emacs-modified-$(os-release.id).service
+ExecStart=/usr/bin/env DISPLAY=:0 emacs --fg-daemon
+
+
+# stop emacs as a daemon
+# systemctl --user stop emacs-modified-$(os-release.id).service
 ExecStop=/usr/bin/emacsclient --eval "(progn (save-some-buffers t) (kill-emacs))"
+
+# ExecStartPost=/bin/sleep 10
+
 # The location of the SSH auth socket varies by distribution, and some
 # set it from PAM, so don't override by default.
 # Environment=SSH_AUTH_SOCK=%t/keyring/ssh
