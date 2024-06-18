@@ -9,7 +9,9 @@ Type=idle
 # enable/start emacs as a daemon
 # systemctl --user enable --now emacs-modified-$(os-release.id).service
 # TODO mike@carif.io: Is /nix/var/nix/profiles/default/bin/emacs on PATH?
-ExecStart=/usr/bin/env DISPLAY=:0 emacs --fg-daemon
+Environment="DISPLAY=:0"
+# update PATH here?
+ExecStart=/usr/bin/env emacs --fg-daemon
 
 # stop emacs as a daemon
 # systemctl --user stop emacs-modified-$(os-release.id).service
