@@ -10,8 +10,8 @@ Type=idle
 
 # enable/start emacs as a daemon
 # systemctl --user enable --now emacs-modified-$(os-release.id).service
-ExecStart=/usr/bin/env DISPLAY=:0 emacs --fg-daemon
-
+Environment="DISPLAY=:0"
+ExecStart=/usr/bin/emacs --fg-daemon
 
 # stop emacs as a daemon
 # systemctl --user stop emacs-modified-$(os-release.id).service
