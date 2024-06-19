@@ -59,6 +59,8 @@ brew.env() {
 }
 f.x brew.env
 
+# `brew shellenv` *side effects* the bash environment so it's at the start of each session.
+# This seems broken to me.
 brew.session() {
     source <(/home/linuxbrew/.linuxbrew/bin/brew shellenv) || return $(u.error "${FUNCNAME} failed")
     export HOMEBREW_NO_ENV_HINTS="$(path.pn ${BASH_SOURCE})"
