@@ -55,13 +55,13 @@ f.complete brew.parse
 
 
 brew.env() {
-    source <(/home/linuxbrew/.linuxbrew/bin/brew shellenv) || return $(u.error "${FUNCNAME} failed")
-    export HOMEBREW_NO_ENV_HINTS="$(path.pn ${BASH_SOURCE})"
+    true || return $(u.error "${FUNCNAME} failed")
 }
 f.x brew.env
 
 brew.session() {
-    true || return $(u.error "${FUNCNAME} failed")
+    source <(/home/linuxbrew/.linuxbrew/bin/brew shellenv) || return $(u.error "${FUNCNAME} failed")
+    export HOMEBREW_NO_ENV_HINTS="$(path.pn ${BASH_SOURCE})"
 }
 f.x brew.session
 # try to run once to avoid adding brew to PATH multiple times
