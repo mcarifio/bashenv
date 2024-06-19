@@ -16,9 +16,14 @@ jobs:
       - uses: actions/checkout@v4
       # - uses: actions/setup-node@v4
       # - run: npm install -g bats
+      # - run: |
+      #       sudo apt upgrade -y
+      #       sudo apt install -y bats just
+      #       id
+      #       tree -aF
+      #       bats -v
       - run: |
-             sudo apt upgrade -y
-             sudo apt install -y bats just
-             id
-             tree -aF
-             bats -v
+          return 0
+          
+      
+             
