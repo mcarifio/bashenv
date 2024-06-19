@@ -1,4 +1,7 @@
-# usage: [guard | source] brew.guard.sh [--install] [--verbose] [--trace]
+# usage: source brew.source.sh [--install] [--verbose] [--trace]
+
+# brew is in an odd location
+/home/linuxbrew/.linuxbrew/bin/brew --version &> /dev/null || return 0
 
 # Front matter. Parse the source command line. Install by platform if --install,
 # trace (and revert) if --trace.
@@ -52,13 +55,13 @@ f.complete brew.parse
 
 
 brew.env() {
-    true || return $(u.error "${FUNCNAME} failed")
+    source <(/home/linuxbrew/.linuxbrew/bin/brew shellenv) || return $(u.error "${FUNCNAME} failed")
+    export HOMEBREW_NO_ENV_HINTS="$(path.pn ${BASH_SOURCE})"
 }
 f.x brew.env
 
 brew.session() {
-    : 'export brew env vars, add brew to path. HOMEBREW_PREFIX is the root'
-    source <(/home/linuxbrew/.linuxbrew/bin/brew shellenv) || return $(u.error "${FUNCNAME} failed")
+    true || return $(u.error "${FUNCNAME} failed")
 }
 f.x brew.session
 # try to run once to avoid adding brew to PATH multiple times
