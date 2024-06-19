@@ -23,7 +23,7 @@ jobs:
       #       tree -aF
       #       bats -v
       - run: |
-          return 0
+          exit 0
           
       
              
