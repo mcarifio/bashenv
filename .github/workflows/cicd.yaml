@@ -24,6 +24,3 @@ jobs:
       #       bats -v
       - run: |
           exit 0
-          
-      
-             
