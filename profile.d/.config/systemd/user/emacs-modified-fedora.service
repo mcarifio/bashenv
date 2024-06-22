@@ -1,23 +1,21 @@
 [Unit]
-Description=Emacs text editor
+Description=emacs daemon
 Documentation=info:emacs man:emacs(1) https://gnu.org/software/emacs/
 Requires=graphical-session.target
 
 [Service]
-# Type=forking
-# Type=notify
 Type=idle
 
 # enable/start emacs as a daemon
 # systemctl --user enable --now emacs-modified-$(os-release.id).service
 Environment="DISPLAY=:0"
-ExecStart=/usr/bin/emacs --fg-daemon
+# ExecStart=/usr/bin/emacs --fg-daemon
+# Environment directive not found?
+ExecStart=/usr/bin/bash -c "DISPLAY=:0 /usr/bin/emacs --fg-daemon"
 
 # stop emacs as a daemon
 # systemctl --user stop emacs-modified-$(os-release.id).service
 ExecStop=/usr/bin/emacsclient --eval "(progn (save-some-buffers t) (kill-emacs))"
-
-# ExecStartPost=/bin/sleep 10
 
 # The location of the SSH auth socket varies by distribution, and some
 # set it from PAM, so don't override by default.
