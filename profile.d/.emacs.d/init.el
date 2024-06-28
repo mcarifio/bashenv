@@ -25,6 +25,7 @@
   (package-initialize))
 
 (defun bootstrap-straight()
+  "https://github.com/radian-software/straight.el"
   (defvar bootstrap-version)
   (let ((bootstrap-file
          (expand-file-name
