@@ -1,6 +1,6 @@
 # dnf install -y emacs
 # systemctl --user enable --now emacs-modified-$(os-release.id)
-# journalctl --user --unit emacs-modified--$(os-release.id)
+# journalctl --user --unit emacs-modified--$(os-release.id) -b 0
 # loginctl enable-linger ${USER}
 
 _guard=$(path.basename ${BASH_SOURCE})
@@ -16,19 +16,14 @@ if (( ${_option[trace]} )) && ! bashenv.is.tracing; then
     set -x
 fi
 
-# install by distro id by (runtime) dispatching to distro install function
-eval "${_guard}.install() ( ${_guard}.install.\$(os-release.id); )"
-f.x ${_guard}.install
-
-eval "${_guard}.install.fedora() ( set -x; dnf install ${_guard}; )"
-f.x ${_guard}.install.fedora
-
-eval "${_guard}.install.ubuntu() ( set -x; sudo apt upgrade -y; sudo apt install -y ${_guard}; )"
-f.x ${_guard}.install.ubuntu
-
-# source ${_guard}.guard.sh --install
-if (( ${_option[install]} )) && ! u.have ${_guard}; then
-    ${_guard}.install ${_rest} || return $(u.error "${_guard}.install failed")
+if (( ${_option[install]} )); then
+    if u.have ${_guard}; then
+        >&2 echo ${_guard} already installed
+    elif [[ -x "${BASH_SOURCE/.guard./.install.}" ]] ; then
+        "${BASH_SOURCE/.guard./.install.}"
+    else        
+        $(u.here)/guard.install.sh ${BASH_SOURCE%%.*}
+    fi
 fi
 
 

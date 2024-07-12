@@ -1,7 +1,8 @@
 [Unit]
 Description=emacs daemon
 Documentation=info:emacs man:emacs(1) https://gnu.org/software/emacs/
-Requires=graphical-session.target
+After=graphical-session.target
+
 
 [Service]
 Type=idle
@@ -11,7 +12,7 @@ Type=idle
 Environment="DISPLAY=:0"
 # ExecStart=/usr/bin/emacs --fg-daemon
 # Environment directive not found?
-ExecStart=/usr/bin/bash -c "DISPLAY=:0 /usr/bin/emacs --fg-daemon"
+ExecStart=/usr/bin/emacs --fg-daemon
 
 # stop emacs as a daemon
 # systemctl --user stop emacs-modified-$(os-release.id).service
@@ -23,5 +24,4 @@ ExecStop=/usr/bin/emacsclient --eval "(progn (save-some-buffers t) (kill-emacs))
 Restart=on-failure
 
 [Install]
-# WantedBy=default.target
-RequiredBy=graphical-session.target
+WantedBy=default.target
