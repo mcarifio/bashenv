@@ -1,5 +1,14 @@
 # assume path.sh sourced
 path.add ~/.cargo/bin
 
+cargo.update-all() (
+    set -Eeuo pipefail
+    for p in $(cargo install --list | grep -o '^[^ ]*'); do
+        cargo install $p || true
+    done    
+)
+f.x cargo.update-all
+
+
 
 
