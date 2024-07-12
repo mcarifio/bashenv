@@ -9,7 +9,6 @@ Type=idle
 
 # enable/start emacs as a daemon
 # systemctl --user enable --now emacs-modified-$(os-release.id).service
-Environment="DISPLAY=:0"
 # ExecStart=/usr/bin/emacs --fg-daemon
 # Environment directive not found?
 ExecStart=/usr/bin/emacs --fg-daemon
