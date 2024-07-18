@@ -23,7 +23,7 @@ fi
 
 dnf() (
     : "sudo dnf ..."
-    sudo /usr/bin/dnf --assumeyes "$@"# --allowerasing
+    sudo /usr/bin/dnf --assumeyes "$@" # --allowerasing
 )
 f.x dnf
 

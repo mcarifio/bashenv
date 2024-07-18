@@ -18,7 +18,7 @@ f.x sudo.alacritty
 # display.
 
 watch.input() (
-    sudo.alacritty ${FUNCNAME} showmethekey-cli &
+    sudo.alacritty ${FUNCNAME} $(type -p showmethekey-cli) &
 )
 f.x watch.input
 
