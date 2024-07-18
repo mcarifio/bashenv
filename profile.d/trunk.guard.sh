@@ -14,9 +14,9 @@ if (( ${_option[install]} )); then
     if u.have ${_guard}; then
         >&2 echo ${_guard} already installed
     elif [[ -x "${BASH_SOURCE/.guard./.install.}" ]] ; then
-        "${BASH_SOURCE/.guard./.install.}"
+        "${BASH_SOURCE/.guard./.install.}" "$@"
     else        
-        $(u.here)/guard.install.sh ${BASH_SOURCE%%.*}
+        $(u.here)/guard.install.sh ${BASH_SOURCE%%.*} "$@"
     fi
 fi
 
