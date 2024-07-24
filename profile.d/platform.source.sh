@@ -32,11 +32,11 @@ platform.upgrade() (
     local _jetbrains_toolbox="${HOME}/.local/share/JetBrains/Toolbox/bin/jetbrains-toolbox"
     [[ -x "${_jetbrains_toolbox}" ]] && >&2 echo "${_jetbrains_toolbox} upgrade # tbs"
 
-    cargo.update-all
+    u.have snap && snap refresh
+    u.have cargo && cargo.update-all
     u.have brew && brew update -y
     u.have flatpak && flatpak upgrade -y
-    u.have rpm-ostree && sudo rpm-ostree upgrade || sudo /usr/bin/dnf upgrade --allowerasing --assumeyes
-    
+    u.have rpm-ostree && sudo $(type -P rpm-ostree) upgrade || sudo $(type -P dnf) upgrade --allowerasing --assumeyes    
 )
 f.x platform.upgrade
 

@@ -63,8 +63,8 @@ zlib.target() (
     # map the category to a directory name e.g. .rs.pdf => ~/Document/e/pl/rs
     local _category=$(zlib.category "${2:?'expecting a pathname'}")
     local _prefix="${3:-$(zlib.root)}"
-    # local _notfound="${4:-2sort/${_category}}"
-    local _notfound="${4:-${PWD}}"
+    # local _notfound="${4:-${PWD}}"
+    local _notfound="${4:-2sort/${_category}}"
     if [[ -n "${_category}" ]]; then
 	# Find the first subdirectory under ${_prefix} named ${_category}. That's the target.
 	local _target=$( 2>/dev/null find "${_prefix}" -name "${_category}" -type d -print -quit )
