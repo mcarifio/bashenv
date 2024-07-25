@@ -1,4 +1,5 @@
-# usage: [guard | source] template.guard.sh [--install] [--verbose] [--trace]
+# usage: [guard | source] ${guard}.guard.sh [--install] [--verbose] [--trace]
+# creation: guard=something envsubst < _template.guard.sh > something.guard.sh
 
 # Front matter. Parse the source command line. Install by platform if --install,
 # trace (and revert) if --trace.
@@ -12,7 +13,7 @@ if (( ${_option[trace]} )) && ! bashenv.is.tracing; then
 fi
 if (( ${_option[install]} )); then
     if u.have ${_guard}; then
-        >&2 echo ${_guard} already installed
+        >&2 echo \${_guard} already installed
     elif [[ -x "${BASH_SOURCE/.guard./.install.}" ]] ; then
         "${BASH_SOURCE/.guard./.install.}" "$@"
     else        
@@ -22,27 +23,27 @@ fi
 
 # template itself
 # not working
-_template.parse() (
+_${guard}.parse() (
     : '## example: parse callers arglist'
     set -uEeo pipefail
     shopt -s nullglob
-    declare -A _template_options=([file]="${PWD}/${FUNCNAME}" [comment]="${HOSTNAME}:and_some_stuff" [trace]=0)
-    local -a _rest=( $(u.parse _template_options --foo=bar --user=${USER} --trace 1 2 3) )
-    printf '%s ' ${FUNCNAME}; declare -p _template_options; printf '%s ' ${_rest[@]}
+    declare -A _${guard}_options=([file]="${PWD}/${FUNCNAME}" [comment]="${HOSTNAME}:and_some_stuff" [trace]=0)
+    local -a _rest=( \$(u.parse _${guard}_options --foo=bar --user=${USER} --trace 1 2 3) )
+    printf '%s ' ${FUNCNAME}; declare -p _${guard}_options; printf '%s ' ${_rest[@]}
 )
 
 # TODO mike@carif.io: logic needs fixing
-f.x _template.parse
+f.x _${guard}.parse
 
 
-template.env() {
+${guard}.env() {
     true || return $(u.error "${FUNCNAME} failed")
 }
-f.x template.env
+f.x ${guard}.env
 
-template.session() {
+${guard}.session() {
     true || return $(u.error "${FUNCNAME} failed")
 }
-f.x template.session
+f.x ${guard}.session
 
 loaded "${BASH_SOURCE}"

@@ -557,7 +557,7 @@ f.x path.mpcd
 u.have() (
     : '${command} # succeeds iff ${command} is defined.'
     set -Eeuo pipefail
-    type -P ${1?:'expecting a command'}
+    type -p ${1?:'expecting a command'} >/dev/null
 )
 f.complete u.have
 u.map.mkall u.have # u.have.all

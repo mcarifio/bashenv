@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# ${guard}.install.sh will install ${guard} depending on the distro id.
-# guard=${name} envsubst < _template.install.sh > ${guard}.install.sh
+# rustup.install.sh will install `rustup`
 
 # brew install will upgrade older versions.
 # https://formulae.brew.sh/formula/elan-init#default
