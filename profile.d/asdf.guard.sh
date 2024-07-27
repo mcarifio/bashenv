@@ -1,5 +1,5 @@
 # guard isn't sufficient here?
-[[ -r ~/opt/asdf/current/asdf.sh ]] || return 0
+[[ -r ${ASDF_DIR:-~/opt/asdf/current}/asdf.sh ]] || return 0
 export ASDF_DATA_DIR=~/opt/asdf/current
 source ${ASDF_DATA_DIR}/asdf.sh
 
@@ -160,5 +160,22 @@ asdf.platform-update() {
 }
 f.complete asdf.platform-update
 
+asdf.plugin.urls() (
+    set -Eeuo pipefail
+    for _g in $(find ${ASDF_DIR}/plugins -name \.git -type d); do
+        git -C $_g remote get-url origin
+    done
+)
+f.x asdf.plugin.urls
+
+asdf.install.all() (
+    set -Eeuo pipefail
+    for _url in "$@"; do
+        local _pkg=$(path.basename ${_url##*/asdf-})
+        asdf plugin-add ${_pkg} ${_url}
+        asdf install ${_pkg} latest && asdf global ${_pkg} latest
+    done    
+)
+f.x asdf.install.all
 
 loaded "${BASH_SOURCE}"
