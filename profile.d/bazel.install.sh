@@ -6,6 +6,7 @@
 # https://formulae.brew.sh/formula/elan-init#default
 install.brew() ( brew install "$@"; )
 
+# install.asdf ${_plugin} [${_version:-latest} [${_git_url}]]
 install.asdf() (
     set -Eeuo pipefail
     local _plugin=${1:?'expecting an asdf plugin'}
@@ -16,7 +17,6 @@ install.asdf() (
 )
 
 install.curl() (
-install() (
     set -Eeuo pipefail
     local _name="${1:?'expecting a name'}"
     local _url="${2:?'expecting a url'}"
@@ -37,9 +37,11 @@ install.ubuntu() ( sudo $(type -P apt) install -y "${$@}"; )
 
 # dispatch
 # install() ( install.$(os.release ID) "$@"; )
-install() ( install.$(os.release ID) "$@"; )
+install() (
+    install.asdf "$@"
+)
 
 # install $(path.basename ${BASH_SOURCE}) "$@"
 # install "$@"
-install "$@"
+install $(path.basename ${BASH_SOURCE}) "$@"
 
