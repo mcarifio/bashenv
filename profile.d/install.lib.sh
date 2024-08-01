@@ -9,6 +9,7 @@ install.asdf() (
     asdf plugin add ${_plugin} ${3:-}
     asdf install ${_plugin} ${_version}
     asdf global ${_plugin} ${_version}
+    asdf which ${_plugin}
 )
 
 install.curl() (
@@ -22,9 +23,28 @@ install.curl() (
     local _target="${_dir}/${_name}"
     # TODO mike@carif.io: add ${_url} specific post processing here based on file extension
     # zstd --decompress --no-progress ${_tmp}
+    # curl -Ssf ${_url} | tar xz -C /tmp
     command install ${_tmp%%.${_suffix}} "${_target}"
     >&2 echo "installed '${_target}' from '${_url}'"
+    echo ${_target}
 )    
+
+install.curl-tar() (
+    set -Eeuo pipefail
+    local _name="${1:?'expecting a name'}"
+    local _url="${2:?'expecting a url'}"
+    local _suffix=${_url##*.tar.}
+    local _dir=${3:-~/.local/bin}
+    curl -SsfLJ --show-error "${_url}" | tar x --${_suffix} -C /tmp
+    local _target="${_dir}/${_name}"
+    # brittle, depends on how .tar.* was tarred
+    local _cmd=/tmp/$(basename ${_url} .tar.${_suffix})/${_name}
+    command install  "${_cmd}" "${_target}"
+    rm -rf /tmp/$(basename ${_url} .tar.${_suffix})
+    >&2 echo "installed '${_target}' from '${_url}'"
+    echo ${_target}
+)
+
 
 install.cargo() (
     set -Eeuo pipefail
@@ -34,6 +54,7 @@ install.cargo() (
     rustup upgrade
     (set -x; cargo install ${_pkg} "$@")
     >&2 echo "${FUNCNAME} installed ${_pkg}"
+    type -P ${_pkg}
 )
 
 install.check() (

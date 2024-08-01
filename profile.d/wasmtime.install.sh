@@ -10,7 +10,7 @@ install0() (
 )
 
 # cut-and-paste install.curl()
-install() (
+install.curl-tar() (
     set -Eeuo pipefail
     local _name="${1:?'expecting a name'}"
     local _url="${2:?'expecting a url'}"
@@ -23,8 +23,10 @@ install() (
     command install  "${_cmd}" "${_target}"
     rm -rf /tmp/$(basename ${_url} .tar.${_suffix})
     >&2 echo "installed '${_target}' from '${_url}'"
+
+    install.check ${_name}
 )
 
 
-install wasmtime https://github.com/bytecodealliance/wasmtime/releases/download/v23.0.1/wasmtime-v23.0.1-x86_64-linux.tar.xz
+install.curl-tar wasmtime https://github.com/bytecodealliance/wasmtime/releases/download/v23.0.1/wasmtime-v23.0.1-x86_64-linux.tar.xz
 

@@ -86,13 +86,8 @@ if asdf.plugin.have python; then
     # https://github.com/danhper/asdf-python/
     # asdf plugin add python
     export ASDF_PYTHON_DEFAULT_PACKAGES_FILE=${ASF_DATA_DIR}/.default-python-packages
+    path.add $(asdf where python)/bin
 fi
-
-# pypoetry (independent of asdf python)
-# if asdf.installed? poetry ; then
-#    source <(poetry completions bash)
-# fi
-
 
 # nodejs
 if asdf.plugin.have nodejs; then
@@ -102,6 +97,8 @@ if asdf.plugin.have nodejs; then
     # note: on new version, after `asdf reshim nodejs`:
     # npm i -g $(tr '\n' ' ' < ${ASDF_NPM_DEFAULT_PACKAGES_FILE}
     # asdf reshim nodejs # again
+    path.add $(asdf where node)/bin
+
 fi
 
 
