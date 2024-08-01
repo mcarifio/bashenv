@@ -97,7 +97,7 @@ if asdf.plugin.have nodejs; then
     # note: on new version, after `asdf reshim nodejs`:
     # npm i -g $(tr '\n' ' ' < ${ASDF_NPM_DEFAULT_PACKAGES_FILE}
     # asdf reshim nodejs # again
-    path.add $(asdf where node)/bin
+    path.add $(asdf where nodejs)/bin
 
 fi
 
