@@ -11,12 +11,9 @@ set -Eeuo pipefail
 
 source $(u.here)/install.lib.sh
 
-# install() ( install.$(os.release ID) "$@"; )
-install() (
-    install.$(os.release ID) "$@"
-    install.check "$1"
-)
+install() ( install.asdf "$@"; )
 
+# dispatch
 # install "$@"
 # install $(path.basename ${BASH_SOURCE}) "$@"
 install $(path.basename ${BASH_SOURCE}) "$@"

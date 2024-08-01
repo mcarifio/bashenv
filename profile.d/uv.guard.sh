@@ -1,5 +1,4 @@
 # usage: [guard | source] ${guard}.guard.sh [--install] [--verbose] [--trace]
-# creation: guard=something envsubst < _template.guard.sh > something.guard.sh
 
 # Front matter. Parse the source command line. Install by platform if --install,
 # trace (and revert) if --trace.
@@ -13,7 +12,7 @@ if (( ${_option[trace]} )) && ! bashenv.is.tracing; then
 fi
 if (( ${_option[install]} )); then
     if u.have ${_guard}; then
-        >&2 echo \${_guard} already installed
+        >&2 echo ${_guard} already installed
     elif [[ -x "${BASH_SOURCE/.guard./.install.}" ]] ; then
         "${BASH_SOURCE/.guard./.install.}" "$@"
     else        
@@ -23,27 +22,33 @@ fi
 
 # template itself
 # not working
-_${guard}.parse() (
+_uv.parse() (
     : '## example: parse callers arglist'
     set -uEeo pipefail
     shopt -s nullglob
-    declare -A _${guard}_options=([file]="${PWD}/${FUNCNAME}" [comment]="${HOSTNAME}:and_some_stuff" [trace]=0)
-    local -a _rest=( \$(u.parse _${guard}_options --foo=bar --user=${USER} --trace 1 2 3) )
-    printf '%s ' ${FUNCNAME}; declare -p _${guard}_options; printf '%s ' ${_rest[@]}
+    declare -A _uv_options=([file]="${PWD}/${FUNCNAME}" [comment]="${HOSTNAME}:and_some_stuff" [trace]=0)
+    local -a _rest=( $(u.parse _uv_options --foo=bar --user=${USER} --trace 1 2 3) )
+    printf '%s ' ${FUNCNAME}; declare -p _uv_options; printf '%s ' ${_rest[@]}
 )
 
 # TODO mike@carif.io: logic needs fixing
-f.x _${guard}.parse
+f.x _uv.parse
+
+uv.docs() (
+    set -Eeuo pipefail
+    local -nu _docs=${FUNCNAME%.*}_urls
+    set -x; xdg-open ${_docs:-} "$@" https://github.com/astral-sh/uv
+)
 
 
-${guard}.env() {
+uv.env() {
     true || return $(u.error "${FUNCNAME} failed")
 }
-f.x ${guard}.env
+f.x uv.env
 
-${guard}.session() {
+uv.session() {
     true || return $(u.error "${FUNCNAME} failed")
 }
-f.x ${guard}.session
+f.x uv.session
 
 loaded "${BASH_SOURCE}"

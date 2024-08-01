@@ -21,7 +21,3 @@ done
 
 bashenv.folders() { echo ${_bashenv_folders[@]}; }
 f.x bashenv.folders
-
-
-
-

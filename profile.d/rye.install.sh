@@ -13,7 +13,7 @@ source $(u.here)/install.lib.sh
 
 # install() ( install.$(os.release ID) "$@"; )
 install() (
-    install.$(os.release ID) "$@"
+    install.asdf "$@"
     install.check "$1"
 )
 
