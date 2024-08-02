@@ -13,7 +13,7 @@ declare -ax _bashenv_folders=()
 # u.map.tree source "$(bashenv.root)/profile-${USER}.d"
 
 for _tree in "$(bashenv.root)/profile.d" "$(bashenv.root)/profile-${USER}.d"; do
-    for _action in source guard; do
+    for _action in source lib guard; do
         u.map.tree ${_action} "${_tree}"
     done
     _bashenv_folders+=($_tree)

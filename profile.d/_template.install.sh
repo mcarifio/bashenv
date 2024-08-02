@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+source $(u.here)/install.lib.sh
 
 # ${guard}.install.sh will install ${guard} in various ways. You'll choose and
 # then customize the one you want, typically by modifying `install()` to call
@@ -9,7 +10,6 @@ set -Eeuo pipefail
 
 # install {_template,${guard}}.install.sh
 
-source $(u.here)/install.lib.sh
 
 # install() ( install.$(os.release ID) "$@"; )
 install() (

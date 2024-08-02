@@ -646,7 +646,14 @@ guard() {
 }
 f.complete guard
 
+# lib() is a hack to make map.tree work
+lib() {
+    source ${1:?'expecting a lib file like foo.lib.sh'} || return $(u.error "${FUNCNAME} ${_pathname} => $?")
+}
+f.x lib
+
 # bashenv.*
+
 
 
 bashenv.install.exe() (
@@ -834,9 +841,6 @@ f.x u.all-hosts # hping3
 #    sos.r() { sudo sos report --batch --case-id="${SUDO_USER}-$(uuidgen)" --description "${FUNCNAME}" $*; }; f.x sos.r
 # fi
 
-# go repl
-yaegi() { rlwrap command yaegi $@; }
-f.x yaegi # rlwrap
 
 # pip from the current python directly; coordinate afterwards with asdf and bash
 # hack

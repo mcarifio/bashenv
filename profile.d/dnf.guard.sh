@@ -4,41 +4,24 @@
 
 # usage: [guard | source] dnf.guard.sh [--install] [--verbose] [--trace]
 _guard=$(path.basename ${BASH_SOURCE})
-declare -A _option=([install]=0 [verbose]=0 [trace]=0)
-declare -a _rest=( $(u.parse _option "$@") )
-_undo=''; trap -- 'eval ${_undo}; unset _option _rest _undo; trap -- - RETURN' RETURN
-if (( ${_option[trace]} )) && ! bashenv.is.tracing; then
-    _undo+='set +x;'
-    set -x
-fi
-if (( ${_option[install]} )); then
-    if u.have ${_guard}; then
-        >&2 echo ${_guard} already installed
-    elif [[ -x "${BASH_SOURCE/.guard./.install.}" ]] ; then
-        "${BASH_SOURCE/.guard./.install.}"
-    else        
-        u.bad "${BASH_SOURCE} --install # not implemented"
-    fi
-fi
 
 dnf() (
-    : "sudo dnf ..."
-    sudo /usr/bin/dnf --assumeyes "$@" # --allowerasing
+    : 'sudo dnf ...'
+    sudo $(type -P dnf)  --assumeyes "$@" # --allowerasing
 )
 f.x dnf
 
 dnf.src.rpm() (
-  : "${FUNCNAME[0]} \${src.rpm} [\${destination_dir:-$PWD/src.rpm}] # extract source rpm to an (optional) destination directory"
+  : '${src_rpm} [${destination_dir:-$PWD/src.rpm}] # extract source rpm to an (optional) destination directory'
   local _src_rpm=${1:?'expecting a package or .src.rpm file'}
-  local _file_src_rpm=''
-  [[ -r ${_src_rpm} ]] && _file_src_rpm=$(file --brief ${_src_rpm} | cut -f1 -d' ') # RPM
+  local _file_src_rpm=''; [[ -r ${_src_rpm} ]] && _file_src_rpm=$(file --brief ${_src_rpm} | cut -f1 -d' ') # RPM
 
   # if the .src.rpm isn't local...
   if [[ "${_file_src_rpm}" != RPM ]] ; then
     # ... then fetch it first.
     _src_rpm=${_src_rpm%.src.rpm}
-    local _destdir=/tmp/${FUNCNAME[0]}
-    dnf download --source --destdir ${_destdir} ${_src_rpm} || return 1
+    local _destdir=/tmp/${FUNCNAME}
+    command dnf download --source --destdir ${_destdir} ${_src_rpm} || return 1
     _src_rpm=${_destdir}/$(dnf repoquery --qf "%{SOURCERPM}" ${_src_rpm})
   fi
   _destdir=${2:-${PWD}/${_src_rpm%.rpm}} # where to extract the .src.rpm
@@ -46,14 +29,14 @@ dnf.src.rpm() (
   sudo chown ${USER}:${USER} -R ${_src_rpm}
   rpm2cpio ${_src_rpm} | 2>/dev/null cpio -idm -D ${_destdir}
   for _tar in ${_destdir}/*.tar.* ${_destdir}/*.t?z; do &> /dev/null tar -xaf --one-top-level -C "${_destdir}" "${_tar}"; done
-  >&2 ${_src_rpm} extracted to ${_destdir}
+  >&2 echo "${_src_rpm} extracted to ${_destdir}"
 )
 f.x dnf.src.rpm
 
 
 
 dnf.files() (
-    : "dnf.files lists all files for a package; see also rpm -ql ${package}"
+    : ' ${_pkg} # lists all files for a package; see also rpm -ql ${_pkg}'
     command dnf repoquery --installed -l ${1:?'expecting a package'}
 )
 f.x dnf.files
@@ -66,10 +49,11 @@ dnf.lock-kernel() (
 f.x dnf.lock-kernel
 
 # what package does a command come from?
-dnf.for() (
-    rpm -qf $(type -p ${1:?'expecting a command'}) --qf '%{NAME}'
+rpm.from() (
+    : '${_cmd} # what package does ${_cmd} come from?'
+    rpm -qf $(type -P ${1:?'expecting a command'}) --qf '%{NAME}'
 )
-f.x dnf.for
+f.x rpm.from
 
 rpm.extract() {
     local _rpm_file=${1:?'expecting an rpm file'}
@@ -78,7 +62,7 @@ rpm.extract() {
 f.x rpm.extract
 
 dnf.from() (
-    : "dnf.from returns the repo id a package originated from"
+    : '{_cmd} # returns the repo id a package originated from'
     dnf repoquery --qf "%{repoid}" ${1:?'expecting a package'}
 )
 f.x dnf.from

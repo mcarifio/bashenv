@@ -1,6 +1,12 @@
+# install.* installs "packages" in various ways such as brew, asdf, curl, dnf, apt and so forth.
+
 # brew install will upgrade older versions.
 # https://formulae.brew.sh/formula/elan-init#default
-install.brew() ( brew install "$@"; )
+install.brew() (
+    set -Eeuo pipefail
+    command brew install "$@"
+)
+f.x install.brew
 
 install.asdf() (
     set -Eeuo pipefail
@@ -11,6 +17,7 @@ install.asdf() (
     asdf global ${_plugin} ${_version}
     asdf which ${_plugin}
 )
+f.x install.asdf
 
 install.curl() (
     set -Eeuo pipefail
@@ -28,6 +35,7 @@ install.curl() (
     >&2 echo "installed '${_target}' from '${_url}'"
     echo ${_target}
 )    
+f.x install.curl
 
 install.curl-tar() (
     set -Eeuo pipefail
@@ -44,6 +52,38 @@ install.curl-tar() (
     >&2 echo "installed '${_target}' from '${_url}'"
     echo ${_target}
 )
+f.x install.curl-tar
+
+install.rustup() (
+    : '[--target=somewhere] ${pkg}...'
+    set -Eeuo pipefail
+
+    # parse calling arguments
+    local _target="~/.cargo/bin"
+    if (( $# )); then
+        for _a in "${@}"; do
+            case "${_a}" in
+                --target=*) _target="${_a#--target=}" ;;
+                --)
+                    shift
+                    break
+                    ;;
+                *) break ;;
+            esac
+            shift
+        done
+    fi
+
+    # https://www.rust-lang.org/learn/get-started
+    # TODO mike@carif.io: install to ${_target}?
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh # hate this
+    # hardcoded installation directory ugh
+    path.add "${_target}"
+    install.check rustup
+    install.check cargo
+    (( $# )) && cargo install "$@"
+)
+
 
 
 install.cargo() (
@@ -56,15 +96,47 @@ install.cargo() (
     >&2 echo "${FUNCNAME} installed ${_pkg}"
     type -P ${_pkg}
 )
+f.x install.cargo
 
 install.check() (
-    echo -e "${FUNCNAME}\n"
+    set -Eeuo pipefail
     local _command="${1:?'expecting a command'}"
-    type -p ${_command}
-    ${_command} --version
+    echo "${FUNCNAME} ${_command} at $(type -P ${_command})"    
+    ${_command} --version &> /dev/null && ${_command} --version && return 0
+    ${_command} version
 )
+f.x install.check
+
+install.go() (
+    set -Eeuo pipefail
+    GOBIN=${GOBIN:-~/.local/bin} go install ${1:?'expecting a url'}
+)
+f.x install.go
 
 # by distro id
-install.fedora() ( sudo $(type -P dnf) install --assumeyes "$@"; )
-install.ubuntu() ( sudo $(type -P apt) install -y "$@"; )
+install.fedora() (
+    set -Eeuo pipefail
+    sudo $(type -P dnf) install --assumeyes "$@"
+)
+f.x install.fedora
 
+install.ubuntu() (
+    set -Eeuo pipefail
+    sudo $(type -P apt) install -y "$@"
+)
+f.x install.ubuntu
+
+install.distro() (
+    set -Eeuo pipefail
+    if type -P dnf > /dev/null; then
+        # TODO mike@carif.io: fix pkg naming conventions here
+        sudo $(type -P dnf) install --assumeyes "$@"
+    elif type -P apt > /dev/null; then
+        sudo $(type -P apt) install -y "$@" && return $?
+    # TODO mike@carif.io: other platforms here as they're needed.
+    # elif type -P ${command} install ${stuff}
+    else
+        false && return $(u.error "${FUNCNAME} cannot install '$@' on distro $(os.release ID)")
+    fi
+)
+f.x install.distro
