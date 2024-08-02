@@ -3,15 +3,6 @@
 # Front matter. Parse the source command line. Install by platform if --install,
 # trace (and revert) if --trace.
 _guard=$(path.basename ${BASH_SOURCE})
-declare -A _option=([verbose]=0 [trace]=0)
-declare -a _rest=( $(u.parse _option "$@") )
-_undo=''; trap -- 'eval ${_undo}; unset _option _rest _undo; trap -- - RETURN' RETURN
-if (( ${_option[trace]} )) && ! bashenv.is.tracing; then
-    _undo+='set +x;'
-    set -x
-fi
-
-# nothing to install
 
 # not working
 platform.parse() (
@@ -27,16 +18,16 @@ f.x platform.parse
 
 
 platform.upgrade() (
-    set -u
+    set -uo pipefail
     # TODO mike@carif.io: how to upgrade jetbrains via their toolbox without human intervention?
     local _jetbrains_toolbox="${HOME}/.local/share/JetBrains/Toolbox/bin/jetbrains-toolbox"
     [[ -x "${_jetbrains_toolbox}" ]] && >&2 echo "${_jetbrains_toolbox} upgrade # tbs"
 
     u.have snap && snap refresh
-    u.have cargo && cargo.update-all
+    u.have cargo && cargo.update.all
     u.have brew && brew update -y
     u.have flatpak && flatpak upgrade -y
-    u.have rpm-ostree && sudo $(type -P rpm-ostree) upgrade || sudo $(type -P dnf) upgrade --allowerasing --assumeyes    
+    u.have rpm-ostree && sudo $(type -P rpm-ostree) upgrade || dnf upgrade --allowerasing
 )
 f.x platform.upgrade
 
