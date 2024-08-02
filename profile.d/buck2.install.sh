@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
-source $(u.here)/install.lib.sh
 
 install() (
     set -Eeuo pipefail
@@ -12,7 +11,5 @@ install() (
     >&2 echo "installed '${_buck2}' from '$2'"
 )    
 
-# install $(path.basename ${BASH_SOURCE}) "$@"
-# install "$@"
 install $(path.basename ${BASH_SOURCE}) "https://github.com/facebook/buck2/releases/download/latest/buck2-x86_64-unknown-linux-gnu.zst" "$@"
 

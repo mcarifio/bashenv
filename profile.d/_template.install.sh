@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
-source $(u.here)/install.lib.sh
 
 # ${guard}.install.sh will install ${guard} in various ways. You'll choose and
 # then customize the one you want, typically by modifying `install()` to call

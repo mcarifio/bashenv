@@ -4,7 +4,7 @@
 # https://formulae.brew.sh/formula/elan-init#default
 install.brew() (
     set -Eeuo pipefail
-    command brew install "$@"
+    u.have brew && command brew install "$@"
 )
 f.x install.brew
 
@@ -12,9 +12,8 @@ install.asdf() (
     set -Eeuo pipefail
     local _plugin=${1:?'expecting an asdf plugin'}
     local _version=${2:-latest}
-    asdf plugin add ${_plugin} ${3:-}
-    asdf install ${_plugin} ${_version}
-    asdf global ${_plugin} ${_version}
+    asdf plugin add ${_plugin} ${3:-} || true
+    asdf install ${_plugin} ${_version} && asdf global ${_plugin} ${_version}
     asdf which ${_plugin}
 )
 f.x install.asdf
@@ -92,7 +91,7 @@ install.cargo() (
     # assume rust installed with rustup; rustup and cargo on PATH
     local _pkg=${1:?'expecting a package name'}; shift
     rustup upgrade
-    (set -x; cargo install ${_pkg} "$@")
+    cargo install ${_pkg} "$@"
     >&2 echo "${FUNCNAME} installed ${_pkg}"
     type -P ${_pkg}
 )
@@ -140,3 +139,10 @@ install.distro() (
     fi
 )
 f.x install.distro
+
+install.all() (
+    for i in $(bashenv.root)/profile.d/*.install.sh; do
+        [[ -x "$i" ]] && $i || >&2 echo -e "\n\n\n*** $i failed\n\n\n"
+    done
+)
+f.x install.all
