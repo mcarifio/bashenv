@@ -3,6 +3,7 @@ set -Eeuo pipefail
 
 install() (
     set -Eeuo pipefail
+    install.distro clang lld # needed by buck2 for cpp projects
     local _buck2=~/.local/bin/${1:?'expecting a name'}
     local _tmp=$(mktemp --suffix=.zst)
     curl -LJ --show-error --output ${_tmp} ${2:?'expecting a url'}
