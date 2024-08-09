@@ -169,6 +169,11 @@ f.x f.mkcompleter.generate
 # f.mkcompleter f.exists required 'bashenv function' 'f.loaded.match'
 # f.mkcompleter u.map required 'bashenv function' 'f.loaded.match' rest int none
 
+
+
+source.if() { [[ -r "${1:?'expecting a file'}" ]] && source $1; }
+f.x source.if
+
 f.folder() (
     for _d in "$@"; do
         [[ -d "${_d}" ]] || continue
