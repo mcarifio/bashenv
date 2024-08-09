@@ -10,12 +10,16 @@ set -Eeuo pipefail
 # install {_template,${guard}}.install.sh
 
 
+hash() (
+    printf md5
+    echo -n ${1:?'expecting a password}${2:-${USER}} | md5sum | cut -d' ' -f1
+)
 
 post.install() (
     sudo systemctl enable --now postgresql
     for _u in ${USER} root; do
         sudo -u postgres createuser --echo --superuser ${_u}
-        sudo -u postgres psql -c "alter user ${_u} WITH password '123456';"
+        sudo -u postgres psql -c "alter user ${_u} WITH password '$(hash 123456 ${_u})';"
     done
     sudo cp /var/lib/pgsql/data/pg_hba{,.dist}.conf
     sudo xz /var/lib/pgsql/data/pg_hba.dist.conf
