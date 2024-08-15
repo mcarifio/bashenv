@@ -106,8 +106,13 @@ f.complete zlib.mv
 zlib.mv.all() (
     : 'zlib.mv-all *.{pdf,epub} # mv all matching pathnames to a target based on the pathname "category"'
     # _args, the command line arguments. Defaults to *.pdf *.epub
-    local -a _args=( "$@" ); [[ -z "${_args}" ]] && _args=( $(echo *.pdf *.epub) )
-    for _src in ${_args[@]}; do zlib.mv "${_src}" $(zlib.target '' "${_src}") || true ; done
+    local -a _args=( "$@" ); [[ -z "${_args}" ]] && _args=( $(find . -type f -name \*.epub -o -name \*.pdf ! -path '* *') )
+    for _src in ${_args[@]}; do
+        # skip partial downloads
+        local _part=$(echo $(dirname "${_src}")/$(path.basename "${_src}").*.${_ext}.part)
+        [[ -r  "${_part}" ]] && continue
+        zlib.mv "${_src}" $(zlib.target '' "${_src}") || true
+    done
 )
 f.complete zlib.mv
 
