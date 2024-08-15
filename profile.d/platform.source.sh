@@ -19,6 +19,10 @@ f.x platform.parse
 
 platform.upgrade() (
     set -uo pipefail
+
+    # rpm-ostree | dnf upgrade first, might effect what's above it.
+    u.have rpm-ostree && sudo $(type -P rpm-ostree) upgrade || dnf upgrade --allowerasing
+
     # TODO mike@carif.io: how to upgrade jetbrains via their toolbox without human intervention?
     local _jetbrains_toolbox="${HOME}/.local/share/JetBrains/Toolbox/bin/jetbrains-toolbox"
     [[ -x "${_jetbrains_toolbox}" ]] && >&2 echo "${_jetbrains_toolbox} upgrade # tbs"
@@ -27,7 +31,6 @@ platform.upgrade() (
     u.have cargo && cargo.update.all
     u.have brew && brew update -y
     u.have flatpak && flatpak upgrade -y
-    u.have rpm-ostree && sudo $(type -P rpm-ostree) upgrade || dnf upgrade --allowerasing
 )
 f.x platform.upgrade
 
