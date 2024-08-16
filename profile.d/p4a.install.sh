@@ -1,0 +1,1 @@
+kivy.install.sh

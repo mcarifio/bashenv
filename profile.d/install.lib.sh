@@ -140,6 +140,19 @@ install.distro() (
 )
 f.x install.distro
 
+
+install.pip() (
+    set -Eeuo pipefail
+    local _pkg=${1:?'expecting a pip python package (please)'}; shift
+    python -m pip install --upgrade pip wheel setuptools
+    # Install dependencies first if unstated in the package itself.
+    # You only get one go at it.
+    (( $# )) && python -m pip install --upgrade "$@"
+    python -m pip install --upgrade ${_pkg}    
+)
+f.x install.pip
+
+
 install.all() (
     for i in $(bashenv.root)/profile.d/*.install.sh; do
         [[ -x "$i" ]] && $i || >&2 echo -e "\n\n\n*** $i failed\n\n\n"
