@@ -144,7 +144,8 @@ f.x install.distro
 install.pip() (
     set -Eeuo pipefail
     local _pkg=${1:?'expecting a pip python package (please)'}; shift
-    python -m pip install --upgrade pip wheel setuptools
+    python -m pip install --upgrade pip
+    python -m pip install --upgrade wheel setuptools
     # Install dependencies first if unstated in the package itself.
     # You only get one go at it.
     (( $# )) && python -m pip install --upgrade "$@"
