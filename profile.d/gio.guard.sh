@@ -13,23 +13,6 @@ if (( ${_option[trace]} )) && ! bashenv.is.tracing; then
     set -x
 fi
 
-# install by distro id by (runtime) dispatching to distro install function
-eval "${_guard}.install() ( ${_guard}.install.\$(os-release.id); )"
-f.x ${_guard}.install
-
-eval "${_guard}.install.fedora() ( set -x; dnf install glib2; )" ## untested
-f.x ${_guard}.install.fedora
-
-eval "${_guard}.install.ubuntu() ( set -x; sudo apt upgrade -y; sudo apt install -y glib2; )" ## untested
-f.x ${_guard}.install.ubuntu
-
-# source ${_guard}.guard.sh --install
-if (( ${_option[install]} )) && ! u.have ${_guard}; then
-    ${_guard}.install ${_rest} || return $(u.error "${_guard}.install failed")
-fi
-
-
-
 # _gio itself
 
 desktop.data_dirs() (
@@ -40,17 +23,24 @@ f.complete desktop.data_dirs
 
 # find the full pathname of an application's desktop file by searching for it in well known locations.
 desktop.which() ( 
-    : 'desktop.find ${name} # find the first .desktop file that matches ${name}'
+    : '${name} # find the first .desktop file that matches ${name}'
     local -r _app=${1?'expecting an app'}
     for _d in $(desktop.data_dirs); do
 	local _desktop=$(2>/dev/null find "${_d}" -maxdepth 1 -name \*"${_app}".desktop -print)
 	[[ -r "${_desktop}" ]] && { echo "${_desktop}"; return 0; }
     done
-    >&2 echo "${_app} not found"
-    return 1
-
+    return $(u.error "${_app} not found")
 )
 f.complete desktop.which
+
+desktop.exec() (
+    : '${_exec} # get Exec= from a .desktop file'
+    local -r _app=${1?'expecting an app'}
+    local -r _which=$(desktop.which ${_app}) || return $(u.error "no .desktop found for '${_app}'")
+    grep -e "^Exec=" ${_which}
+)
+f.x desktop.exec
+
 
 # launch a .desktop file at the command line
 desktop.launch() (
@@ -89,7 +79,7 @@ desktop.grep.exec() (
     for _d in $(desktop.data_dirs); do
 	# (set -x; grep "^Exec=[[:space:]]*${_re}" $(2>/dev/null find "${_d}" -maxdepth 1 -name \*.desktop -print) /dev/null) || true
 	# TODO apply realpath to pathname
-	grep "^Exec=[[:space:]]*${_re}" $(2>/dev/null find "${_d}" -maxdepth 1 -name \*.desktop -print) /dev/null || true
+	command grep -e "^Exec=[[:space:]]*${_re}" $(2>/dev/null find "${_d}" -maxdepth 1 -name \*.desktop -print) /dev/null
     done | sort | uniq
 )
 f.complete desktop.grep.exec
