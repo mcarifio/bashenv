@@ -21,7 +21,7 @@ platform.upgrade() (
     set -uo pipefail
 
     # rpm-ostree | dnf upgrade first, might effect what's above it.
-    u.have rpm-ostree && sudo $(type -P rpm-ostree) upgrade || dnf upgrade --allowerasing
+    sudo $(type -P rpm-ostree) upgrade 2>/dev/null || dnf upgrade --allowerasing
 
     # TODO mike@carif.io: how to upgrade jetbrains via their toolbox without human intervention?
     local _jetbrains_toolbox="${HOME}/.local/share/JetBrains/Toolbox/bin/jetbrains-toolbox"
