@@ -1,5 +1,5 @@
 packer.session() {
-    complete -C /usr/bin/packer packer
+    complete -C packer packer
 }
 f.x packer.session
 packer.session

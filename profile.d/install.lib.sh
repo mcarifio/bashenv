@@ -114,8 +114,26 @@ f.x install.go
 
 # by distro id
 install.fedora() (
+    : '[--import=${url}]+ [--add-repo=${url}]+ pkg+'
     set -Eeuo pipefail
-    sudo $(type -P dnf) install --assumeyes "$@"
+
+    if ((${#@})); then
+        for _a in "${@}"; do
+            case "${_a}" in
+                --add-repo=*) dnf config-manager --add-repo "${_a#--add-repo=}";;
+                --import=*) dnf config-manager --import "${_a#--import=}";;
+                --)
+                    shift
+                    break
+                    ;;
+                *) break ;;
+            esac
+            shift
+        done
+    fi
+    local _last=${1:?'expecting a package'}; shift
+    ((${#@})) && sudo $(type -P dnf) install --assumeyes "$@"
+    sudo $(type -P dnf) install --assumeyes "${_last}"
 )
 f.x install.fedora
 

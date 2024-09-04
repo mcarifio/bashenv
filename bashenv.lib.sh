@@ -10,7 +10,7 @@
 #   - the first line of the function definition is : 'text' which acts as a docstring
 
 # name -> date
-unset __bashenv_loaded || true
+# unset __bashenv_loaded || true
 declare -Ax __bashenv_loaded=()
 
 f.x() {
@@ -94,7 +94,7 @@ f.complete() {
     local _fc=__${_f}.complete
     f.exists ${_f} || return $(u.error "no function '${_f}'")
     declare -gfx ${_f}
-    __bashenv_loaded[${_f}]=$(date)
+    __bashenv_loaded["${_f}"]=$(date)
     f.exists ${_fc} || return 0
     declare -gfx ${_fc}
     complete -F ${_fc} ${_f}
