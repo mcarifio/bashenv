@@ -108,7 +108,7 @@ f.x install.check
 
 install.go() (
     set -Eeuo pipefail
-    GOBIN=${GOBIN:-~/.local/bin} go install ${1:?'expecting a url'}
+    GOBIN=${GOBIN:-$(go env GOBIN)} go install ${1:?'expecting a url'}
 )
 f.x install.go
 
