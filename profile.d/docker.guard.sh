@@ -11,15 +11,6 @@ if (( ${_option[trace]} )) && ! bashenv.is.tracing; then
     _undo+='set +x;'
     set -x
 fi
-if (( ${_option[install]} )); then
-    if u.have ${_guard}; then
-        >&2 echo ${_guard} already installed
-    elif [[ -x "${BASH_SOURCE/.guard./.install.}" ]] ; then
-        "${BASH_SOURCE/.guard./.install.}" "$@"
-    else        
-        $(u.here)/guard.install.sh ${BASH_SOURCE%%.*} "$@"
-    fi
-fi
 
 # template itself
 # not working
@@ -34,6 +25,13 @@ _docker.parse() (
 
 # TODO mike@carif.io: logic needs fixing
 f.x _docker.parse
+
+docker.clean.all() (
+    : '## remove *all* local images'
+    set -uEeo pipefail
+    docker rmi --force $(docker images --quiet --all)
+)
+f.x docker.clean.all
 
 docker.docs() (
     set -Eeuo pipefail
