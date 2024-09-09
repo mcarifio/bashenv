@@ -28,9 +28,10 @@ install() (
     #               docker-engine || true
     
     # https://docs.docker.com/engine/install/fedora/
-    local _distro=$(os.release ID)
+    local -r _distro=$(os.release ID) _arch=$(arch) _suffix=amd64
     install.${_distro} --add-repo=https://download.docker.com/linux/${_distro}/docker-ce.repo \
-                   docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin --allowerasing
+            docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin --allowerasing
+    install.${_distro} https://desktop.docker.com/linux/main/${_suffix}/docker-desktop-${_arch}.rpm
     post.install
     install.check docker
     docker run hello-world    
