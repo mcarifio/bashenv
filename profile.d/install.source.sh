@@ -54,15 +54,14 @@ install.curl-tar() (
 f.x install.curl-tar
 
 install.rustup() (
-    : '[--target=somewhere] ${pkg}...'
+    : '[--home=somewhere] ${pkg}...'
     set -Eeuo pipefail
 
     # parse calling arguments
-    local _target="~/.cargo/bin"
     if (( $# )); then
         for _a in "${@}"; do
             case "${_a}" in
-                --target=*) _target="${_a#--target=}" ;;
+                --home=*) _home="${_a#--target=}" ;;
                 --)
                     shift
                     break
@@ -75,7 +74,9 @@ install.rustup() (
 
     # https://www.rust-lang.org/learn/get-started
     # TODO mike@carif.io: install to ${_target}?
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh # hate this
+    # https://rust-lang.github.io/rustup/installation/other.html
+    [[ -n "${_home}" ]] && export CARGO_HOME="${_home}"
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -- --verbose --no-modify-path --default-toolchain stable --profile complete
     # hardcoded installation directory ugh
     path.add "${_target}"
     install.check rustup
