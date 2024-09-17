@@ -46,7 +46,7 @@ docker.env() {
 f.x docker.env
 
 docker.session() {
-    true || return $(u.error "${FUNCNAME} failed")
+    { u.have docker-credential-desktop && source <(docker-credential-desktop completion $(u.shell 2>/dev/null || echo bash)); } || true
 }
 f.x docker.session
 

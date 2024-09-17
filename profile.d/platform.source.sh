@@ -20,6 +20,20 @@ f.x platform.parse
 platform.upgrade() (
     set -uo pipefail
 
+    local -i _shutdown=0
+    
+    if (( ${#@} )) ; then
+        for _a in "${@}"; do
+            case "${_a}" in
+		--shutdown) _shutdown=1;;
+                --) shift; break;;
+                *) break;;
+            esac
+            shift
+        done
+    fi
+
+
     # rpm-ostree | dnf upgrade first, might effect what's above it.
     sudo $(type -P rpm-ostree) upgrade 2>/dev/null || dnf upgrade --allowerasing
 
@@ -31,6 +45,8 @@ platform.upgrade() (
     u.have cargo && cargo.update.all
     u.have brew && brew update -y
     u.have flatpak && flatpak upgrade -y
+
+    (( _shutdown )) && sudo shutdown -h now
 )
 f.x platform.upgrade
 
