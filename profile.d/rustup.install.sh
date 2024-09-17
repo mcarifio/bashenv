@@ -8,5 +8,5 @@ install() (
 
 
 
-install "~/opt/asdf/current/.default-cargo-crates"
+install --home="~/opt/cargo" "~/opt/asdf/current/.default-cargo-crates"
 
