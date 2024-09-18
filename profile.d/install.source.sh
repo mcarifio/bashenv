@@ -9,10 +9,11 @@ install.brew() (
 f.x install.brew
 
 install.asdf() (
+    : 'install.asdf ${_plugin} [${_url} [${_version}]]'
     set -Eeuo pipefail
     local _plugin=${1:?'expecting an asdf plugin'}
-    local _version=${2:-latest}
-    asdf plugin add ${_plugin} ${3:-} || true
+    asdf plugin add ${_plugin} ${2:-} || true
+    local _version=${3:-latest}
     asdf install ${_plugin} ${_version} && asdf global ${_plugin} ${_version}
     asdf which ${_plugin}
 )
