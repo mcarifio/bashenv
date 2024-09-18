@@ -185,6 +185,13 @@ f.folder() (
 )
 f.x f.folder
 
+f.newest() (
+    local _pattern="${1:?'expecting a pathname pattern'}"
+    local _dir="${_pattern%/*}"
+    local _name="${_pattern##*/}"
+    find "${_dir}" -name "'${_name}'" -type f -printf '%T@ %p\n' | sort -n | tail -n 1 | cut -d' ' -f2-
+)
+f.x f.newest
 
 # plus1, useful to test u.map next
 example.plus1() (

@@ -174,6 +174,27 @@ install.pip() (
 f.x install.pip
 
 
+install.AppImage() (
+    : '${_url} {_target:-~/opt/appimage/current/bin}'
+    local _name=${1:?'expecting a name'}
+    local _url="${2:?'expecting a url'}"
+    local _suffix=${_url##*.}
+    local _dir=${3:-${HOME}/opt/appimage/current/bin}
+    local _scheme=${_url%*:}
+    if [[ "${_scheme}" != file ]] ; then
+        local _tmp=$(mktemp --suffix=.${_suffix})
+        curl -LJ --show-error --output ${_tmp} "${_url}"
+        local _source=${_tmp}/*.AppImage
+    else
+        local _source=${_url/file://}
+    fi
+    local _target="${_dir}/${_name}"
+    command install -v "${_source}" "${_target}"
+    >&2 echo "installed '${_target}' from '${_url}'"
+    echo ${_target}    
+)
+
+
 install.all() (
     for i in $(bashenv.root)/profile.d/*.install.sh; do
         [[ -x "$i" ]] && $i || >&2 echo -e "\n\n\n*** $i failed\n\n\n"
