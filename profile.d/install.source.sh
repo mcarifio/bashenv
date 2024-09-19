@@ -193,7 +193,7 @@ install.AppImage() (
     >&2 echo "installed '${_target}' from '${_url}'"
     echo ${_target}    
 )
-
+f.x install.AppImage
 
 install.all() (
     for i in $(bashenv.root)/profile.d/*.install.sh; do

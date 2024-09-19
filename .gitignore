@@ -9,4 +9,4 @@
 
 # ignore log files
 *.log
-pj/log/**
+**/log/**
