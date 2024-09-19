@@ -131,5 +131,22 @@ zlib.categorize.all() (
 )
 f.x zlib.categorize.all
 
+zlib.cat.tree() (
+    : '${_root:-$PWD} # add/change the suffix of every .pdf/.epub file in a tree to match its directory'
+    # foo/something.bar.pdf -> foo/something.foo.pdf
+    for _f in $(find ${1:-${PWD}} -type f -name \*.pdf -o -name \*.epub); do
+        local _cat=$(basename $(dirname ${_f}))
+	local _src=${_f%%*/}
+	declare -a _parts=( ${_src//./ } )
+	local -i _start=1
+	(( ${#_parts[@]} > 2 )) && _start=2
+	local _type=${_parts[1]}
+	local _target=${_parts[0]}.${_cat}$(printf '.%s' ${_parts[@]:${_start}})
+	mv -v ${_f} "${_target}"
+    done    
+)
+f.x zlib.cat.tree
+
+
 loaded "${BASH_SOURCE}"
 
