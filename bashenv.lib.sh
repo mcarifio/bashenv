@@ -1105,12 +1105,6 @@ f.x sa.shutdown.all
 tbird.logged() (NSPR_LOG_MODULES=SMTP:4,IMAP:4 NSPR_LOG_FILE=/tmp/thunderbird-$$.log thunderbird)
 f.x tbird.logged
 
-# https://www.linuxuprising.com/2020/07/how-to-restart-gnome-shell-from-command.html
-gnome.restart() (
-    busctl --user call org.gnome.Shell /org/gnome/Shell org.gnome.Shell Eval s 'Meta.restart("Restarting…")'
-)
-f.x gnome.restart
-
 guard.mkguard() (
     : '${_name} # create ${_name}.guard.sh in the right folder'
     set -Eeuo pipefail; shopt -s nullglob
@@ -1119,7 +1113,14 @@ guard.mkguard() (
     local -r _guard="${_where}/${_name}.guard.sh"
     [[ -f "${_guard}" ]] && return $(u.error "${_guard} already exists?") \
             || xzcat "${_where}/_template.guard.sh.xz" | sed "s/\${g}/${_name}/g" > "${_guard}"
-    [[ -f "${_guard}" ]] && echo "${_guard}" || return $(u.error "${_guard} not created")    
+    if [[ -f "${_guard}" ]]; then
+        local -r _install="${_guard/guard/install}"
+        [[ -r "${_install}" ]] || cp "${_where}/_template.install.sh" "${_install}"
+        >&2 git -C "$(bashenv.root)" status ${_guard} ${_install}
+        echo "${_guard}"
+    else
+        return $(u.error "${_guard} not created")
+    fi
 )
 f.x guard.mkguard
 
