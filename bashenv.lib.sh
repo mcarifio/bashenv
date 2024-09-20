@@ -1111,6 +1111,17 @@ gnome.restart() (
 )
 f.x gnome.restart
 
+guard.mkguard() (
+    : '${_name} # create ${_name}.guard.sh in the right folder'
+    set -Eeuo pipefail; shopt -s nullglob
+    local -r _name=${1:?'expecting a name'}
+    local -r _where="$(bashenv.root)/profile.d"
+    local -r _guard="${_where}/${_name}.guard.sh"
+    [[ -f "${_guard}" ]] && return $(u.error "${_guard} already exists?") \
+            || xzcat "${_where}/_template.guard.sh.xz" | sed "s/\${g}/${_name}/g" > "${_guard}"
+    [[ -f "${_guard}" ]] && echo "${_guard}" || return $(u.error "${_guard} not created")    
+)
+f.x guard.mkguard
 
 # bashenv.loaded || echo "bashenv not loaded"
 loaded "${BASH_SOURCE}"
