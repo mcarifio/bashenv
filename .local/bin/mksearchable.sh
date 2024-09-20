@@ -13,8 +13,8 @@ mksearchable() (
     set -Eeuo pipefail; shopt -s nullglob
 
     # parse flags
-    local -i _function=0 _fx=0
-    local _name=''
+    local -i _function=0 _fx=0 _regenerate=0
+    local _name='' _db=''
     
     if (( ${#@} )) ; then
         for _a in "${@}"; do
@@ -22,6 +22,8 @@ mksearchable() (
 		--function) _function=1;;
                 --function=*) _function=1; _fx=1;;
                 --name=*) _name=${_a##*=};;
+                --regenerate) _regenerate=1;;
+                --db=*) _db=${_a##*=};;
                 --) shift; break;;
                 *) break;;
             esac
@@ -29,16 +31,17 @@ mksearchable() (
         done
     fi
 
-    local -r _root="${1:-$(realpath -Lm ${0%/*}/..)}"
-    local -r _db="${2:-${_root}/${_name}.locate.db}"
-    [[ -z "${_name}" ]] && _name=locate.${_root##*/}
+    local -r _root="${1:-$(realpath -Lm ${0%/*}/..)}"; shift || true
+    [[ -z "${_name}" ]] && _name=${_root##*/}
+    local -r _fname=${_name}.locate
+    [[ -z "${_db}" ]] && _db="${_root}/${_name}.locate.db}"
 
     # index ${_root}
-    updatedb --require-visibility 0 --output "${_db}" --database-root "${_root}"
+    [[ ! -r "${_db}" || (( _regenerate )) ]] && updatedb --require-visibility yes --output "${_db}" --database-root "${_root}"
 
     if (( _function )); then
-        printf '%s() ( locate --database "%s" "$@"; );' ${_name} "${_db}"
-        (( _fx )) && printf 'declare -fx %s;' ${_name}
+        printf '%s() ( locate --database "%s" "$@"; );' ${_fname} "${_db}"
+        (( _fx )) && printf 'declare -fx %s;' ${_fname}
         echo
     else
         echo "${_db}"
