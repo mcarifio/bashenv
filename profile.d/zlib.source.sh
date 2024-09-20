@@ -148,5 +148,7 @@ zlib.cat.tree() (
 f.x zlib.cat.tree
 
 
+source <($(bashenv.root)/.local/bin/mksearchable.sh --function=fx --name=e.locate "$(zlib.root)")
+
 loaded "${BASH_SOURCE}"
 
