@@ -20,12 +20,13 @@ f.x platform.parse
 platform.upgrade() (
     set -uo pipefail
 
-    local -i _shutdown=0
+    local -i _shutdown=0 _reboot=0
     
     if (( ${#@} )) ; then
         for _a in "${@}"; do
             case "${_a}" in
 		--shutdown) _shutdown=1;;
+                --reboot) _reboot=1;;
                 --) shift; break;;
                 *) break;;
             esac
@@ -48,6 +49,7 @@ platform.upgrade() (
     u.have asdf && type asdf.platform-update &> /dev/null && asdf.platform-update
 
     (( _shutdown )) && sudo shutdown -h now
+    (( _reboot )) && sudo reboot
 )
 f.x platform.upgrade
 
