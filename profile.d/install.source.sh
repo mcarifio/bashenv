@@ -14,7 +14,7 @@ install.asdf() (
     local _plugin=${1:?'expecting an asdf plugin'}
     asdf plugin add ${_plugin} ${2:-} || true
     local _version=${3:-latest}
-    asdf install ${_plugin} ${_version} && asdf global ${_plugin} ${_version}
+    { asdf install ${_plugin} ${_version} && asdf global ${_plugin} ${_version}; } >&2
     asdf which ${_plugin}
 )
 f.x install.asdf
@@ -102,9 +102,10 @@ f.x install.cargo
 install.check() (
     set -Eeuo pipefail
     local _command="${1:?'expecting a command'}"
-    echo "${FUNCNAME} ${_command} at $(type -P ${_command})"    
-    ${_command} --version &> /dev/null && ${_command} --version && return 0
-    ${_command} version
+    { echo "${FUNCNAME} ${_command} at $(type -P ${_command})"
+      ${_command} --version &> /dev/null && ${_command} --version && return 0
+      ${_command} version
+    } >&2
 )
 f.x install.check
 

@@ -12,7 +12,7 @@ _install() (
     local _kind=${1:-distro}; shift || true
     # install.$(os.release ID) "$@"
     local _name=${1:?'expecting a name'}; shift || true
-    install.${kind} ${_name} "$@"
+    install.${_kind} ${_name} "$@"
     # _post.install "$@"
     install.check ${_name}
 )
