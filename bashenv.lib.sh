@@ -503,18 +503,34 @@ f.complete path.hpn
 u.map.mkall path.hpn
 
 # path.basename
-path.basename() (
+path.basename0() (
     : '${pathname} #> echo basename of ${pathname}. all extensions are removed.'
     local _pn=${1:?'expecting a pathname'}
     local _result=${_pn##*/}
     echo ${_result%%.*}
 )
-__path.basename.complete() {
-    local _command=$1 _word=$2 _previous_word=$3
-    # return list of possible directories https://stackoverflow.com/questions/12933362/getting-compgen-to-include-slashes-on-directories-when-looking-for-files/40227233#40227233a
-    COMPREPLY=($(compgen -f -- $2))
-}
-f.complete path.basename
+# __path.basename.complete() {
+#     local _command=$1 _word=$2 _previous_word=$3
+#     # return list of possible directories https://stackoverflow.com/questions/12933362/getting-compgen-to-include-slashes-on-directories-when-looking-for-files/40227233#40227233a
+#     COMPREPLY=($(compgen -f -- $2))
+# }
+# f.complete path.basename0
+
+path.basename.part() (
+    : '${_pn} ${_position} # return the nth part of a pathnames basename'
+    local _pn="${1:?'expecting a pathname'}"
+    local -ir _position=${2:--1}
+    _pn=${_pn##*/} # remove dirname
+    declare -a _result=( ${_pn//./ } ) # break basename into it's parts via dot (.)
+    # declare -p _pn _position _result
+    echo ${_result[${_position}]} # return the part by position (indices from the right)
+)
+f.x path.basename.part
+
+path.basename() ( path.basename.part "${1:?'expecting a pathname'}" 0; )
+f.x path.basename
+
+
 
 # path.md
 path.md() (

@@ -3,7 +3,7 @@ set -Eeuo pipefail
 
 _post.install() (
     # after installation configuration
-    >&2 echo "${FUNCNAME} $@ # placeholder does nothing currently"
+    >&2 echo "${FUNCNAME} $@ # ${FUNCNAME} tbs"
 )
 
 
@@ -19,5 +19,5 @@ _install() (
 
 # install "$@"
 # install $(path.basename ${BASH_SOURCE}) "$@"
-_install asdf $(path.basename ${BASH_SOURCE}) "$@"
+_install $(path.basename.part $(basename ${BASH_SOURCE}) 1)  $(path.basename ${BASH_SOURCE}) "$@"
 
