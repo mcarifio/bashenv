@@ -19,5 +19,5 @@ _install() (
 
 # install "$@"
 # install $(path.basename ${BASH_SOURCE}) "$@"
-_install distro $(path.basename ${BASH_SOURCE}) "$@"
+_install asdf $(path.basename ${BASH_SOURCE}) "$@"
 

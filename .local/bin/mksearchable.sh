@@ -10,11 +10,12 @@
 # mksearchable --function --name=foo ~/Documents/e names the bash function `foo`.
 
 mksearchable() (
+    : '[${_root} [${_db}]] ## generate plocate database at pathname _db of content rooted at pathname _root'
     set -Eeuo pipefail; shopt -s nullglob
 
     # parse flags
     local -i _function=0 _fx=0 _regenerate=0
-    local _name='' _db=''
+    local _name='' # _db=''
     
     if (( ${#@} )) ; then
         for _a in "${@}"; do
@@ -23,7 +24,7 @@ mksearchable() (
                 --function=*) _function=1; _fx=1;;
                 --name=*) _name=${_a##*=};;
                 --regenerate) _regenerate=1;;
-                --db=*) _db=${_a##*=};;
+                # --db=*) _db=${_a##*=};;
                 --) shift; break;;
                 *) break;;
             esac
@@ -34,7 +35,8 @@ mksearchable() (
     local -r _root="${1:-$(realpath -Lm ${0%/*}/..)}"; shift || true
     [[ -z "${_name}" ]] && _name=${_root##*/}
     local -r _fname=${_name}.locate
-    [[ -z "${_db}" ]] && _db="${_root}/${_name}.locate.db}"
+    # [[ -z "${_db}" ]] && _db="${_root}/${_name}.locate.db}"
+    local -r _db="${2:-${_root}/${_name}.locate.db}}"
 
     # index ${_root}
     [[ ! -r "${_db}" || (( _regenerate )) ]] && updatedb --require-visibility yes --output "${_db}" --database-root "${_root}"
