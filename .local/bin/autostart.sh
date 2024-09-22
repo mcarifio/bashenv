@@ -2,6 +2,8 @@
 # invoked by ~/.config/autostart.desktop
 
 set -Eeuo pipefail
+shopt -s nullglob
+[[ "$0" = */bashdb ]] && shift
 
 # Does gnome autostart login first?
 bashenv=$(bashenv.root 2>/dev/null || echo ${HOME}/bashenv/.bash_profile.d)

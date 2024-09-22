@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+set -Eeuo pipefail; shopt -s nullglob
+[[ "$0" = */bashdb ]] && shift
 
 main() (
     local -r _message="restarted by $0"

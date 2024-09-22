@@ -127,46 +127,72 @@ install.go() (
 )
 f.x install.go
 
-# by distro id
-install.fedora() (
+
+# by package manager
+
+# Note that dnf can handle urls directly. Use the url instead of the package name.
+# Note that web browser can often report the url they downloaded from. This can useful
+# for ${_guard}.{dnf,apt}.install.sh.
+install.dnf() (
+    : '[--import=${url}]+ [--add-repo=${url}]+ {$pkg||$url} $pkg*'
+    set -Eeuo pipefail
+
+    if ((${#@})); then
+        for _a in "${@}"; do
+            case "${_a}" in
+                --add-repo=*) sudo $(type -P dnf) config-manager --add-repo "${_a#--add-repo=}";;
+                --import=*) sudo $(type -P dnf) config-manager --import "${_a#--import=}";;
+                --) shift; break;;
+                *) break ;;
+            esac
+            shift
+        done
+    fi
+
+    # $@ is a list of packages to install. For convenience, the first package is considered
+    # the "primary" package and rest of the packages are considered prerequisites to be installed *first*.
+    local -a _pkgs=( "$@" )
+    # If there are prerequisites, install them first...
+    ((${#_pkgs[*]})) && sudo $(type -P dnf) install --assumeyes "${_pkgs[*]:1}"
+    # ... and then install the primary package.
+    sudo $(type -P dnf) install --assumeyes "${_pkgs[0]}"
+)
+f.x install.dnf
+
+install.apt() (
     : '[--import=${url}]+ [--add-repo=${url}]+ pkg+'
     set -Eeuo pipefail
 
     if ((${#@})); then
         for _a in "${@}"; do
             case "${_a}" in
-                --add-repo=*) dnf config-manager --add-repo "${_a#--add-repo=}";;
-                --import=*) dnf config-manager --import "${_a#--import=}";;
-                --)
-                    shift
-                    break
-                    ;;
+                --add-repo=*) sudo $(type -P apt) add "${_a##*=}";;
+                # --import=*) sudo $(type -P apt) config-manager --import "${_a##*=}";;
+                --import=*) sudo $(type -P apt) apt import "${_a##*=}";;
+                --) shift; break;;
                 *) break ;;
             esac
             shift
         done
     fi
-    local _last=${1:?'expecting a package'}; shift
-    ((${#@})) && sudo $(type -P dnf) install --assumeyes "$@"
-    sudo $(type -P dnf) install --assumeyes "${_last}"
-)
-f.x install.fedora
 
-install.ubuntu() (
-    set -Eeuo pipefail
-    sudo $(type -P apt) install -y "$@"
+    # $@ is a list of packages to install. For convenience, the first package is considered
+    # the "primary" package and rest of the packages are considered prerequisites to be installed *first*.
+    local -a _pkgs=( "$@" )
+    # If there are prerequisites, install them first...
+    ((${#_pkgs[*]})) && sudo $(type -P apt) install -y "${_pkgs[*]:1}"
+    # ... and then install the primary package.
+    sudo $(type -P apt) install -y "${_pkgs[0]}"
 )
-f.x install.ubuntu
+f.x install.apt
 
 install.distro() (
     set -Eeuo pipefail
-    if type -P dnf > /dev/null; then
+    if u.have dnf; then
         # TODO mike@carif.io: fix pkg naming conventions here
-        sudo $(type -P dnf) install --assumeyes "$@"
-    elif type -P apt > /dev/null; then
-        sudo $(type -P apt) install -y "$@" && return $?
-    # TODO mike@carif.io: other platforms here as they're needed.
-    # elif type -P ${command} install ${stuff}
+        install.dnf "$@"
+    elif u.have apt; then
+        install.apt "$@"
     else
         false && return $(u.error "${FUNCNAME} cannot install '$@' on distro $(os.release ID)")
     fi

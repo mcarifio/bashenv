@@ -35,6 +35,16 @@ ec() (
 )
 f.complete ec
 
+ec.bf() (
+    : '${function-name} # ec +${lineno} ${pathname} # suitable for emacs'
+    shopt -s extdebug
+    local -a _where=( $(declare -F ${1:?'expecting a function'}) )
+    # ${name} ${lineno} ${pathname}    
+    [[ main != "${_where[2]}" ]] && ec +${_where[1]} ${_where[2]} || return $(u.error "$1 has no associated file")  ## emacs format
+)
+f.x ec.bf
+
+
 _emacs.server() (
     : ' ${service} ## starts emacs systemd service ${service}'
    set -Eeuo pipefail

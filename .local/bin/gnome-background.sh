@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+shopt -s nullglob
+[[ "$0" = */bashdb ]] && shift
 
 # https://andrewmccarthy.ie/setting-a-blank-desktop-background-in-gnome.html
 # gsettings list-keys org.gnome.desktop.background

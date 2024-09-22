@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+set -Eeuo pipefail; shopt -s nullglob
+[[ "$0" = */bashdb ]] && shift
 
 # make a file tree searchable by creating a locate database at it's root based on the folder's name.
 # mksearchable ~/Documents/e creates ~/Documents/e/e.locate.db which can be searched with

@@ -22,7 +22,7 @@ f.x() {
 f.x f.x
 
 u.error() (
-    local -i _status=$?
+    local -i _status=${2:-$?}; (( _status )) || _status=1
     : '${command} || return $(u.error this is a message)'
 
     set -Eeuo pipefail
