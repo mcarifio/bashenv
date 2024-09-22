@@ -1125,12 +1125,13 @@ guard.mkguard() (
     : '${_name} # create ${_name}.guard.sh in the right folder'
     set -Eeuo pipefail; shopt -s nullglob
     local -r _name=${1:?'expecting a name'}
+    local -r _kind=${2:-distro}
     local -r _where="$(bashenv.root)/profile.d"
     local -r _guard="${_where}/${_name}.guard.sh"
     [[ -f "${_guard}" ]] && return $(u.error "${_guard} already exists?") \
             || xzcat "${_where}/_template.guard.sh.xz" | sed "s/\${g}/${_name}/g" > "${_guard}"
     if [[ -f "${_guard}" ]]; then
-        local -r _install="${_guard/guard/install}"
+        local -r _install="${_guard/guard/${kind}.install}"
         [[ -r "${_install}" ]] || cp "${_where}/_template.install.sh" "${_install}"
         >&2 git -C "$(bashenv.root)" status ${_guard} ${_install}
         echo "${_guard}"

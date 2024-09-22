@@ -37,6 +37,18 @@ install.curl() (
 )    
 f.x install.curl
 
+install.sh() (
+    : '${_url} ... # fetch a script remotely and run it'
+    set -Eeuo pipefail
+    local _name="${1:?'expecting a name'}"; shift
+    local _url="${2:?'expecting a url'}"; shift
+    >&2 printf "\n\nugh, hate this\n\n"
+    curl -LJ --show-error "${_url}" | sh -- "$@"
+)    
+f.x install.sh
+
+
+
 install.curl-tar() (
     set -Eeuo pipefail
     local _name="${1:?'expecting a name'}"
