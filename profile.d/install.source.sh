@@ -9,11 +9,24 @@ install.brew() (
 f.x install.brew
 
 install.asdf() (
-    : 'install.asdf ${_plugin} [${_url} [${_version}]]'
-    set -Eeuo pipefail
+    : 'install.asdf [--version=latest] ${_plugin} [${_url}]'
+    set -Eeuo pipefail; shopt -s nullglob
+
+    local _version=latest _toolchain=''
+     if (( ${#@} )) ; then
+         for _a in "${@}"; do
+            case "${_a}" in
+		--version=*) _version="${_a##*=}";;
+		--toolchain=*) _toolchain="${_a##*=}";;
+                --) shift; break;;
+                *) break;;
+            esac
+            shift
+        done
+    fi
+    
     local _plugin=${1:?'expecting an asdf plugin'}
     asdf plugin add ${_plugin} ${2:-} || true
-    local _version=${3:-latest}
     { asdf install ${_plugin} ${_version} && asdf global ${_plugin} ${_version}; } >&2
     asdf which ${_plugin}
 )
@@ -100,13 +113,10 @@ install.rustup() (
 
 
 install.cargo() (
-    set -Eeuo pipefail
-    # assume rust installed with rustup; rustup and cargo on PATH
-    local _pkg=${1:?'expecting a package name'}; shift
-    rustup upgrade
-    cargo install ${_pkg} "$@"
-    >&2 echo "${FUNCNAME} installed ${_pkg}"
-    type -P ${_pkg}
+    set -Eeuo pipefail; shopt -s nullglob
+    # rustup upgrade
+    local -r _pkg=${1:?'expecting a cargo package name'}; shift
+    (( ${#@} )) && cargo install "$@" || cargo install ${_pkg}
 )
 f.x install.cargo
 
