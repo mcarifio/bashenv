@@ -101,7 +101,6 @@ install.rustup() (
 
 install.cargo() (
     set -Eeuo pipefail
-    # local _id=$(os-release.id)
     # assume rust installed with rustup; rustup and cargo on PATH
     local _pkg=${1:?'expecting a package name'}; shift
     rustup upgrade
@@ -153,7 +152,7 @@ install.dnf() (
     # the "primary" package and rest of the packages are considered prerequisites to be installed *first*.
     local -a _pkgs=( "$@" )
     # If there are prerequisites, install them first...
-    ((${#_pkgs[*]})) && sudo $(type -P dnf) install --assumeyes "${_pkgs[*]:1}"
+    ((${#_pkgs[*]} - 1)) && sudo $(type -P dnf) install --assumeyes "${_pkgs[*]:1}"
     # ... and then install the primary package.
     sudo $(type -P dnf) install --assumeyes "${_pkgs[0]}"
 )
@@ -180,7 +179,7 @@ install.apt() (
     # the "primary" package and rest of the packages are considered prerequisites to be installed *first*.
     local -a _pkgs=( "$@" )
     # If there are prerequisites, install them first...
-    ((${#_pkgs[*]})) && sudo $(type -P apt) install -y "${_pkgs[*]:1}"
+    ((${#_pkgs[*]} - 1)) && sudo $(type -P apt) install -y "${_pkgs[*]:1}"
     # ... and then install the primary package.
     sudo $(type -P apt) install -y "${_pkgs[0]}"
 )

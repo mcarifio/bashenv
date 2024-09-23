@@ -156,4 +156,5 @@ asdf.install.all() (
 )
 f.x asdf.install.all
 
+unset _guard
 loaded "${BASH_SOURCE}"

@@ -1,3 +1,5 @@
+_guard=$(path.basename ${BASH_SOURCE})
+
 sudo.alacritty() (
     local _title=${1:?'expecting a title'}; shift
     sudo -E alacritty --title "${_title}" --option window.dimensions.{lines=50,columns=300} --command "$@"
@@ -27,7 +29,7 @@ watch.dmesg() (
 )
 f.x watch.dmesg
 
-alacritty.loaded() ( return 0; )
-f.x alacritty.loaded
+unset _guard
+loaded "${BASH_SOURCE}"
 
 
