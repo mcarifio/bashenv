@@ -2,8 +2,8 @@
 _guard=$(path.basename ${BASH_SOURCE})
 
 # Wrap freecad if needed.
-# freecad() ( command ${FUNCNAME} "$@"; )
-# f.x freecad
+freecad() ( LD_PRELOAD=/usr/lib64/libdrm_amdgpu.so.1 command ${FUNCNAME} "$@"; )
+f.x freecad
 
 
 freecad.docs() (
