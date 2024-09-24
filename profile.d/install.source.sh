@@ -60,7 +60,7 @@ install.sh() (
     : '${_url} ... # fetch a script remotely and run it'
     set -Eeuo pipefail
     local _name="${1:?'expecting a name'}"; shift
-    local _url="${2:?'expecting a url'}"; shift
+    local _url="${1:?'expecting a url'}"; shift
     >&2 printf "\n\nugh, hate this\n\n"
     # curl --proto '=https' --tlsv1.2 -sSf 
     curl --proto '=https' --tlsv1.2 -LJ --show-error "${_url}" | sh -- "$@"
