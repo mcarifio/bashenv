@@ -230,7 +230,7 @@ f.x install.pip
 
 
 install.AppImage() (
-    : '${_url} {_target:-~/opt/appimage/current/bin}'
+    : '${_name} ${_url} {_target:-~/opt/appimage/current/bin}'
     local _name=${1:?'expecting a name'}
     local _url="${2:?'expecting a url'}"
     local _suffix=${_url##*.}
@@ -239,7 +239,7 @@ install.AppImage() (
     if [[ "${_scheme}" != file ]] ; then
         local _tmp=$(mktemp --suffix=.${_suffix})
         curl -LJ --show-error --output ${_tmp} "${_url}"
-        local _source=${_tmp}/*.AppImage
+        local _source=${_tmp}
     else
         local _source=${_url/file://}
     fi
