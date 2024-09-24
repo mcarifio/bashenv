@@ -46,7 +46,7 @@ platform.upgrade() (
     u.have cargo && cargo.update.all
     u.have brew && brew update -y
     u.have flatpak && flatpak upgrade -y
-    u.have asdf && type asdf.platform-update &> /dev/null && asdf.platform-update
+    # u.have asdf && type asdf.platform-update &> /dev/null && asdf.platform-update
 
     (( _shutdown )) && sudo shutdown -h now
     (( _reboot )) && sudo reboot
