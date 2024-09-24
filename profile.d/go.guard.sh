@@ -16,6 +16,9 @@ f.x go.docs
 go.env() {
     : '# called (once) by .bash_profile'
     export GOBIN=${HOME}/.local/bin
+    mkdir -p $(go env GOPATH)
+    local -r _goenv="$(dirname $(go env GOENV))"
+    [[ -d "${_goenv}" ]] || >&2 echo "${_goenv} not found, continuing..."
 }
 f.x go.env
 
