@@ -1141,5 +1141,35 @@ guard.mkguard() (
 )
 f.x guard.mkguard
 
+guard.missing() (
+    set -Eeuo pipefail; shopt -s nullglob
+    local -i _installer=0
+
+    if (( ${#@} )) ; then
+        for _a in "${@}"; do
+            case "${_a}" in
+                --install) _installer=1;;
+                --) shift; break;;
+                *) break;;
+            esac
+            shift
+        done
+    fi
+    
+    local _cmd=''
+    for _f in $(bashenv.folders); do
+        for _g in ${_f}/*.guard.sh; do
+            _cmd="$(path.basename ${_g%*/})"
+            u.have ${_cmd} && continue
+            printf '%s ' ${_cmd}
+            (( _installer )) || { echo; continue; }
+            printf '# '
+            printf '%s ' $(find $(bashenv.root) -name ${_cmd}.\*.install.sh -type f)
+            echo
+        done
+    done | sort | uniq
+)
+f.x guard.missing
+
 # bashenv.loaded || echo "bashenv not loaded"
 loaded "${BASH_SOURCE}"

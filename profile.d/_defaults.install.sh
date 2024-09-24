@@ -32,6 +32,7 @@ _installx() (
     [[ -z "${_pkg:-}" ]] && return $(u.error 'expecting --pkg=${something}')
     install.${_kind} ${_pkg} "$@"
     [[ -z "${_cmd}" ]] && { _cmd=$(rpm -ql ${_pkg} | grep --max-count=1 --basic-regexp '^/usr/bin/'); >&2 echo "${_pkg} seems to install ${_cmd}, continuing..."; }
-    [[ -x "${_cmd}" ]] && _post.install "${_cmd}" || return $(u.error "${_cmd} is not executable")
+    _post.install "${_cmd}"
+
 )
 
