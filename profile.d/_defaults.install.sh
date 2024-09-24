@@ -14,7 +14,7 @@ _install() (
 
 _installx() (
     set -Eeuo pipefail; shopt -s nullglob
-    local _kind=distro _pkg _cmd
+    local _kind=distro _pkg='' _cmd=''
 
     if (( ${#@} )) ; then
         for _a in "${@}"; do
@@ -29,8 +29,9 @@ _installx() (
         done
     fi
     
-    [[ -n "${_pkg:-}" ]] || return $(u.error 'expecting --pkg=${something}')
+    [[ -z "${_pkg:-}" ]] && return $(u.error 'expecting --pkg=${something}')
     install.${_kind} ${_pkg} "$@"
-    _post.install "${_cmd:-${_pkg}}"
+    [[ -z "${_cmd}" ]] && { _cmd=$(rpm -ql ${_pkg} | grep --max-count=1 --basic-regexp '^/usr/bin/'); >&2 echo "${_pkg} seems to install ${_cmd}, continuing..."; }
+    [[ -x "${_cmd}" ]] && _post.install "${_cmd}" || return $(u.error "${_cmd} is not executable")
 )
 
