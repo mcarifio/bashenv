@@ -156,8 +156,9 @@ install.dnf() (
     if ((${#@})); then
         for _a in "${@}"; do
             case "${_a}" in
-                --add-repo=*) sudo $(type -P dnf) config-manager --add-repo "${_a#--add-repo=}";;
-                --import=*) sudo $(type -P dnf) config-manager --import "${_a#--import=}";;
+                --add-repo=*) sudo $(type -P dnf) config-manager --add-repo "${_a##*=}";;
+                --copr=*) sudo $(type -P dnf) copr enable "${_a##*=}";;
+                --import=*) sudo $(type -P dnf) config-manager --import "${_a##*=}";;
                 --) shift; break;;
                 *) break ;;
             esac
