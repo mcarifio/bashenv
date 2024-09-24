@@ -1,9 +1,15 @@
 # install.* installs "packages" in various ways such as brew, asdf, curl, dnf, apt and so forth.
 
+install.tbs() (
+    set -Eeuo pipefail; shopt -s nullglob
+    return $(u.error "${FUNCNAME} no installation supplied")
+)
+f.x install.tbs
+
 # brew install will upgrade older versions.
 # https://formulae.brew.sh/formula/elan-init#default
 install.brew() (
-    set -Eeuo pipefail
+    set -Eeuo pipefail; shopt -s nullglob
     u.have brew && command brew install "$@"
 )
 f.x install.brew
@@ -56,7 +62,8 @@ install.sh() (
     local _name="${1:?'expecting a name'}"; shift
     local _url="${2:?'expecting a url'}"; shift
     >&2 printf "\n\nugh, hate this\n\n"
-    curl -LJ --show-error "${_url}" | sh -- "$@"
+    # curl --proto '=https' --tlsv1.2 -sSf 
+    curl --proto '=https' --tlsv1.2 -LJ --show-error "${_url}" | sh -- "$@"
 )    
 f.x install.sh
 
