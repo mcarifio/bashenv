@@ -1127,17 +1127,14 @@ guard.mkguard() (
     local -r _name=${1:?'expecting a name'}
     local -r _kind=${2:-tbs}
     local -r _where="$(bashenv.root)/profile.d"
+    local -r _installd="${_where}/install.d"
     local -r _guard="${_where}/${_name}.guard.sh"
-    local -r _install="${_where}/${_name}.${_kind}.install.sh"
-    [[ -f "${_guard}" ]] && return $(u.error "${_guard} already exists?") \
-            || xzcat "${_where}/_template.guard.sh.xz" | sed "s/\${g}/${_name}/g" > "${_guard}"
-    if [[ -f "${_guard}" ]]; then
-        [[ -r "${_install}" ]] || cp "${_where}/_template.install.sh" "${_install}"
-        >&2 git -C "$(bashenv.root)" status ${_guard} ${_install}
-        echo "${_guard}"
-    else
-        return $(u.error "${_guard} not created")
-    fi
+    local -r _install="${_installd}/${_name}.${_kind}.install.sh"
+    [[ -f "${_guard}" ]] && return $(u.error "${_guard} already exists?")
+    xzcat "${_where}/_template.guard.sh.xz" | sed "s/\${g}/${_name}/g" > "${_guard}"
+    [[ -r "${_install}" ]] || cp "${_installd}/_template.install.sh" "${_install}"
+    >&2 git -C "$(bashenv.root)" status ${_guard} ${_install}
+    echo "${_guard}"
 )
 f.x guard.mkguard
 
