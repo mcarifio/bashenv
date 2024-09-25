@@ -30,9 +30,9 @@ _installx() (
     fi
     
     [[ -z "${_pkg:-}" ]] && return $(u.error 'expecting --pkg=${something}')
-    install.${_kind} ${_pkg} "$@"
+    local -r _tmp=$(install.${_kind} ${_pkg} "$@")
     [[ -z "${_cmd}" ]] && { _cmd=$(rpm -ql ${_pkg} | grep --max-count=1 --basic-regexp '^/usr/bin/'); >&2 echo "${_pkg} seems to install ${_cmd}, continuing..."; }
-    _post.install "${_cmd}"
-
+    _post.install "${_cmd}" >&2
+    echo ${_result}
 )
 

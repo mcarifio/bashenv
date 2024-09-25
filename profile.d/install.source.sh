@@ -251,8 +251,26 @@ install.AppImage() (
 )
 f.x install.AppImage
 
+
+# dnf install git autoconf automake texinfo || true
+install.git() (
+    set -Eeuo pipefail; shopt -s nullglob
+    local -r _pkg=${1:-}
+    local -r _url=${2:?'expecting a url'}
+    local -r _repo="/tmp/$(path.basename ${_url})"
+    
+    ( [[ -d "${_repo}" ]] || git clone "${_url}" ${_repo}
+      cd ${_repo}
+      [[ -f ./autogen.sh ]] && ./autogen.sh
+      make
+      sudo make install ) >&2
+    echo ${_repo}
+)
+f.x install.git
+
+
 install.all() (
-    for i in $(bashenv.root)/profile.d/*.install.sh; do
+    for i in $(bashenv.root)/profile.d/*.*.install.sh; do
         [[ -x "$i" ]] && $i || >&2 echo -e "\n\n\n*** $i failed\n\n\n"
     done
 )
