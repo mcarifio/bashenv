@@ -39,7 +39,7 @@ install.asdf() (
 f.x install.asdf
 
 install.curl() (
-    set -Eeuo pipefail
+    set -Eeuo pipefail; shopt -s nullglob
     local _name="${1:?'expecting a name'}"
     local _url="${2:?'expecting a url'}"
     local _suffix=${_url##*.}
@@ -58,7 +58,7 @@ f.x install.curl
 
 install.sh() (
     : '${_url} ... # fetch a script remotely and run it'
-    set -Eeuo pipefail
+    set -Eeuo pipefail; shopt -s nullglob
     local _name="${1:?'expecting a name'}"; shift
     local _url="${1:?'expecting a url'}"; shift
     >&2 printf "\n\nugh, hate this\n\n"
@@ -70,7 +70,7 @@ f.x install.sh
 
 
 install.curl-tar() (
-    set -Eeuo pipefail
+    set -Eeuo pipefail; shopt -s nullglob
     local _name="${1:?'expecting a name'}"
     local _url="${2:?'expecting a url'}"
     local _suffix=${_url##*.tar.}
@@ -88,7 +88,7 @@ f.x install.curl-tar
 
 install.rustup() (
     : '[--home=somewhere] ${pkg}...'
-    set -Eeuo pipefail
+    set -Eeuo pipefail; shopt -s nullglob
 
     # parse calling arguments
     if (( $# )); then
@@ -106,14 +106,14 @@ install.rustup() (
     fi
 
     # https://www.rust-lang.org/learn/get-started
-    # TODO mike@carif.io: install to ${_target}?
     # https://rust-lang.github.io/rustup/installation/other.html
+    # TODO mike@carif.io: install to ${_target}?
     [[ -n "${_home}" ]] && export CARGO_HOME="${_home}"
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -- --verbose --no-modify-path --default-toolchain stable --profile complete
+    # curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -- --verbose --no-modify-path --default-toolchain stable --profile complete
+    install.sh https://sh.rustup.rs --verbose --no-modify-path --default-toolchain stable --profile complete
     # hardcoded installation directory ugh
     path.add "${_target}"
-    install.check rustup
-    install.check cargo
+    install.check rustup cargo
     (( $# )) && cargo install "$@"
 )
 
@@ -128,17 +128,17 @@ install.cargo() (
 f.x install.cargo
 
 install.check() (
-    set -Eeuo pipefail
-    local _command="${1:?'expecting a command'}"
-    { echo "${FUNCNAME} ${_command} at $(type -P ${_command})"
-      ${_command} --version &> /dev/null && ${_command} --version && return 0
-      ${_command} version
-    } >&2
+    set -Eeuo pipefail; shopt -s nullglob
+    for _command in "$@"; do
+        printf '%s (%s): ' ${_command} $(type -P ${_command})
+        ${_command} --version &> /dev/null && ${_command} --version && break
+        ${_command} version
+    done >&2
 )
 f.x install.check
 
 install.go() (
-    set -Eeuo pipefail
+    set -Eeuo pipefail; shopt -s nullglob
     GOBIN=${GOBIN:-$(go env GOBIN)} go install ${1:?'expecting a url'}
 )
 f.x install.go
@@ -151,7 +151,7 @@ f.x install.go
 # for ${_guard}.{dnf,apt}.install.sh.
 install.dnf() (
     : '[--import=${url}]+ [--add-repo=${url}]+ {$pkg||$url} $pkg*'
-    set -Eeuo pipefail
+    set -Eeuo pipefail; shopt -s nullglob
 
     if ((${#@})); then
         for _a in "${@}"; do
@@ -178,7 +178,7 @@ f.x install.dnf
 
 install.apt() (
     : '[--import=${url}]+ [--add-repo=${url}]+ pkg+'
-    set -Eeuo pipefail
+    set -Eeuo pipefail; shopt -s nullglob
 
     if ((${#@})); then
         for _a in "${@}"; do
@@ -204,7 +204,7 @@ install.apt() (
 f.x install.apt
 
 install.distro() (
-    set -Eeuo pipefail
+    set -Eeuo pipefail; shopt -s nullglob
     if u.have dnf; then
         # TODO mike@carif.io: fix pkg naming conventions here
         install.dnf "$@"
@@ -218,7 +218,7 @@ f.x install.distro
 
 
 install.pip() (
-    set -Eeuo pipefail
+    set -Eeuo pipefail; shopt -s nullglob
     local _pkg=${1:?'expecting a pip python package (please)'}; shift
     python -m pip install --upgrade pip
     python -m pip install --upgrade wheel setuptools
@@ -232,6 +232,7 @@ f.x install.pip
 
 install.AppImage() (
     : '${_name} ${_url} {_target:-~/opt/appimage/current/bin}'
+    set -Eeuo pipefail; shopt -s nullglob
     local _name=${1:?'expecting a name'}
     local _url="${2:?'expecting a url'}"
     local _suffix=${_url##*.}
@@ -270,6 +271,7 @@ f.x install.git
 
 
 install.all() (
+    set -Eeuo pipefail; shopt -s nullglob
     for i in $(bashenv.root)/profile.d/*.*.install.sh; do
         [[ -x "$i" ]] && $i || >&2 echo -e "\n\n\n*** $i failed\n\n\n"
     done
