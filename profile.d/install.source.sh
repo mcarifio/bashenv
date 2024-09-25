@@ -30,7 +30,7 @@ install.asdf() (
     done
     
     local _plugin=${1:?'expecting an asdf plugin'}
-    asdf plugin add ${_plugin} ${2:-} || true
+    >&2 asdf plugin add ${_plugin} ${2:-} || true
     { asdf install ${_plugin} ${_version} && asdf global ${_plugin} ${_version}; } >&2
     asdf which ${_plugin}
 )
@@ -43,12 +43,12 @@ install.curl() (
     local _suffix=${_url##*.}
     local _dir=${3:-~/.local/bin}
     local _tmp=$(mktemp --suffix=.${_suffix})
-    curl -LJ --show-error --output ${_tmp} "${_url}"
+    >&2 curl -LJ --show-error --output ${_tmp} "${_url}"
     local _target="${_dir}/${_name}"
     # TODO mike@carif.io: add ${_url} specific post processing here based on file extension
     # zstd --decompress --no-progress ${_tmp}
     # curl -Ssf ${_url} | tar xz -C /tmp
-    command install ${_tmp%%.${_suffix}} "${_target}"
+    >&2 command install ${_tmp%%.${_suffix}} "${_target}"
     >&2 echo "installed '${_target}' from '${_url}'"
     echo ${_target}
 )    
