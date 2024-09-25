@@ -19,17 +19,15 @@ install.asdf() (
     set -Eeuo pipefail; shopt -s nullglob
 
     local _version=latest _toolchain=''
-     if (( ${#@} )) ; then
-         for _a in "${@}"; do
-            case "${_a}" in
-		--version=*) _version="${_a##*=}";;
-		--toolchain=*) _toolchain="${_a##*=}";;
-                --) shift; break;;
-                *) break;;
-            esac
-            shift
-        done
-    fi
+    for _a in "${@}"; do
+        case "${_a}" in
+	    --version=*) _version="${_a##*=}";;
+	    --toolchain=*) _toolchain="${_a##*=}";;
+            --) shift; break;;
+            *) break;;
+        esac
+        shift
+    done
     
     local _plugin=${1:?'expecting an asdf plugin'}
     asdf plugin add ${_plugin} ${2:-} || true
@@ -91,19 +89,17 @@ install.rustup() (
     set -Eeuo pipefail; shopt -s nullglob
 
     # parse calling arguments
-    if (( $# )); then
-        for _a in "${@}"; do
-            case "${_a}" in
-                --home=*) _home="${_a#--target=}" ;;
-                --)
-                    shift
-                    break
-                    ;;
-                *) break ;;
-            esac
-            shift
-        done
-    fi
+    for _a in "${@}"; do
+        case "${_a}" in
+            --home=*) _home="${_a#--target=}" ;;
+            --)
+                shift
+                break
+                ;;
+            *) break ;;
+        esac
+        shift
+    done
 
     # https://www.rust-lang.org/learn/get-started
     # https://rust-lang.github.io/rustup/installation/other.html
@@ -153,18 +149,16 @@ install.dnf() (
     : '[--import=${url}]+ [--add-repo=${url}]+ {$pkg||$url} $pkg*'
     set -Eeuo pipefail; shopt -s nullglob
 
-    if ((${#@})); then
-        for _a in "${@}"; do
-            case "${_a}" in
-                --add-repo=*) sudo $(type -P dnf) config-manager --add-repo "${_a##*=}";;
-                --copr=*) sudo $(type -P dnf) copr enable "${_a##*=}";;
-                --import=*) sudo $(type -P dnf) config-manager --import "${_a##*=}";;
-                --) shift; break;;
-                *) break ;;
-            esac
-            shift
-        done
-    fi
+    for _a in "${@}"; do
+        case "${_a}" in
+            --add-repo=*) sudo $(type -P dnf) config-manager --add-repo "${_a##*=}";;
+            --copr=*) sudo $(type -P dnf) copr enable "${_a##*=}";;
+            --import=*) sudo $(type -P dnf) config-manager --import "${_a##*=}";;
+            --) shift; break;;
+            *) break ;;
+        esac
+        shift
+    done
 
     # $@ is a list of packages to install. For convenience, the first package is considered
     # the "primary" package and rest of the packages are considered prerequisites to be installed *first*.
@@ -181,18 +175,17 @@ install.apt() (
     : '[--import=${url}]+ [--add-repo=${url}]+ pkg+'
     set -Eeuo pipefail; shopt -s nullglob
 
-    if ((${#@})); then
-        for _a in "${@}"; do
-            case "${_a}" in
-                --add-repo=*) sudo $(type -P apt) add "${_a##*=}";;
-                # --import=*) sudo $(type -P apt) config-manager --import "${_a##*=}";;
-                --import=*) sudo $(type -P apt) apt import "${_a##*=}";;
-                --) shift; break;;
-                *) break ;;
-            esac
-            shift
-        done
-    fi
+    for _a in "${@}"; do
+        case "${_a}" in
+            --add-repo=*) sudo $(type -P apt) add "${_a##*=}";;
+            # --import=*) sudo $(type -P apt) config-manager --import "${_a##*=}";;
+            --import=*) sudo $(type -P apt) apt import "${_a##*=}";;
+            --) shift; break;;
+            *) break ;;
+        esac
+        shift
+    done
+
 
     # $@ is a list of packages to install. For convenience, the first package is considered
     # the "primary" package and rest of the packages are considered prerequisites to be installed *first*.
