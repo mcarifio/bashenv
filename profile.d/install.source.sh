@@ -168,11 +168,12 @@ install.dnf() (
 
     # $@ is a list of packages to install. For convenience, the first package is considered
     # the "primary" package and rest of the packages are considered prerequisites to be installed *first*.
+    # set -x
     local -a _pkgs=( "$@" )
     # If there are prerequisites, install them first...
-    ((${#_pkgs[*]} - 1)) && sudo $(type -P dnf) install --assumeyes "${_pkgs[*]:1}"
+    ((${#_pkgs[*]} - 1)) && sudo $(type -P dnf) install --assumeyes ${_pkgs[*]:1}
     # ... and then install the primary package.
-    sudo $(type -P dnf) install --assumeyes "${_pkgs[0]}"
+    sudo $(type -P dnf) install --assumeyes ${_pkgs[0]}
 )
 f.x install.dnf
 
