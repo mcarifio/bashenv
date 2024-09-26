@@ -1,8 +1,8 @@
 # creation: guard.mkguard ${_name}
 _guard=$(path.basename ${BASH_SOURCE})
 
-act() ( command ${FUNCNAME} "$@"; )
-f.x act
+_act() ( command ${FUNCNAME} "$@"; )
+f.x _act
 
 
 act.docs() (

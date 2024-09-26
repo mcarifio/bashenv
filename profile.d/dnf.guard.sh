@@ -7,7 +7,7 @@ _guard=$(path.basename ${BASH_SOURCE})
 
 dnf() (
     : 'sudo dnf ...'
-    sudo $(type -P dnf)  --assumeyes "$@" # --allowerasing
+    sudo $(type -P dnf)  --allowerasing --assumeyes "$@" # --allowerasing
 )
 f.x dnf
 

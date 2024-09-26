@@ -16,7 +16,7 @@ declare -Ax __bashenv_loaded=()
 f.x() {
     : '${_f}... # export functions ${_f}...'
     for _f in "$@"; do
-        declare -fx ${_f} && __bashenv_loaded[${_f}]=$(date) || return $(u.error "${_f} not exported")
+        declare -fx ${_f} && __bashenv_loaded["${_f}"]=$(date) || return $(u.error "${_f} not exported")
     done
 }
 f.x f.x
