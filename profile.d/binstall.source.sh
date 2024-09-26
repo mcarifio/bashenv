@@ -93,7 +93,7 @@ binstall.sh() (
 
     >&2 printf "\n\nugh, hate this\n\n"
     # curl --proto '=https' --tlsv1.2 -sSf 
-    curl --proto '=https' --tlsv1.2 -LJ --show-error "${_url}" | sh -- "$@"
+    (set -x; curl --proto '=https' --tlsv1.2 -sSLJ --show-error "${_url}" | bash -s -- "$@")
 )    
 f.x binstall.sh
 
@@ -164,18 +164,20 @@ binstall.cargo() (
     set -Eeuo pipefail; shopt -s nullglob
     # rustup upgrade
     local _pkg=''
+    declare -a _cmds=()
+
     for _a in "${@}"; do
         case "${_a}" in
             --pkg=*) _pkg="${_a##*=}";;
-
+            --cmd=*) _cmds+="${_a##*=}";;            
             --) shift; break;;
             *) break;;
         esac
         shift
     done
 
-    [[ -z "${_pkg}" ]] && return $(u.error "${FUNCNAME} expecting --pkg=\${something}")    
-    (( ${#@} )) && cargo install "$@" || cargo install ${_pkg}
+    [[ -z "${_pkg}" ]] && return $(u.error "${FUNCNAME} expecting --pkg=\${something}")
+    cargo install ${_pkg} $@
 )
 f.x binstall.cargo
 
@@ -192,10 +194,12 @@ f.x binstall.check
 binstall.go() (
     set -Eeuo pipefail; shopt -s nullglob
 
-    local _url=''
+    local _url='' pkg=''
     for _a in "${@}"; do
         case "${_a}" in
             --url=*) _url="${_a##*=}";;
+            # --pkg ignored
+            --pkg=*) _pkg="${_a##*=}";;
             --) shift; break;;
             *) break;;
         esac
@@ -223,6 +227,7 @@ binstall.dnf() (
     for _a in "${@}"; do
         case "${_a}" in
             --add-repo=*) sudo $(type -P dnf) --assumeyes config-manager --add-repo "${_a##*=}";;
+            # TODO mike@carif.io: --assumeyes doesn't work?
             --copr=*) sudo $(type -P dnf) --assumeyes copr enable "${_a##*=}";;
             --import=*) sudo $(type -P rpm) --import "${_a##*=}";;
             --pkg=*) _pkg="${_a##*=}";;
@@ -290,11 +295,13 @@ f.x binstall.distro
 binstall.pip() (
     set -Eeuo pipefail; shopt -s nullglob
 
-        local _pkg='' _url=''
+    local _pkg='' _url=''
+    declare -a _cmds=()
     for _a in "${@}"; do
         case "${_a}" in
             --pkg=*) _pkg="${_a##*=}";;
             --url=*) _url="${_a##*=}";;
+            --cmd=*) _cmds+="${_a##*=}";;
             --) shift; break;;
             *) break;;
         esac
@@ -302,14 +309,16 @@ binstall.pip() (
     done
 
     [[ -z "${_pkg}" ]] && return $(u.error "${FUNCNAME} expecting --pkg=\${something}")    
-    [[ -z "${_url}" ]] && return $(u.error "${FUNCNAME} expecting --url=\${something}")    
+    # [[ -z "${_url}" ]] && return $(u.error "${FUNCNAME} expecting --url=\${something}")    
 
     python -m pip install --upgrade pip
     python -m pip install --upgrade wheel setuptools
     # Install dependencies first if unstated in the package itself.
     # You only get one go at it.
     (( $# )) && python -m pip install --upgrade "$@"
-    python -m pip install --upgrade ${_pkg}    
+    python -m pip install --upgrade ${_pkg}
+    # TODO mike@carif.io: deduce commands pip ${_pkg} provides?
+    binstall.check ${_cmds[*]}
 )
 f.x binstall.pip
 
