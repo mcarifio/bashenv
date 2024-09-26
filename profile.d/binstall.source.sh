@@ -222,8 +222,8 @@ binstall.dnf() (
 
     for _a in "${@}"; do
         case "${_a}" in
-            --add-repo=*) sudo $(type -P dnf) config-manager --add-repo "${_a##*=}";;
-            --copr=*) sudo $(type -P dnf) copr enable "${_a##*=}";;
+            --add-repo=*) sudo $(type -P dnf) --assumeyes config-manager --add-repo "${_a##*=}";;
+            --copr=*) sudo $(type -P dnf) --assumeyes copr enable "${_a##*=}";;
             --import=*) sudo $(type -P rpm) --import "${_a##*=}";;
             --pkg=*) _pkg="${_a##*=}";;
             --cmd=*) _cmds+="${_a##*=}";;
