@@ -17,6 +17,7 @@ f.x binstall.brew
 binstall.asdf() (
     : 'binstall.asdf [--version=latest] ${_plugin} [${_url}]'
     set -Eeuo pipefail; shopt -s nullglob
+    u.have ${FUNCNAME##*.} || return $(u.error "${FUNCNAME##*.} not on path, stopping.")
 
     local _version=latest _toolchain='' _pkg='' _url=''
     for _a in "${@}"; do
@@ -41,6 +42,7 @@ f.x binstall.asdf
 
 binstall.curl() (
     set -Eeuo pipefail; shopt -s nullglob
+    u.have ${FUNCNAME##*.} || return $(u.error "${FUNCNAME##*.} not on path, stopping.")
 
     local _pkg='' _url='' _dir="${HOME}/.local/bin"
     for _a in "${@}"; do
@@ -102,6 +104,11 @@ f.x binstall.sh
 binstall.curl-tar() (
     set -Eeuo pipefail; shopt -s nullglob
 
+    local -r _suffix=${FUNCNAME##*.}
+    for _c in ${_suffix//-/ }; do
+        u.have ${_c} || return $(u.error "${FUNCNAME}: ${_c} not found on path")
+    done
+
     local _pkg='' _url=''
     for _a in "${@}"; do
         case "${_a}" in
@@ -162,7 +169,8 @@ binstall.rustup() (
 
 binstall.cargo() (
     set -Eeuo pipefail; shopt -s nullglob
-    # rustup upgrade
+    u.have ${FUNCNAME##*.} || return $(u.error "${FUNCNAME##*.} not on path, stopping.")
+
     local _pkg=''
     declare -a _cmds=()
 
@@ -194,6 +202,7 @@ f.x binstall.check
 
 binstall.go() (
     set -Eeuo pipefail; shopt -s nullglob
+    u.have ${FUNCNAME##*.} || return $(u.error "${FUNCNAME##*.} not on path, stopping.")
 
     local _url='' pkg=''
     for _a in "${@}"; do
@@ -221,6 +230,7 @@ f.x binstall.go
 binstall.dnf() (
     : '[--import=${url}]+ [--add-repo=${url}]+ {$pkg||$url} $pkg*'
     set -Eeuo pipefail; shopt -s nullglob
+    u.have ${FUNCNAME##*.} || return $(u.error "${FUNCNAME##*.} not on path, stopping.")
 
     local _pkg=''
     local -a _cmds=()
@@ -256,6 +266,7 @@ f.x binstall.dnf
 binstall.apt() (
     : '[--import=${url}]+ [--add-repo=${url}]+ pkg+'
     set -Eeuo pipefail; shopt -s nullglob
+    u.have ${FUNCNAME##*.} || return $(u.error "${FUNCNAME##*.} not on path, stopping.")
 
     for _a in "${@}"; do
         case "${_a}" in
@@ -295,6 +306,8 @@ f.x binstall.distro
 
 binstall.pip() (
     set -Eeuo pipefail; shopt -s nullglob
+    u.have python -m pip list &> /dev/null || return $(u.error "python -m pip not working, stopping.")
+
 
     local _pkg='' _url=''
     declare -a _cmds=()
@@ -363,6 +376,7 @@ f.x binstall.AppImage
 # dnf install git autoconf automake texinfo || true
 binstall.git() (
     set -Eeuo pipefail; shopt -s nullglob
+    u.have ${FUNCNAME##*.} || return $(u.error "${FUNCNAME##*.} not on path, stopping.")
 
     local _pkg='' _url=''
     for _a in "${@}"; do
