@@ -4,6 +4,7 @@ binstalld.dispatch() (
     set -Eeuo pipefail; shopt -s nullglob
     local _kind=tbs _pkg='' _postinstall=''
     local -a _cmds=()
+    u.have ${FUNCNAME##*.} || return $(u.error "${$FUNCNAME}: ${FUNCNAME##*.} not on path, stopping.")
     
     for _a in "${@}"; do
         case "${_a}" in
