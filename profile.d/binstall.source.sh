@@ -17,7 +17,7 @@ f.x binstall.brew
 binstall.asdf() (
     : 'binstall.asdf [--version=latest] ${_plugin} [${_url}]'
     set -Eeuo pipefail; shopt -s nullglob
-    u.have ${FUNCNAME##*.} || return $(u.error "${FUNCNAME##*.} not on path, stopping.")
+    u.have ${FUNCNAME##*.} || return $(u.error "${FUNCNAME}: ${FUNCNAME##*.} not on path, stopping.")
 
     local _version=latest _toolchain='' _pkg='' _url=''
     for _a in "${@}"; do
@@ -42,7 +42,7 @@ f.x binstall.asdf
 
 binstall.curl() (
     set -Eeuo pipefail; shopt -s nullglob
-    u.have ${FUNCNAME##*.} || return $(u.error "${FUNCNAME##*.} not on path, stopping.")
+    u.have ${FUNCNAME##*.} || return $(u.error "${FUNCNAME}: ${FUNCNAME##*.} not on path, stopping.")
 
     local _pkg='' _url='' _dir="${HOME}/.local/bin"
     for _a in "${@}"; do
@@ -169,7 +169,7 @@ binstall.rustup() (
 
 binstall.cargo() (
     set -Eeuo pipefail; shopt -s nullglob
-    u.have ${FUNCNAME##*.} || return $(u.error "${FUNCNAME##*.} not on path, stopping.")
+    u.have ${FUNCNAME##*.} || return $(u.error "${FUNCNAME}: ${FUNCNAME##*.} not on path, stopping.")
 
     local _pkg=''
     declare -a _cmds=()
@@ -202,7 +202,7 @@ f.x binstall.check
 
 binstall.go() (
     set -Eeuo pipefail; shopt -s nullglob
-    u.have ${FUNCNAME##*.} || return $(u.error "${FUNCNAME##*.} not on path, stopping.")
+    u.have ${FUNCNAME##*.} || return $(u.error "${FUNCNAME}: ${FUNCNAME##*.} not on path, stopping.")
 
     local _url='' pkg=''
     for _a in "${@}"; do
@@ -230,7 +230,7 @@ f.x binstall.go
 binstall.dnf() (
     : '[--import=${url}]+ [--add-repo=${url}]+ {$pkg||$url} $pkg*'
     set -Eeuo pipefail; shopt -s nullglob
-    u.have ${FUNCNAME##*.} || return $(u.error "${FUNCNAME##*.} not on path, stopping.")
+    u.have ${FUNCNAME##*.} || return $(u.error "${FUNCNAME}: ${FUNCNAME##*.} not on path, stopping.")
 
     local _pkg=''
     local -a _cmds=()
@@ -266,7 +266,7 @@ f.x binstall.dnf
 binstall.apt() (
     : '[--import=${url}]+ [--add-repo=${url}]+ pkg+'
     set -Eeuo pipefail; shopt -s nullglob
-    u.have ${FUNCNAME##*.} || return $(u.error "${FUNCNAME##*.} not on path, stopping.")
+    u.have ${FUNCNAME##*.} || return $(u.error "${FUNCNAME}: ${FUNCNAME##*.} not on path, stopping.")
 
     for _a in "${@}"; do
         case "${_a}" in
@@ -298,7 +298,7 @@ binstall.distro() (
     elif u.have apt; then
         binstall.apt "$@"
     else
-        false && return $(u.error "${FUNCNAME} cannot install '$@' on distro $(os.release ID)")
+        false && return $(u.error "${FUNCNAME}: ${FUNCNAME} cannot install '$@' on distro $(os.release ID)")
     fi
 )
 f.x binstall.distro
