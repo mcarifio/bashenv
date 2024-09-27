@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail; shopt -s nullglob
 
-o.var() ( local _v=${1%=*}; echo "_${_v:2}"; )
-o.val() ( echo "${1##*=}"; )
 # o.required() {
 #     local -gn _v=$1
 #     echo ${FUNCNAME} $1 ${_v} || true
@@ -19,7 +17,7 @@ example.options() (
     local -i _bool=0
     # _var required, see check below
     local _var='_var' _varo='_varo'
-    >&2 declare -p _var _varo _bool
+    >&2 declare -p _var _varo _bool _doo=default
 
     for _a in "${@}"; do
         case "${_a}" in
@@ -27,7 +25,7 @@ example.options() (
             --var=*) _var="${_a##*=}";; ## manual
             --varo=*) local -n _lhs=$(o.var ${_a}); _lhs="$(o.val ${_a})";  >&2 printf '_lhs: %s, _varo: %s ## --varo case\n' ${_lhs} ${_varo};; ## regardless of variable
 	    --do=*) echo "${_a%=*} ${_a##*=} ## --do case";; ## do something manually
-            --doo=*) local -n _lhs=$(o.var ${_a}); _lhs="$(o.val ${_a})"; >&2 printf '_lhs: %s ## --doo case\n' ${_lhs};;
+            --doo=*) sw.update ${_a}; >&2 echo ${_doo};;
             --*) >&2 echo "${FUNCNAME}: unknown switch ${_a}, stop processing switches"; break;;
             --) shift; break;;
             *) break;;
@@ -36,9 +34,9 @@ example.options() (
     done
 
     # required _var check
-    # o.required _var
-    # o.required _boo || true
-    [[ -z "${_var:-}" ]] && >&2 echo "_var has no required value, use --var=\${something}"
+    # [[ -z "${_var:-}" ]] && >&2 echo "_var has no required value, use --var=\${something}"
+    is.required _var
+
     >&2 declare -p _var _varo _bool
     local _first=${1:?'expecting an argument'}; shift
     >&2 declare -p _first

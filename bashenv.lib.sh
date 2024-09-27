@@ -25,18 +25,26 @@ f.x f.x
 # handle function switches like --var or --var=value
 # o.var() ( local _v=${1%=*}; echo "_${_v:2}"; ); f.x o.var
 # o.val() ( echo "${1##*=}"; ); f.x o.val
-switch.update() {
+sw.update() {
     local -r _expecting="expecting a switch like --left or --left=value"
     local -r _switch=${1:?"${FUNCNAME} ${_expecting}"}
     local -r _prefix=${2:-_}
     local -r _true=${3:-1}
 
     # --var=value
-    # usage: --left=*) eval $(switch.update ${_a}); >&2 echo ${_left};;
+    # usage: --left=*) eval $(sw.update ${_a}); >&2 echo ${_left};;
     [[ $1 =~ --([^=]+)(=(.+))?\$ ]] || return $(u.error "${FUNCNAME} '${_switch}' wrong format, ${_expecting}")
-    printf '%s%s="%s"' ${_prefix} ${BASH_REMATCH[1]} ${BASH_REMATCH[2]:-${_true}}
+    eval $(printf '%s%s="%s"' ${_prefix} ${BASH_REMATCH[1]} ${BASH_REMATCH[2]:-${_true}})
 }
-f.x switch.update
+f.x sw.update
+
+# eval is.required _var
+is.required() {
+    local -r _var=${1:?"${FUNCNAME} expecting a variable name"}
+    local -r _error=${2:-"${FUNCNAME[-2]}: ${_var} is required"}
+    eval $(printf '[[ -z "${%s}" ]] && return u.error("%s")' ${_var} ${_error})
+}
+f.x is.required
 
 u.error() (
     local -i _status=${2:-$?}; (( _status )) || _status=1
