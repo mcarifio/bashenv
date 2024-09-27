@@ -25,7 +25,7 @@ binstall.asdf() (
 	    --toolchain=*) _toolchain="${_a##*=}";;
             --pkg=*) _pkg="${_a##*=}";;
             --url=*) _url="${_a##*=}";;
-            --) shift; break;;
+            --*) >&2 echo "${FUNCNAME}: unknown switch ${_a}, stop processing switches"; break            --) shift; break;;
             *) break;;
         esac
         shift
@@ -48,7 +48,7 @@ binstall.curl() (
             --pkg=*) _pkg="${_a##*=}";;
             --url=*) _url="${_a##*=}";;
             --dir=*) _dir="${_a##*=}";;
-            --) shift; break;;
+            --*) >&2 echo "${FUNCNAME}: unknown switch ${_a}, stop processing switches"; break            --) shift; break;;
             *) break;;
         esac
         shift
@@ -82,7 +82,7 @@ binstall.sh() (
         case "${_a}" in
             --pkg=*) _pkg="${_a##*=}";;
             --url=*) _url="${_a##*=}";;
-            --) shift; break;;
+            --*) >&2 echo "${FUNCNAME}: unknown switch ${_a}, stop processing switches"; break            --) shift; break;;
             *) break;;
         esac
         shift
@@ -107,7 +107,7 @@ binstall.curl-tar() (
         case "${_a}" in
             --pkg=*) _pkg="${_a##*=}";;
             --url=*) _url="${_a##*=}";;
-            --) shift; break;;
+            --*) >&2 echo "${FUNCNAME}: unknown switch ${_a}, stop processing switches"; break            --) shift; break;;
             *) break;;
         esac
         shift
@@ -137,7 +137,7 @@ binstall.rustup() (
     for _a in "${@}"; do
         case "${_a}" in
             --home=*) _home="${_a##*=}" ;;
-            --)
+            --*) >&2 echo "${FUNCNAME}: unknown switch ${_a}, stop processing switches"; break            --)
                 shift
                 break
                 ;;
@@ -170,13 +170,14 @@ binstall.cargo() (
         case "${_a}" in
             --pkg=*) _pkg="${_a##*=}";;
             --cmd=*) _cmds+="${_a##*=}";;            
-            --) shift; break;;
+            --*) >&2 echo "${FUNCNAME}: unknown switch ${_a}, stop processing switches"; break            --) shift; break;;
             *) break;;
         esac
         shift
     done
 
     [[ -z "${_pkg}" ]] && return $(u.error "${FUNCNAME} expecting --pkg=\${something}")
+    u.have cargo || path.add ~/.cargo/bin
     cargo install ${_pkg} $@
 )
 f.x binstall.cargo
@@ -200,7 +201,7 @@ binstall.go() (
             --url=*) _url="${_a##*=}";;
             # --pkg ignored
             --pkg=*) _pkg="${_a##*=}";;
-            --) shift; break;;
+            --*) >&2 echo "${FUNCNAME}: unknown switch ${_a}, stop processing switches"; break            --) shift; break;;
             *) break;;
         esac
         shift
@@ -232,7 +233,7 @@ binstall.dnf() (
             --import=*) sudo $(type -P rpm) --import "${_a##*=}";;
             --pkg=*) _pkg="${_a##*=}";;
             --cmd=*) _cmds+="${_a##*=}";;
-            --) shift; break;;
+            --*) >&2 echo "${FUNCNAME}: unknown switch ${_a}, stop processing switches"; break            --) shift; break;;
             *) break ;;
         esac
         shift
@@ -261,7 +262,7 @@ binstall.apt() (
             --add-repo=*) sudo $(type -P apt) add "${_a##*=}";;
             # --import=*) sudo $(type -P apt) config-manager --import "${_a##*=}";;
             --import=*) sudo $(type -P apt) apt import "${_a##*=}";;
-            --) shift; break;;
+            --*) >&2 echo "${FUNCNAME}: unknown switch ${_a}, stop processing switches"; break            --) shift; break;;
             *) break ;;
         esac
         shift
@@ -302,7 +303,7 @@ binstall.pip() (
             --pkg=*) _pkg="${_a##*=}";;
             --url=*) _url="${_a##*=}";;
             --cmd=*) _cmds+="${_a##*=}";;
-            --) shift; break;;
+            --*) >&2 echo "${FUNCNAME}: unknown switch ${_a}, stop processing switches"; break            --) shift; break;;
             *) break;;
         esac
         shift
@@ -333,7 +334,7 @@ binstall.AppImage() (
             --pkg=*) _pkg="${_a##*=}";;
             --url=*) _url="${_a##*=}";;
             --dir=*) _dir="${_a##*=}";;
-            --) shift; break;;
+            --*) >&2 echo "${FUNCNAME}: unknown switch ${_a}, stop processing switches"; break            --) shift; break;;
             *) break;;
         esac
         shift
@@ -368,7 +369,7 @@ binstall.git() (
         case "${_a}" in
             --pkg=*) _pkg="${_a##*=}";;
             --url=*) _url="${_a##*=}";;
-            --) shift; break;;
+            --*) >&2 echo "${FUNCNAME}: unknown switch ${_a}, stop processing switches"; break            --) shift; break;;
             *) break;;
         esac
         shift
@@ -396,7 +397,7 @@ binstall.mkbinstall() (
         case "${_a}" in
             --pkg=*) _pkg="${_a##*=}";;
             --kind=*) _kind="${_a##*=}";;
-            --) shift; break;;
+            --*) >&2 echo "${FUNCNAME}: unknown switch ${_a}, stop processing switches"; break            --) shift; break;;
             *) break;;
         esac
         shift

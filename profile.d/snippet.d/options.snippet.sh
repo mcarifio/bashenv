@@ -28,6 +28,7 @@ example.options() (
             --varo=*) local -n _lhs=$(o.var ${_a}); _lhs="$(o.val ${_a})";  >&2 printf '_lhs: %s, _varo: %s ## --varo case\n' ${_lhs} ${_varo};; ## regardless of variable
 	    --do=*) echo "${_a%=*} ${_a##*=} ## --do case";; ## do something manually
             --doo=*) local -n _lhs=$(o.var ${_a}); _lhs="$(o.val ${_a})"; >&2 printf '_lhs: %s ## --doo case\n' ${_lhs};;
+            --*) >&2 echo "${FUNCNAME}: unknown switch ${_a}, stop processing switches"; break;;
             --) shift; break;;
             *) break;;
         esac
