@@ -11,15 +11,33 @@
 
 # name -> date
 # unset __bashenv_loaded || true
+
 declare -Ax __bashenv_loaded=()
 
 f.x() {
     : '${_f}... # export functions ${_f}...'
     for _f in "$@"; do
-        declare -fx ${_f} && __bashenv_loaded["${_f}"]=$(date) || return $(u.error "${_f} not exported")
+        declare -fx ${_f} && __bashenv_loaded["${_f}"]="$(date)" || return $(u.error "${_f} not exported")
     done
 }
 f.x f.x
+
+# handle function switches like --var or --var=value
+# o.var() ( local _v=${1%=*}; echo "_${_v:2}"; ); f.x o.var
+# o.val() ( echo "${1##*=}"; ); f.x o.val
+switch.update() {
+    local -r _expecting="expecting a switch like --left or --left=value"
+    local -r _switch=${1:?"${FUNCNAME} ${_expecting}"}
+    local -r _prefix=${2:-_}
+    local -r _true=${3:-1}
+
+    # --var=value
+    # usage: --left=*) switch.update ${_a}; >&2 echo ${_left};;
+    [[ $1 =~ --([^=]+)(=(.+))?\$ ]] || return $(u.error "${FUNCNAME} '${_switch}' wrong format, ${_expecting}")
+    # eval $(printf '%s%s="%s"' ${_prefix} ${BASH_REMATCH[1]} ${BASH_REMATCH[2]:-${_true}})
+    printf '%s%s="%s"' ${_prefix} ${BASH_REMATCH[1]} ${BASH_REMATCH[2]:-${_true}}
+}
+f.x switch.update
 
 u.error() (
     local -i _status=${2:-$?}; (( _status )) || _status=1
