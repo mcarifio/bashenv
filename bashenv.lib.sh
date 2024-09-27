@@ -32,9 +32,8 @@ switch.update() {
     local -r _true=${3:-1}
 
     # --var=value
-    # usage: --left=*) switch.update ${_a}; >&2 echo ${_left};;
+    # usage: --left=*) eval $(switch.update ${_a}); >&2 echo ${_left};;
     [[ $1 =~ --([^=]+)(=(.+))?\$ ]] || return $(u.error "${FUNCNAME} '${_switch}' wrong format, ${_expecting}")
-    # eval $(printf '%s%s="%s"' ${_prefix} ${BASH_REMATCH[1]} ${BASH_REMATCH[2]:-${_true}})
     printf '%s%s="%s"' ${_prefix} ${BASH_REMATCH[1]} ${BASH_REMATCH[2]:-${_true}}
 }
 f.x switch.update
