@@ -3,10 +3,6 @@
 export ASDF_DATA_DIR=~/opt/asdf/current
 source ${ASDF_DATA_DIR}/asdf.sh
 
-
-# usage: [guard | source] _template.guard.sh [--install] [--verbose] [--trace]
-_guard=$(path.basename ${BASH_SOURCE})
-
 # is plugin
 asdf.plugin.have() (
     set -Eeuo pipefail
@@ -156,5 +152,4 @@ asdf.install.all() (
 )
 f.x asdf.install.all
 
-unset _guard
 loaded "${BASH_SOURCE}"
