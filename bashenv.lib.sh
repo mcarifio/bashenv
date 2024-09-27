@@ -1140,7 +1140,7 @@ f.x tbird.logged
 
 guard.mkguard() (
     : '${_name} # create ${_name}.guard.sh in the right folder'
-    set -Eeuo pipefail; shopt -s nullglob
+    set -Eeuo pipefail; shopt -s nullglob noclobber
     local -r _name=${1:?'expecting a name'}
     local -r _kind=${2:-tbs}
     local -r _where="$(bashenv.root)/profile.d"
@@ -1149,7 +1149,7 @@ guard.mkguard() (
     local -r _install="${_installd}/${_name}.${_kind}.install.sh"
     [[ -f "${_guard}" ]] && return $(u.error "${_guard} already exists?")
     xzcat "${_where}/_template.guard.sh.xz" | sed "s/\${g}/${_name}/g" > "${_guard}"
-    [[ -r "${_install}" ]] || cp "${_installd}/_template.install.sh" "${_install}"
+    [[ -r "${_install}" ]] || cp --no-clobber "${_installd}/_template.tbs.install.sh" "${_install}"
     >&2 git -C "$(bashenv.root)" status ${_guard} ${_install}
     echo "${_guard}"
 )
