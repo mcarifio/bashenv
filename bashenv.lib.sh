@@ -12,12 +12,12 @@
 # name -> date
 # unset __bashenv_loaded || true
 
-declare -Ax __bashenv_loaded=()
+declare -Ax __bashenv_fx=()
 
 f.x() {
     : '${_f}... # export functions ${_f}...'
     for _f in "$@"; do
-        declare -fx ${_f} && __bashenv_loaded["${_f}"]="$(date)" || return $(u.error "${_f} not exported")
+        declare -fx ${_f} && __bashenv_fx["${_f}"]="$(date)" || return $(u.error "${_f} not exported")
     done
 }
 f.x f.x
@@ -100,6 +100,7 @@ __f.exists.complete() {
     COMPREPLY=()
     if ((_position == 1)); then
         # prompt
+
         if ((__previous_position != _position)) && [[ -z "${_word}" ]]; then
             echo >&2 -n "(required bashenv function) "
         else
@@ -236,7 +237,7 @@ f.apply() (
 )
 f.complete f.apply
 
-loaded() {
+loaded0() {
     : 'make an exported function ${name}.loaded that always succeeds.'
     local _name="$(path.basename ${1:?'expecting a name'})"
     local _predicate=${_name}.loaded
@@ -246,7 +247,34 @@ loaded() {
     eval "${_pathname}() (echo $(realpath -s $1); )"
     f.x ${_pathname}
 }
-f.x loaded
+f.x loaded0
+
+declare -Aix __bashenv_sourced=()
+sourced.reset() { __bashenv_sourced=(); }
+f.x sourced.reset
+
+sourced() {
+    local _s=${1:-${BASH_SOURCE[1]}}
+    [[ -z "${_s}" ]] && return $(u.error "${FUNCNAME} expecting a pathname")
+    local _pn="$(realpath -Lm ${_s})"
+    __bashenv_sourced["${_pn}"]=$(date +"%s")
+}
+f.x sourced
+
+sourced.when() {
+    local _s=${1:-${BASH_SOURCE[1]}}
+    [[ -z "${_s}" ]] && return $(u.error "${FUNCNAME} expecting a pathname")
+    local _pn="$(realpath -Lm ${_s})"
+    local -i _timestamp=${__bashenv_sourced["${_pn}"]}
+    echo ${_timestamp}
+}
+f.x sourced.when
+
+sourced.pathnames() { for _pn in "${!__bashenv_sourced[@]}"; do printf '%s\n' ${_pn}; done; }
+f.x sourced.pathnames
+
+sourced.times() { for _pn in "${!__bashenv_sourced[@]}"; do printf '%s %s\n' ${_pn} ${__bashenv_sourced["${_pn}"]}; done; }
+f.x sourced.times
 
 loaded.list() (
     f.loaded | command grep -e "\.loaded$"
@@ -785,6 +813,30 @@ __u.map.tree.complete0() {
     COMPREPLY=($(compgen -d -- $2))
 }
 f.complete u.map.tree
+
+u.map.trees0() {
+    local _kind=${1:?'expecting a file kind, e.g. lib, source or guard'}; shift
+    for _f in $(find $@ -type f -regex "[^#]+\.${_action}\.sh\$"); do
+        # ${_action} ${_f}
+        echo source ${_f} || >&2 echo "${FUNCNAME}: ${_f} => $?"
+    done
+}
+f.x u.map.trees0
+
+u.map.trees() {
+    local -i _depth=${1:?'expecting a depth'}; shift
+    local _kind=${1:?'expecting a file kind, e.g. lib, source or guard'}; shift
+    local _action=${1:?'expecting an action'}; shift
+    # traverse breadth first
+    for _depth in $(seq 1 ${_depth}); do
+        for _f in $(find $@ -mindepth ${_depth} -maxdepth ${_depth} -type f -regex "[^#]+\.${_kind}\.sh\$"); do
+            echo ${_action} ${_f} || >&2 echo "${FUNCNAME}: ${_action} ${_f} => $?"
+        done        
+    done
+}
+f.x u.map.trees
+
+
 
 u.or() (echo "$@" | cut -d' ' -f1)
 f.x u.or
