@@ -1,4 +1,4 @@
-## f
+# f
 
 # https://www.gnu.org/software/bash/manual/html_node/Programmable-Completion.html
 
@@ -17,7 +17,7 @@ declare -Ax __bashenv_fx=()
 f.x() {
     : '${_f}... # export functions ${_f}...'
     for _f in "$@"; do
-        declare -fx ${_f} && __bashenv_fx["${_f}"]="$(date)" || return $(u.error "${_f} not exported")
+        declare -fx ${_f} && __bashenv_fx["${_f}"]="$(date +"%s")" || return $(u.error "${_f} not exported")
     done
 }
 f.x f.x
@@ -120,7 +120,7 @@ f.complete() {
     local _fc=__${_f}.complete
     f.exists ${_f} || return $(u.error "no function '${_f}'")
     declare -gfx ${_f}
-    __bashenv_loaded["${_f}"]=$(date)
+    __bashenv_fx["${_f}"]=$(date +"%s")
     f.exists ${_fc} || return 0
     declare -gfx ${_fc}
     complete -F ${_fc} ${_f}
@@ -276,10 +276,10 @@ f.x sourced.pathnames
 sourced.times() { for _pn in "${!__bashenv_sourced[@]}"; do printf '%s %s\n' ${_pn} ${__bashenv_sourced["${_pn}"]}; done; }
 f.x sourced.times
 
-loaded.list() (
+f.loaded.list() (
     f.loaded | command grep -e "\.loaded$"
 )
-f.x loaded.list
+f.x f.loaded.list
 
 
 # readline;
@@ -381,31 +381,31 @@ f.complete u.map.mkall
 
 
 # f.loaded
-f.loaded() {
-    : '#> return all functions loaded (so far)'
-    printf '%s\n' ${!__bashenv_loaded[@]}
-}
-f.complete f.loaded
+# f.loaded() {
+#     : '#> return all functions loaded (so far)'
+#     printf '%s\n' ${!__bashenv_loaded[@]}
+# }
+# f.complete f.loaded
 
 # f.loaded.match
-f.loaded.match() {
-    : '${prefix:-""} #> echo all bashenv functions matching ${prefix} '
-    f.loaded | command grep -e "^$1"
-}
-__f.loaded.match.complete() {
-    local _command=$1 _word=$2 _previous_word=$3
-    local -i _position=${COMP_CWORD} _arg_length=${#COMP_WORDS[@]}
-    COMPREPLY=()
-    if ((_position == 1)); then
-        COMPREPLY=($(f.loaded.match "$2"))
-    else
-        echo >&2
-        f.doc >&2 f.loaded.match
-        echo >&2 "f.loaded.match takes one argument, currently ${_previous_word}"
-        echo -n "${COMP_LINE} "
-    fi
-}
-f.complete f.loaded.match
+# f.loaded.match() {
+#     : '${prefix:-""} #> echo all bashenv functions matching ${prefix} '
+#     f.loaded | command grep -e "^$1"
+# }
+# __f.loaded.match.complete() {
+#     local _command=$1 _word=$2 _previous_word=$3
+#     local -i _position=${COMP_CWORD} _arg_length=${#COMP_WORDS[@]}
+#     COMPREPLY=()
+#     if ((_position == 1)); then
+#         COMPREPLY=($(f.loaded.match "$2"))
+#     else
+#         echo >&2
+#         f.doc >&2 f.loaded.match
+#         echo >&2 "f.loaded.match takes one argument, currently ${_previous_word}"
+#         echo -n "${COMP_LINE} "
+#     fi
+# }
+# f.complete f.loaded.match
 
 # f.doc
 f.doc() {
@@ -465,6 +465,10 @@ eval "bashenv.root() ( echo $(dirname $(realpath ${BASH_SOURCE})); )"
 f.complete bashenv.root
 eval "bashenv.lib() ( echo $(realpath -P ${BASH_SOURCE}); )"
 f.complete bashenv.lib
+
+bashenv.profiled() ( find $(bashenv.root) -mindepth 1 -maxdepth 1 -name profile*.d -type d; )
+f.x bashenv.profiled
+
 
 path() (echo ${PATH} | tr ':' '\n')
 f.complete path
@@ -632,6 +636,13 @@ f.x path.mpt
 path.mpcd() (cd $(dirname $(path.mp ${1:?'expecting a pathname'})))
 f.x path.mpcd
 
+path.readable() { [[ -r "$1" ]]; }
+f.x path.readable
+u.map.mkall path.readable
+
+
+
+
 # u.have
 # u.have is the heart of guard()
 # u can have a command in various ways: on PATH, as a flatpak or as a snap (ubutu)
@@ -640,8 +651,15 @@ u.have() (
     set -Eeuo pipefail
     type -p ${1?:'expecting a command'} >/dev/null
 )
-f.complete u.have
-u.map.mkall u.have # u.have.all
+f.x u.have
+
+u.have.all() (
+    : '${command} # succeeds iff ${command} is defined.'
+    set -Eeuo pipefail
+    for _c in $@; do u.have ${_c} || return 1; done
+    return 0
+)
+f.x u.have.all
 
 flatpak.have() (
     : '${command} # succeeds iff ${command} is defined.'
@@ -766,7 +784,144 @@ f.x bashenv.is.tracing
 
 bashenv.is.elf() ( file --mime-type ${1:?'expecting a pathname'} | grep --silent application/x-executable; )
 f.x bashenv.is.elf
-              
+
+bashenv.source.kinds() {
+    local -i _depth=${1:?'expecting a depth'}; shift
+    local -a _kinds=( ${1//:/ } ); shift
+    local _action=${1:?"${FUNCNAME} expecting an action"}; shift
+    # declare -p _kinds
+    for _kind in @{_kinds[*]}; do walk.trees ${_depth} ${_kind} ${_action} $@; done
+}
+f.x bashenv.source.kinds
+
+u.f2v() ( local -u _name=${1//./_}; echo ${_name}; )
+f.x u.f2v
+
+declare -Ax __bashenv_db
+bashenv.db.reset() { __bashenv_db=(); }
+f.x bashenv.db.reset
+
+bashenv.db0() {
+    local _key=${1:?"${FUNCNAME} expecting a key"}
+    [[ -n "${2:-}" ]] && __bashenv_db["${_key}"]="$2"
+    echo ${__bashenv_db["${_key}"]}
+}
+f.x bashenv.db0
+
+bashenv.A() {
+    local -nx _An=${1:?"${FUNCNAME} expecting a global associative array name"}
+    local _key=${2:?"${FUNCNAME} expecting a key"}
+    [[ -z "${3:-}" ]] || _An["${_key}"]="$3"
+    echo ${_An["${_key}"]}
+}
+f.x bashenv.A
+
+u.f2aa() { echo __${1//./_}; }
+f.x u.f2aa
+
+bashenv.A.keys() {
+    local -nx _An=${1:?"${FUNCNAME} expecting a global associative array name"}
+    printf '%s\n' ${!_An[@]};
+}
+f.x bashenv.A.keys
+
+bashenv.A.values() {
+    local -nx _An=${1:?"${FUNCNAME} expecting a global associative array name"}
+    printf '%s\n' ${_An[@]}
+}
+f.x bashenv.A.values
+
+bashenv.A.items() {
+    local -nx _An=${1:?"${FUNCNAME} expecting a global associative array name"}
+    local -r _fmt=${2:-'[%s]=%s\n'};
+    for _key in "${!_An[@]}"; do printf "${_fmt}" ${_key} ${_An["${_key}"]}; done
+}
+f.x bashenv.A.items
+
+bashenv.A.map() {
+    local -nx _An=${1:?"${FUNCNAME} expecting a global associative array name"}
+    local _action=${2:-echo}
+    u.have ${_action} || return $(u.error "${FUNCNAME} no action ${_action}")
+    local -a _pair
+    for _p in $(${FUNCNAME%.*}.items $1 '%s:%s\n'); do
+        _pair=( ${_p/:/ } )
+        # declare -p _pair
+        local _key=${_pair[0]} _value=${_pair[1]}
+        ${_action} ${_key} ${_value} || true
+    done        
+}
+f.x bashenv.A.map
+
+bashenv.db.gs() {
+    bashenv.db.A $(u.f2aa ${FUNCNAME}) ${1:?"${FUNCNAME} expecting a key"} ${2:-}
+}
+f.x bashenv.db.gs
+
+
+bashenv.db() { bashenv.A $(u.f2aa ${FUNCNAME}) ${1:?"${FUNCNAME} expecting a key"} ${2:-}; }
+f.x bashenv.db
+
+bashenv.db.keys0() { printf '%s\n' ${!__bashenv_db[@]}; }
+f.x bashenv.db.keys0
+
+bashenv.db.keys() { bashenv.A.${FUNCNAME##*.} $(u.f2aa ${FUNCNAME%.*}); }
+f.x bashenv.db.keys
+
+                    
+bashenv.db.values0() { printf '%s\n' ${__bashenv_db[@]}; }
+f.x bashenv.db.values0
+
+bashenv.db.values() { bashenv.A.${FUNCNAME##*.} $(u.f2aa ${FUNCNAME%.*}); }
+f.x bashenv.db.values
+
+
+bashenv.db.items0() {
+    local -r _delim=${1:-:};
+    for _key in "${!__bashenv_db[@]}"; do printf '%s%s%s\n' ${_key} ${_delim} ${__bashenv_db["${_key}"]}; done; }
+f.x bashenv.db.items0
+
+bashenv.db.items() {  bashenv.A.${FUNCNAME##*.} $(u.f2aa ${FUNCNAME%.*}); }
+f.x bashenv.db.items
+
+bashenv.db.map0() {
+    local _action=${1:?"${FUNCNAME} expecting an action"}
+    u.have ${_action} || return $(u.error "${FUNCNAME} no action ${_action}")
+    for _p in $(bashenv.db.items); do
+        local -a _pair=( ${_p/: } )
+        local _key=${_pair[0]} _value=${_pair[1]}
+        ${_action} ${_key} ${_value} || true
+    done        
+}
+f.x bashenv.db.map0
+
+bashenv.db.map() { bashenv.A.${FUNCNAME##*.} $(u.f2aa ${FUNCNAME%.*}) ${2:-echo}; }
+f.x bashenv.db.map
+
+
+
+
+bashenv.init() {
+    bashenv.source.kinds 1 lib source $(bashenv.root)
+    bashenv.source.kinds 2 source source $(bashenv.profiled)
+    bashenv.db ${FUNCNAME} $(date +"%s")
+}
+f.x bashenv.init
+
+#     # export $(u.f2v ${FUNCNAME})=$(date +"%s")
+# bashenv.loaded0() {
+#     local _e=$(u.f2v ${FUNCNAME})
+#     [[ -n "$1" ]] && export ${_e}=$(date +"%s")
+#     local -i _result=$(eval $(printf 'echo ${%s}' ${_e}))
+#     return $(( ! _result ))
+# }
+# f.x bashenv.loaded0
+
+
+bashenv.loaded() {
+    local -i _init="$(bashenv.db bashenv.init)"
+    return $(( ! _init ))
+}
+f.x bashenv.loaded
 
 bashenv.session.functions() (
     declare -Fpx | cut -f3 -d' ' | grep -e '\.session$'
@@ -795,7 +950,7 @@ f.x bashenv.reload
 
 _template() (
     : 'add args here ## add comments here'
-    set -Eeuo pipefail
+    set -Eeuo pipefail; shopt -s nullglob no-clobber
     false || return $(u.error "${FUNCNAME} tbs")
 )
 f.x _template
@@ -823,18 +978,18 @@ u.map.trees0() {
 }
 f.x u.map.trees0
 
-u.map.trees() {
+walk.trees() {
     local -i _depth=${1:?'expecting a depth'}; shift
     local _kind=${1:?'expecting a file kind, e.g. lib, source or guard'}; shift
     local _action=${1:?'expecting an action'}; shift
     # traverse breadth first
     for _depth in $(seq 1 ${_depth}); do
         for _f in $(find $@ -mindepth ${_depth} -maxdepth ${_depth} -type f -regex "[^#]+\.${_kind}\.sh\$"); do
-            echo ${_action} ${_f} || >&2 echo "${FUNCNAME}: ${_action} ${_f} => $?"
+            ${_action} ${_f} || >&2 echo "${FUNCNAME}: ${_action} ${_f} => $?"
         done        
     done
 }
-f.x u.map.trees
+f.x walk.trees
 
 
 
@@ -988,6 +1143,8 @@ pn.deparen() {
     done
 }
 f.x pn.deparen
+
+
 
 pdf.mv() {
     # if [[ -r "$1" ]]; then
@@ -1246,4 +1403,6 @@ guard.missing() (
 f.x guard.missing
 
 # bashenv.loaded || echo "bashenv not loaded"
-loaded "${BASH_SOURCE}"
+# loaded "${BASH_SOURCE}"
+sourced
+
