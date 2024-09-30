@@ -23,28 +23,38 @@ f.x() {
 f.x f.x
 
 # handle function switches like --var or --var=value
-# o.var() ( local _v=${1%=*}; echo "_${_v:2}"; ); f.x o.var
-# o.val() ( echo "${1##*=}"; ); f.x o.val
-sw.update() {
-    local -r _expecting="expecting a switch like --left or --left=value"
-    local -r _switch=${1:?"${FUNCNAME} ${_expecting}"}
-    local -r _prefix=${2:-_}
-    local -r _true=${3:-1}
+# usage: --switch=*) eval case.update "${_a}";;
+# usage: --switch) eval case.update "${_a}";;
+case.update() {
+    return $(u.error "${FUNCNAME} broken")
+    local -r _switch=${1:?"${FUNCNAME} expecting a switch --left or --left=value"}
+    local -r _true=${2:-1}
+    local -r _prefix=${3:-_}
 
     # --var=value
     # usage: --left=*) eval $(sw.update ${_a}); >&2 echo ${_left};;
-    [[ $1 =~ --([^=]+)(=(.+))?\$ ]] || return $(u.error "${FUNCNAME} '${_switch}' wrong format, ${_expecting}")
-    eval $(printf '%s%s="%s"' ${_prefix} ${BASH_REMATCH[1]} ${BASH_REMATCH[2]:-${_true}})
+    # repl testing: [[ "literal" =~ --([^=]+)(=(.+))?$ ]] && declare -p BASH_REMATCH
+    [[ "${_switch}" =~ --([^=]+)(=(.+))?$ ]] || return $(u.error "${FUNCNAME} '${_switch}' wrong format, expecting a switch --left or --left=value")
+    printf '%s%s="%s"' ${_prefix} ${BASH_REMATCH[1]} ${BASH_REMATCH[3]:-${_true}}
 }
-f.x sw.update
+f.x case.update
 
 # eval is.required _var
 is.required() {
     local -r _var=${1:?"${FUNCNAME} expecting a variable name"}
     local -r _error=${2:-"${FUNCNAME[-2]}: ${_var} is required"}
-    eval $(printf '[[ -z "${%s}" ]] && return u.error("%s")' ${_var} ${_error})
+    $(printf '[[ -z "${%s}" ]] && return u.error("%s")' ${_var} ${_error})
 }
 f.x is.required
+
+u.field() (
+    local _record=${1:?"${FUNCNAME} expecting a record 0:1:2:..."}
+    local -i _field=${2:-0}
+    local -a _result=( ${_record//:/ } )
+    echo "${_result[${_field}]}"
+)
+f.x u.field
+
 
 u.error() (
     local -i _status=${2:-$?}; (( _status )) || _status=1
@@ -786,11 +796,23 @@ bashenv.is.elf() ( file --mime-type ${1:?'expecting a pathname'} | grep --silent
 f.x bashenv.is.elf
 
 bashenv.source.kinds() {
-    local -i _depth=${1:?'expecting a depth'}; shift
+    : '--record=sourced.status --record=sourced.when --depth=1 --kind=lib --action=source'
+    
+    local -i _depth=1
+    local _kind=source
+    local _action=source
+    local -a _records=()
+
+
+    
+    local _aamethod=${1:?"${FUNCNAME} expecting an associate array method"}
+    local -i _depth=${1:?"${FUNCNAME} expecting an integer depth"}; shift
+    (( _depth > 0 )) || return $(u.error "${FUNCNAME} depth ${_depth} < 1, stopping.")
     local -a _kinds=( ${1//:/ } ); shift
+    (( ${#_kinds[@]} )) || return $(u.error "${FUNCNAME} expecting a file kind e.g. lib or source")
     local _action=${1:?"${FUNCNAME} expecting an action"}; shift
     # declare -p _kinds
-    for _kind in @{_kinds[*]}; do walk.trees ${_depth} ${_kind} ${_action} $@; done
+    for _kind in @{_kinds[*]}; do walk.trees ${_aamethod} ${_depth} ${_kind} ${_action} $@; done
 }
 f.x bashenv.source.kinds
 
@@ -898,12 +920,32 @@ bashenv.db.map() { bashenv.A.${FUNCNAME##*.} $(u.f2aa ${FUNCNAME%.*}) ${2:-echo}
 f.x bashenv.db.map
 
 
+# sourced.{status,when}
+declare -Ax __sourced_status __sourced_when
+sourced.status.reset() { __sourced_db_status=(); }; sourced.status.reset
+sourced.when.reset() { __sourced_db_when=(); }; sourced.when.reset
 
+sourced.status() { bashenv.A $(u.f2aa ${FUNCNAME}) ${1:?"${FUNCNAME} expecting a key"} ${2:-}; }; f.x sourced.status
+sourced.when() { bashenv.A $(u.f2aa ${FUNCNAME}) ${1:?"${FUNCNAME} expecting a key"} ${2:-}; }; f.x sourced.when
+
+sourced.status.keys() { bashenv.A.${FUNCNAME##*.} $(u.f2aa ${FUNCNAME%.*}); }; f.x sourced.status.keys
+sourced.when.keys() { bashenv.A.${FUNCNAME##*.} $(u.f2aa ${FUNCNAME%.*}); }; f.x sourced.when.keys
+
+sourced.status.values() { bashenv.A.${FUNCNAME##*.} $(u.f2aa ${FUNCNAME%.*}); };f.x sourced.status.values
+sourced.when.values() { bashenv.A.${FUNCNAME##*.} $(u.f2aa ${FUNCNAME%.*}); };f.x sourced.when.values
+
+sourced.status.items() {  bashenv.A.${FUNCNAME##*.} $(u.f2aa ${FUNCNAME%.*}); }; f.x sourced.status.items
+sourced.when.items() {  bashenv.A.${FUNCNAME##*.} $(u.f2aa ${FUNCNAME%.*}); }; f.x sourced.when.items
+
+sourced.status.map() { bashenv.A.${FUNCNAME##*.} $(u.f2aa ${FUNCNAME%.*}) ${2:-echo}; }; f.x sourced.status.map
+sourced.when.map() { bashenv.A.${FUNCNAME##*.} $(u.f2aa ${FUNCNAME%.*}) ${2:-echo}; }; f.x sourced.when.map
 
 bashenv.init() {
-    bashenv.source.kinds 1 lib source $(bashenv.root)
-    bashenv.source.kinds 2 source source $(bashenv.profiled)
-    bashenv.db ${FUNCNAME} $(date +"%s")
+    sourced.status.reset; sourced.when.reset
+    bashenv.source.kinds --record=sourced.status --record=sourced.when --depth=1 --kind=lib --action=source $(bashenv.root)
+    bashenv.source.kinds --record=sourced.status --record=sourced.when --depth=2 --kind=source --action=source $(bashenv.profiled)
+    sourced.status ${FUNCNAME} 0
+    sourced.when ${FUNCNAME} $(date +"%s")
 }
 f.x bashenv.init
 
@@ -918,7 +960,7 @@ f.x bashenv.init
 
 
 bashenv.loaded() {
-    local -i _init="$(bashenv.db bashenv.init)"
+    local -i _init="$(sourced.history bashenv.init)"
     return $(( ! _init ))
 }
 f.x bashenv.loaded
@@ -978,18 +1020,24 @@ u.map.trees0() {
 }
 f.x u.map.trees0
 
-walk.trees() {
+u.map.trees() {
+    local _aamethod=${1:?"${FUNCNAME} expecting an associate array method"}
+    u.have ${_aamethod} || return $(u.error "${FUNCNAME} unknown method ${_aamethod}")
     local -i _depth=${1:?'expecting a depth'}; shift
     local _kind=${1:?'expecting a file kind, e.g. lib, source or guard'}; shift
     local _action=${1:?'expecting an action'}; shift
+    local -i _status
     # traverse breadth first
     for _depth in $(seq 1 ${_depth}); do
         for _f in $(find $@ -mindepth ${_depth} -maxdepth ${_depth} -type f -regex "[^#]+\.${_kind}\.sh\$"); do
-            ${_action} ${_f} || >&2 echo "${FUNCNAME}: ${_action} ${_f} => $?"
+            ${_action} "${_f}"
+            _status=$?
+            ${_aamethod} "${_f}" ${_status}
+            (( _status )) || >&2 echo "${FUNCNAME}: ${_action} ${_f} => $?"
         done        
     done
 }
-f.x walk.trees
+f.x u.map.trees
 
 
 

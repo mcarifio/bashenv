@@ -2,7 +2,7 @@
 # set -x
 set -Eeuo pipefail; shopt -s nullglob
 
-on.return() { local -i _status=$?; printf '* => %s *\n' ${_status} >&2; return ${_status}; }
+# on.return() { local -i _status=$?; printf '* => %s *\n' ${_status} >&2; return ${_status}; }
 # trap on.return RETURN
 
 example.options() (
@@ -12,8 +12,10 @@ example.options() (
     local -i _bool=0
     # _var required, see check below
     local _var='_var' _varo='_varo' _doo=default # no _do
+    local -a _many=()
+    local -A _pairs=()
     echo "** ${FUNCNAME} keywords initialized:" >&2
-    declare -p _bool _var _varo _doo >&2
+    declare -p _bool _var _varo _doo _many _pairs >&2
 
     for _a in "${@}"; do
         case "${_a}" in
@@ -22,6 +24,8 @@ example.options() (
             --varo=*) _varo="${_a##*=}";;
 	    --do=*) _do="${_a##*=}";; # assign undefined variable
             --doo=*) _doo="${_a##*=}";;
+            --many=*) _many+=( "${_a##*=}" );;
+            --pairs=*) _pairs["$(u.field ${_a##*=})"]="$(u.field ${_a##*=} 1)";;
             --) shift; break;;
             # --*) break;; ## break on unknown switch, pass it along
             --*) >&2 echo "${FUNCNAME}: unknown switch ${_a}, stop processing switches"; break;;
@@ -32,7 +36,7 @@ example.options() (
     done
 
     echo "** ${FUNCNAME} args parsed" >&2
-    declare -p _bool _var _varo _doo >&2
+    declare -p _bool _var _varo _doo _many _pairs >&2
 
     echo "** ${FUNCNAME} check args" >&2
     [[ -z "${_var:-}" ]] && { echo "${FUNCNAME} _var has no required value, use --var=\${something}"; echo "return here"; } >&2
@@ -47,6 +51,8 @@ example.options() (
     declare -p _varo >&2
     # declare -p _do >&2
     declare -p _doo >&2
+    declare -p _many >&2
+    declare -p _pairs >&2
     
     # assign remaining arguments
     local _first="${1:?\"${FUNCNAME} expecting first argument\"}"; shift
@@ -70,6 +76,8 @@ example.options() (
     declare -p _var >&2
     declare -p _varo >&2
     declare -p _doo >&2
+    declare -p _many >&2
+    declare -p _pairs >&2
     declare -p _first >&2
     declare -p _second >&2
     declare -p _rest >&2
@@ -89,8 +97,14 @@ all() (
     local _result=''; _result=$(example.options no options ${LINENO}); test $? = 0 -a "${_result}" = ${USER} || echo "failed ${LINENO}" >&2
     _result=''; _result=$(example.options --bool just bool  ${LINENO}}); test $? = 0 -a "${_result}" = ${USER} || echo "failed ${LINENO}" >&2
     _result=''; _result=$(example.options --do=something just something else ${LINENO}); test $? = 0 -a "${_result}" = ${USER} || echo "failed ${LINENO}" >&2
-    _result=''; _result=$(example.options --var=${USER} just var ${LINENO} && expect ${LINENO} 0); test $? = 0 -a "${_result}" = ${USER} || echo "failed ${LINENO}" >&2
-    _result=''; _result=$(example.options --varo=oh just varo ${LINENO} && expect ${LINENO} 0); test $? = 0 -a "${_result}" = ${USER} || echo "failed ${LINENO}" >&2
+    _result=''; _result=$(example.options --var=${USER} just var ${LINENO}); test $? = 0 -a "${_result}" = ${USER} || echo "failed ${LINENO}" >&2
+    _result=''; _result=$(example.options --varo=oh just varo ${LINENO}); test $? = 0 -a "${_result}" = ${USER} || echo "failed ${LINENO}" >&2
+    _result=''; _result=$(example.options --many=1 --varo=oh --many=2 --many=3 just varo ${LINENO})
+    test $? = 0 -a "${_result}" = ${USER} || echo "failed ${LINENO}" >&2
+    _result=''; _result=$(example.options --pairs=two:2 --varo=oh --pairs=one:1 just varo ${LINENO})
+    test $? = 0 -a "${_result}" = ${USER} || echo "failed ${LINENO}" >&2    
+    _result=''; _result=$(example.options --pairs=one:two:three --varo=oh just varo ${LINENO}); test $? = 0 -a "${_result}" = ${USER} || echo "failed ${LINENO}" >&2
+    
 
     # fails
     _result=''; _result=$(example.options --doo='doo doo' ${LINENO}); test $? != 0 -a -z "${_result}" || echo "failed ${LINENO}" >&2
