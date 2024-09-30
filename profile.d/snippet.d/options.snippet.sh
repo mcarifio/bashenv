@@ -1,62 +1,109 @@
 #!/usr/bin/env bash
+# set -x
 set -Eeuo pipefail; shopt -s nullglob
 
-# o.required() {
-#     local -gn _v=$1
-#     echo ${FUNCNAME} $1 ${_v} || true
-#     [[ -n "${_v}" ]] && return 0
-#     >&2 echo "${FUNCNAME[-2]} expecting --${1:1}=\${something}"
-#     return 1
-# }
+on.return() { local -i _status=$?; printf '* => %s *\n' ${_status} >&2; return ${_status}; }
+# trap on.return RETURN
 
 example.options() (
     set -Eeuo pipefail; shopt -s nullglob
-    >&2 echo ${FUNCNAME} "$@"
-
+    echo -e "\n\n** ${FUNCNAME} unparsed args: " "$@" >&2 
 
     local -i _bool=0
     # _var required, see check below
-    local _var='_var' _varo='_varo'
-    >&2 declare -p _var _varo _bool _doo=default
+    local _var='_var' _varo='_varo' _doo=default # no _do
+    echo "** ${FUNCNAME} keywords initialized:" >&2
+    declare -p _bool _var _varo _doo >&2
 
     for _a in "${@}"; do
         case "${_a}" in
             --bool) _bool=1;; ## turn _bool on
-            --var=*) _var="${_a##*=}";; ## manual
-            --varo=*) local -n _lhs=$(o.var ${_a}); _lhs="$(o.val ${_a})";  >&2 printf '_lhs: %s, _varo: %s ## --varo case\n' ${_lhs} ${_varo};; ## regardless of variable
-	    --do=*) echo "${_a%=*} ${_a##*=} ## --do case";; ## do something manually
-            --doo=*) sw.update ${_a}; >&2 echo ${_doo};;
-            --*) >&2 echo "${FUNCNAME}: unknown switch ${_a}, stop processing switches"; break;;
+            --var=*) _var="${_a##*=}";;
+            --varo=*) _varo="${_a##*=}";;
+	    --do=*) _do="${_a##*=}";; # assign undefined variable
+            --doo=*) _doo="${_a##*=}";;
             --) shift; break;;
+            # --*) break;; ## break on unknown switch, pass it along
+            --*) >&2 echo "${FUNCNAME}: unknown switch ${_a}, stop processing switches"; break;;
+            # --*) return $(u.error "${FUNCNAME} unknown switch "${_a}", stoppping") ## error on unknown switch
             *) break;;
         esac
         shift
     done
 
-    # required _var check
-    # [[ -z "${_var:-}" ]] && >&2 echo "_var has no required value, use --var=\${something}"
-    is.required _var
+    echo "** ${FUNCNAME} args parsed" >&2
+    declare -p _bool _var _varo _doo >&2
 
-    >&2 declare -p _var _varo _bool
-    local _first=${1:?'expecting an argument'}; shift
-    >&2 declare -p _first
-    >&2 echo -e "$@\n\n"
+    echo "** ${FUNCNAME} check args" >&2
+    [[ -z "${_var:-}" ]] && { echo "${FUNCNAME} _var has no required value, use --var=\${something}"; echo "return here"; } >&2
+    declare -p _var >&2
+    # arg checks
+    (( _bool > -1 )) || return $(u.error "${FUNCNAME} _bool is ${_bool}, expecting _bool > -1")
+    declare -p _bool >&2
+    
+    echo "** ${FUNCNAME} all options" >&2
+    declare -p _bool >&2
+    declare -p _var >&2
+    declare -p _varo >&2
+    # declare -p _do >&2
+    declare -p _doo >&2
+    
+    # assign remaining arguments
+    local _first="${1:?\"${FUNCNAME} expecting first argument\"}"; shift
+    declare -p _first >&2
+    
+    local _second="${1:?\"${FUNCNAME} expecting second argument\"}"; shift
+    declare -p _second >&2
+
+    # _rest is everything unassigned, for completeness
+    local -a _rest=( "$@" )
+    declare -p _rest >&2
+
+    echo "** ${FUNCNAME} all args" >&2
+    declare -p _first >&2
+    declare -p _second >&2
+    declare -p _rest >&2    
+
+    # body
+    echo "** ${FUNCNAME} body" >&2
+    declare -p _bool >&2
+    declare -p _var >&2
+    declare -p _varo >&2
+    declare -p _doo >&2
+    declare -p _first >&2
+    declare -p _second >&2
+    declare -p _rest >&2
+    echo "@: $@" >&2
+    echo "** ${FUNCNAME} return" >&2
+    echo ${USER}
 )
 
-# required() (
-#     local -rg _r=''
-#     declare -p _r
-#     o.required _r
-# )
+# set -x
+# exit 1
+
+    
+all() (
+    set +Ee
+    set -uo pipefail; shopt -s nullglob
+    # succeeds
+    local _result=''; _result=$(example.options no options ${LINENO}); test $? = 0 -a "${_result}" = ${USER} || echo "failed ${LINENO}" >&2
+    _result=''; _result=$(example.options --bool just bool  ${LINENO}}); test $? = 0 -a "${_result}" = ${USER} || echo "failed ${LINENO}" >&2
+    _result=''; _result=$(example.options --do=something just something else ${LINENO}); test $? = 0 -a "${_result}" = ${USER} || echo "failed ${LINENO}" >&2
+    _result=''; _result=$(example.options --var=${USER} just var ${LINENO} && expect ${LINENO} 0); test $? = 0 -a "${_result}" = ${USER} || echo "failed ${LINENO}" >&2
+    _result=''; _result=$(example.options --varo=oh just varo ${LINENO} && expect ${LINENO} 0); test $? = 0 -a "${_result}" = ${USER} || echo "failed ${LINENO}" >&2
+
+    # fails
+    _result=''; _result=$(example.options --doo='doo doo' ${LINENO}); test $? != 0 -a -z "${_result}" || echo "failed ${LINENO}" >&2
+    _result=''; _result=$(example.options --doo='doo doo' ${LINENO}); test $? != 0 -a -z "${_result}"  || echo "failed ${LINENO}" >&2
+    _result=''; _result=$(example.options --doo='doo doo' ${LINENO}); test $? != 0 -a -z "${_result}"  || echo "failed ${LINENO}" >&2
+    
+    # succeeds
+    _result=''; _result=$(example.options --var=100 --bool --do=something+else --varo=200 --doo=dowhop all options ${LINENO}); test $? = 0 -a "${_result}" = ${USER} || echo "failed ${LINENO}" >&2
+    _result=''; _result=$(example.options --bool -- --var=100 short circuit  ${LINENO}); test $? = 0 -a "${_result}" = ${USER} || echo "failed ${LINENO}" >&2
+)
+
+all
 
 
-example.options no options ${LINENO}
-example.options --bool just bool  ${LINENO}
-example.options --do=something just something else  ${LINENO}
-example.options --var=${USER} just var  ${LINENO}
-example.options --varo=oh just varo  ${LINENO}
-example.options --doo='doo doo'  ${LINENO}
-example.options --var=100 --bool --do='something else' --varo=200 --doo=dowhop all options  ${LINENO}
-example.options --bool -- --var=100 short circuit  ${LINENO}
 
-# required
+
