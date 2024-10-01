@@ -19,7 +19,7 @@ f.x deno.env
 
 deno.session() {
     : '# called by .bashrc'
-    source <(deno completions $(u.shell)
+    source <(deno completions $(u.shell))
 }
 f.x deno.session
 
