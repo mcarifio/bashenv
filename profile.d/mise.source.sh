@@ -1,5 +1,4 @@
-# creation: guard.mkguard ${_name}
-_guard=$(path.basename ${BASH_SOURCE})
+${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
 
 # mise() ( command ${FUNCNAME} "$@"; )
 # f.x mise
@@ -26,5 +25,4 @@ mise.session() {
 }
 f.x mise.session
 
-unset _guard
-loaded "${BASH_SOURCE}"
+sourced || true
