@@ -1,26 +1,34 @@
-# usage: [guard | source] _template.guard.sh [--install] [--verbose] [--trace]
-_guard=$(path.basename ${BASH_SOURCE})
-declare -A _option=([install]=0 [verbose]=0 [trace]=0)
-_undo=''; trap -- 'eval ${_undo}; unset _option _undo; trap -- - RETURN' RETURN
-local -a _rest=( $(u.parse _option "$@") )
-if (( ${_option[trace]} )) && ! bashenv.is.tracing; then
-    _undo+='set +x;'
-    set -x
-fi
-if (( ${_option[install]} )); then
-    if u.have ${_guard}; then
-        >&2 echo ${_guard} already installed
-    else
-        case "$(os-release.id)" in
-            fedora) dnf install erlang{,-rebar3};;
-            ubuntu) sudo command apt install -y erlang{,-rebar3};;
-            *) u.bad "${BASH_SOURCE} --install unknown for $(os-release.id)"
-        esac
-        git clone git clone https://github.com/gleam-lang/gleam.git ~/src/gleam
-        cd ~/srg/gleam
-        make install ## assumes cargo on PATH
-        gleam --version
-    fi
-fi
+${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
 
-loaded "${BASH_SOURCE}"
+# gleam() ( command ${FUNCNAME} "$@"; )
+# f.x gleam
+
+
+gleam.docs() (
+    set -Eeuo pipefail; shopt -s nullglob
+    local -nu _docs=${FUNCNAME%.*}_urls # e.g. UV_DOCS
+    set -x; xdg-open ${_docs:-} "$@" # hard-code urls here if desired
+)
+f.x gleam.docs
+
+gleam.env() {
+    : '# called (once) by .bash_profile'
+    true || return $(u.error "${FUNCNAME} failed")
+}
+f.x gleam.env
+
+_gleam.session() {
+    local -r _shell=${1:-$(u.shell)}
+    local -r _cmd=${2:-${FUNCNAME%.*}}
+    source.if /usr/share/bash-completion/completions/${_cmd}{,.${_shell}}
+}
+f.x _gleam.session
+
+gleam.session() {
+    : '# called by .bashrc'
+    _${FUNCNAME} ${1:-$(u.shell)} ${2:-${FUNCNAME%.*}}
+}
+f.x gleam.session
+
+sourced || true
+

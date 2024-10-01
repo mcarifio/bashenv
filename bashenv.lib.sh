@@ -821,7 +821,7 @@ bashenv.source.kind() {
     done
     
     (( _depth > 0 )) || return $(u.error "${FUNCNAME} depth ${_depth} < 1, stopping.")
-    walk.trees ${_depth} ${_kind} ${_action} $@
+    u.map.trees ${_depth} ${_kind} ${_action} $@
 }
 f.x bashenv.source.kind
 
@@ -893,6 +893,8 @@ bashenv.mkA() {
 declare -Ax __sourced_from
 bashenv.mkA __sourced_from
 
+declare -Ax __sourced_action
+bashenv.mkA __sourced_action
 
 # 
 # sourced.status
@@ -1039,8 +1041,8 @@ u.map.trees0() {
 f.x u.map.trees0
 
 u.map.trees() {
-    local _aamethod=${1:?"${FUNCNAME} expecting an associate array method"}
-    u.have ${_aamethod} || return $(u.error "${FUNCNAME} unknown method ${_aamethod}")
+    # local _aamethod=${1:?"${FUNCNAME} expecting an associate array method"}
+    # u.have ${_aamethod} || return $(u.error "${FUNCNAME} unknown method ${_aamethod}")
     local -i _depth=${1:?'expecting a depth'}; shift
     local _kind=${1:?'expecting a file kind, e.g. lib, source or guard'}; shift
     local _action=${1:?'expecting an action'}; shift
@@ -1050,14 +1052,12 @@ u.map.trees() {
         for _f in $(find $@ -mindepth ${_depth} -maxdepth ${_depth} -type f -regex "[^#]+\.${_kind}\.sh\$"); do
             ${_action} "${_f}"
             _status=$?
-            ${_aamethod} "${_f}" ${_status}
-            (( _status )) || >&2 echo "${FUNCNAME}: ${_action} ${_f} => $?"
+            { sourced.status "${_f}" ${_status}; sourced.when "${_f}" $(date +"%s"); sourced.action "${_f}" "${_action}"; } &> /dev/null
+            (( _status )) && echo "${FUNCNAME}: ${_action} ${_f} => ${_status}"
         done        
     done
 }
 f.x u.map.trees
-
-
 
 u.or() (echo "$@" | cut -d' ' -f1)
 f.x u.or
@@ -1423,7 +1423,7 @@ f.x tbird.logged
 
 source.mkguard() (
     : '${_name} # create ${_name}.guard.sh in the right folder'
-    set -Eeuo pipefail; shopt -s nullglob noclobber
+    set -Eeuo pipefail; shopt -s nullglob
     local -r _name=${1:?'expecting a name'}
     local -r _kind=${2:-tbs}
     local -r _where="$(bashenv.root)/profile.d"
