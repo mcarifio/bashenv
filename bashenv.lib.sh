@@ -39,14 +39,6 @@ case.update() {
 }
 f.x case.update
 
-# eval is.required _var
-is.required() {
-    local -r _var=${1:?"${FUNCNAME} expecting a variable name"}
-    local -r _error=${2:-"${FUNCNAME[-2]}: ${_var} is required"}
-    $(printf '[[ -z "${%s}" ]] && return u.error("%s")' ${_var} ${_error})
-}
-f.x is.required
-
 u.field() (
     local _record=${1:?"${FUNCNAME} expecting a record 0:1:2:..."}
     local -i _field=${2:-0}
@@ -207,7 +199,11 @@ f.x f.mkcompleter.generate
 
 
 
-source.if() { [[ -r "${1:?'expecting a file'}" ]] && source $1; }
+source.if() {
+    for _f in "$@"; do
+        [[ -r "${_f}" ]] && source ${_f}
+    done
+}
 f.x source.if
 
 f.folder() (
@@ -270,6 +266,16 @@ sourced() {
     __bashenv_sourced["${_pn}"]=$(date +"%s")
 }
 f.x sourced
+
+loaded() {
+    local _s=${1:-${BASH_SOURCE[1]}}
+    [[ -z "${_s}" ]] && return $(u.error "${FUNCNAME} expecting a pathname")
+    local _pn="$(realpath -Lm ${_s})"
+    __bashenv_sourced["${_pn}"]=$(date +"%s")
+    echo fix ${BASH_SOURCE[1]}:${BASH_LINENO[1]} >&2    
+}
+f.x loaded
+
 
 sourced.when() {
     local _s=${1:-${BASH_SOURCE[1]}}
@@ -729,37 +735,37 @@ f.complete f.complete.for
 
 ## guard
 
-guard.for() {
-    : 'guard.for ${command}... # returns 0 iff all ${commands} are on PATH '
-    u.have "${1:?'expecting a command'}" $2
-}
-f.x guard.for
+# guard.for() {
+#     : 'guard.for ${command}... # returns 0 iff all ${commands} are on PATH '
+#     u.have "${1:?'expecting a command'}" $2
+# }
+# f.x guard.for
 
-_guard() {
-    : '_guard ${pathname} [${command}] # source ${pathname} iff ${command} resolves'
-    local _pathname=${1:-'expecting a pathname'}
-    shift
-    local _for=${2:-$(path.basename ${_pathname})}
-    shift
-    local _flatpak=${3:-}
-    shift
-    guard.for ${_for} || return 0
-    source ${_pathname} "$@" || return $(u.error "${_pathname} => $?")
-    u.call ${_for}.env "$@" || return $(u.error "${_for}.env => $?")
-}
-f.x _guard
-guard() {
-    : 'guard ${pathname} [${command}] # source ${pathname} iff ${command} resolves. print errors but ignores return values'
-    # guard has a private helper _guard which simplifies the calling expression.
-    _${FUNCNAME} "$@" || true
-}
-f.complete guard
+# _guard() {
+#     : '_guard ${pathname} [${command}] # source ${pathname} iff ${command} resolves'
+#     local _pathname=${1:-'expecting a pathname'}
+#     shift
+#     local _for=${2:-$(path.basename ${_pathname})}
+#     shift
+#     local _flatpak=${3:-}
+#     shift
+#     guard.for ${_for} || return 0
+#     source ${_pathname} "$@" || return $(u.error "${_pathname} => $?")
+#     u.call ${_for}.env "$@" || return $(u.error "${_for}.env => $?")
+# }
+# f.x _guard
+# guard() {
+#     : 'guard ${pathname} [${command}] # source ${pathname} iff ${command} resolves. print errors but ignores return values'
+#     # guard has a private helper _guard which simplifies the calling expression.
+#     _${FUNCNAME} "$@" || true
+# }
+# f.complete guard
 
-# lib() is a hack to make map.tree work
-lib() {
-    source ${1:?'expecting a lib file like foo.lib.sh'} || return $(u.error "${FUNCNAME} ${_pathname} => $?")
-}
-f.x lib
+# # lib() is a hack to make map.tree work
+# lib() {
+#     source ${1:?'expecting a lib file like foo.lib.sh'} || return $(u.error "${FUNCNAME} ${_pathname} => $?")
+# }
+# f.x lib
 
 # bashenv.*
 
@@ -795,40 +801,39 @@ f.x bashenv.is.tracing
 bashenv.is.elf() ( file --mime-type ${1:?'expecting a pathname'} | grep --silent application/x-executable; )
 f.x bashenv.is.elf
 
-bashenv.source.kinds() {
-    : '--record=sourced.status --record=sourced.when --depth=1 --kind=lib --action=source'
+bashenv.source.kind() {
+    : '[--depth=$i] [--kind=${extension}] [--action=${command}]'
     
     local -i _depth=1
     local _kind=source
     local _action=source
-    local -a _records=()
 
-
+    for _a in "${@}"; do
+        case "${_a}" in
+            --depth=*) _depth="${_a##*=}";;
+            --kind=*) _kind="${_a##*=}";;
+            --action=*) _action="${_a##*=}";;
+            --) shift; break;;
+            --*) return $(u.error "${FUNCNAME} unknown switch '${_a}', stopping");;
+            *) break;;
+        esac
+        shift
+    done
     
-    local _aamethod=${1:?"${FUNCNAME} expecting an associate array method"}
-    local -i _depth=${1:?"${FUNCNAME} expecting an integer depth"}; shift
     (( _depth > 0 )) || return $(u.error "${FUNCNAME} depth ${_depth} < 1, stopping.")
-    local -a _kinds=( ${1//:/ } ); shift
-    (( ${#_kinds[@]} )) || return $(u.error "${FUNCNAME} expecting a file kind e.g. lib or source")
-    local _action=${1:?"${FUNCNAME} expecting an action"}; shift
-    # declare -p _kinds
-    for _kind in @{_kinds[*]}; do walk.trees ${_aamethod} ${_depth} ${_kind} ${_action} $@; done
+    walk.trees ${_depth} ${_kind} ${_action} $@
 }
-f.x bashenv.source.kinds
+f.x bashenv.source.kind
 
+# bashenv.A associate array "base"
 u.f2v() ( local -u _name=${1//./_}; echo ${_name}; )
 f.x u.f2v
 
-declare -Ax __bashenv_db
-bashenv.db.reset() { __bashenv_db=(); }
-f.x bashenv.db.reset
-
-bashenv.db0() {
-    local _key=${1:?"${FUNCNAME} expecting a key"}
-    [[ -n "${2:-}" ]] && __bashenv_db["${_key}"]="$2"
-    echo ${__bashenv_db["${_key}"]}
-}
-f.x bashenv.db0
+u.f2aa() { echo __${1//./_}; }; f.x u.f2aa
+u.aa2f() {
+    local _aa=${1:?"${FUNCNAME} expecting an associating array"}
+    [[ "${_aa}" =~ __([^_]+)_(.+) ]] && echo ${BASH_REMATCH[1]}.${BASH_REMATCH[2]} || return $(u.error "${FUNCNAME} '${_aa}' not expected as __something_else")
+}; f.x u.aa2f
 
 bashenv.A() {
     local -nx _An=${1:?"${FUNCNAME} expecting a global associative array name"}
@@ -837,9 +842,6 @@ bashenv.A() {
     echo ${_An["${_key}"]}
 }
 f.x bashenv.A
-
-u.f2aa() { echo __${1//./_}; }
-f.x u.f2aa
 
 bashenv.A.keys() {
     local -nx _An=${1:?"${FUNCNAME} expecting a global associative array name"}
@@ -874,78 +876,94 @@ bashenv.A.map() {
 }
 f.x bashenv.A.map
 
-bashenv.db.gs() {
-    bashenv.db.A $(u.f2aa ${FUNCNAME}) ${1:?"${FUNCNAME} expecting a key"} ${2:-}
-}
-f.x bashenv.db.gs
+bashenv.mkA() {
+    local _aa=${1:?"${FUNCNAME} expecting a global associative array name"}
+    local -nx _An=${_aa}
+    local _prefix=$(u.aa2f ${_aa})
+    eval $(printf '%s() { bashenv.A $(u.f2aa ${FUNCNAME}) ${1:?"${FUNCNAME} expecting a key"} ${2:-}; };' ${_prefix}); f.x ${_prefix}
+    eval $(printf '%s() { %s=(); };' ${_prefix}.reset ${_aa}); f.x ${_prefix}.reset
+    eval $(printf '%s() { bashenv.A.${FUNCNAME##*.} $(u.f2aa ${FUNCNAME%%.*}) ${2:-echo}; };' ${_prefix}.map); f.x ${_prefix}.map
+
+    for _method in ${_prefix}.{keys,values,items}; do
+        eval $(printf '%s() { bashenv.A.${FUNCNAME##*.} $(u.f2aa ${FUNCNAME%%.*}) $1; };' ${_method}); f.x ${_method}
+    done
+}; f.x bashenv.mkA
+
+# sourced.from
+declare -Ax __sourced_from
+bashenv.mkA __sourced_from
 
 
-bashenv.db() { bashenv.A $(u.f2aa ${FUNCNAME}) ${1:?"${FUNCNAME} expecting a key"} ${2:-}; }
-f.x bashenv.db
+# 
+# sourced.status
+declare -Ax __sourced_status
+bashenv.mkA __sourced_status
+# sourced.status() { bashenv.A $(u.f2aa ${FUNCNAME}) ${1:?"${FUNCNAME} expecting a key"} ${2:-}; }; f.x sourced.status
+# sourced.status.reset() { __sourced_status=(); }; f.x sourced.status.reset
+# sourced.status.keys() { bashenv.A.${FUNCNAME##*.} $(u.f2aa ${FUNCNAME%.*}); }; f.x sourced.status.keys
+# sourced.status.values() { bashenv.A.${FUNCNAME##*.} $(u.f2aa ${FUNCNAME%.*}); };f.x sourced.status.values
+# sourced.status.items() {  bashenv.A.${FUNCNAME##*.} $(u.f2aa ${FUNCNAME%.*}); }; f.x sourced.status.items
+# sourced.status.map() { bashenv.A.${FUNCNAME##*.} $(u.f2aa ${FUNCNAME%.*}) ${2:-echo}; }; f.x sourced.status.map
 
-bashenv.db.keys0() { printf '%s\n' ${!__bashenv_db[@]}; }
-f.x bashenv.db.keys0
+# sourced.when
+declare -Ax __sourced_when
+bashenv.mkA __sourced_when
+# sourced.when() { bashenv.A $(u.f2aa ${FUNCNAME}) ${1:?"${FUNCNAME} expecting a key"} ${2:-}; }; f.x sourced.when
+# sourced.when.reset() { __sourced_db_when=(); }; f.x sourced.when.reset
+# sourced.when.keys() { bashenv.A.${FUNCNAME##*.} $(u.f2aa ${FUNCNAME%.*}); }; f.x sourced.when.keys
+# sourced.when.values() { bashenv.A.${FUNCNAME##*.} $(u.f2aa ${FUNCNAME%.*}); };f.x sourced.when.values
+# sourced.when.items() {  bashenv.A.${FUNCNAME##*.} $(u.f2aa ${FUNCNAME%.*}); }; f.x sourced.when.items
+# sourced.when.map() { bashenv.A.${FUNCNAME##*.} $(u.f2aa ${FUNCNAME%.*}) ${2:-echo}; }; f.x sourced.when.map
 
-bashenv.db.keys() { bashenv.A.${FUNCNAME##*.} $(u.f2aa ${FUNCNAME%.*}); }
-f.x bashenv.db.keys
+declare -Ax __bashenv_db
+bashenv.mkA __bashenv_db
+# bashenv.db() { bashenv.A $(u.f2aa ${FUNCNAME}) ${1:?"${FUNCNAME} expecting a key"} ${2:-}; }
+# f.x bashenv.db
+
+# # bashenv.db.keys0() { printf '%s\n' ${!__bashenv_db[@]}; }
+# # f.x bashenv.db.keys0
+
+# bashenv.db.keys() { bashenv.A.${FUNCNAME##*.} $(u.f2aa ${FUNCNAME%.*}); }
+# f.x bashenv.db.keys
 
                     
-bashenv.db.values0() { printf '%s\n' ${__bashenv_db[@]}; }
-f.x bashenv.db.values0
+# # bashenv.db.values0() { printf '%s\n' ${__bashenv_db[@]}; }
+# # f.x bashenv.db.values0
 
-bashenv.db.values() { bashenv.A.${FUNCNAME##*.} $(u.f2aa ${FUNCNAME%.*}); }
-f.x bashenv.db.values
-
-
-bashenv.db.items0() {
-    local -r _delim=${1:-:};
-    for _key in "${!__bashenv_db[@]}"; do printf '%s%s%s\n' ${_key} ${_delim} ${__bashenv_db["${_key}"]}; done; }
-f.x bashenv.db.items0
-
-bashenv.db.items() {  bashenv.A.${FUNCNAME##*.} $(u.f2aa ${FUNCNAME%.*}); }
-f.x bashenv.db.items
-
-bashenv.db.map0() {
-    local _action=${1:?"${FUNCNAME} expecting an action"}
-    u.have ${_action} || return $(u.error "${FUNCNAME} no action ${_action}")
-    for _p in $(bashenv.db.items); do
-        local -a _pair=( ${_p/: } )
-        local _key=${_pair[0]} _value=${_pair[1]}
-        ${_action} ${_key} ${_value} || true
-    done        
-}
-f.x bashenv.db.map0
-
-bashenv.db.map() { bashenv.A.${FUNCNAME##*.} $(u.f2aa ${FUNCNAME%.*}) ${2:-echo}; }
-f.x bashenv.db.map
+# bashenv.db.values() { bashenv.A.${FUNCNAME##*.} $(u.f2aa ${FUNCNAME%.*}); }
+# f.x bashenv.db.values
 
 
-# sourced.{status,when}
-declare -Ax __sourced_status __sourced_when
-sourced.status.reset() { __sourced_db_status=(); }; sourced.status.reset
-sourced.when.reset() { __sourced_db_when=(); }; sourced.when.reset
+# # bashenv.db.items0() {
+# #     local -r _delim=${1:-:};
+# #     for _key in "${!__bashenv_db[@]}"; do printf '%s%s%s\n' ${_key} ${_delim} ${__bashenv_db["${_key}"]}; done; }
+# # f.x bashenv.db.items0
 
-sourced.status() { bashenv.A $(u.f2aa ${FUNCNAME}) ${1:?"${FUNCNAME} expecting a key"} ${2:-}; }; f.x sourced.status
-sourced.when() { bashenv.A $(u.f2aa ${FUNCNAME}) ${1:?"${FUNCNAME} expecting a key"} ${2:-}; }; f.x sourced.when
+# bashenv.db.items() {  bashenv.A.${FUNCNAME##*.} $(u.f2aa ${FUNCNAME%.*}); }
+# f.x bashenv.db.items
 
-sourced.status.keys() { bashenv.A.${FUNCNAME##*.} $(u.f2aa ${FUNCNAME%.*}); }; f.x sourced.status.keys
-sourced.when.keys() { bashenv.A.${FUNCNAME##*.} $(u.f2aa ${FUNCNAME%.*}); }; f.x sourced.when.keys
+# # bashenv.db.map0() {
+# #     local _action=${1:?"${FUNCNAME} expecting an action"}
+# #     u.have ${_action} || return $(u.error "${FUNCNAME} no action ${_action}")
+# #     for _p in $(bashenv.db.items); do
+# #         local -a _pair=( ${_p/: } )
+# #         local _key=${_pair[0]} _value=${_pair[1]}
+# #         ${_action} ${_key} ${_value} || true
+# #     done        
+# # }
+# # f.x bashenv.db.map0
 
-sourced.status.values() { bashenv.A.${FUNCNAME##*.} $(u.f2aa ${FUNCNAME%.*}); };f.x sourced.status.values
-sourced.when.values() { bashenv.A.${FUNCNAME##*.} $(u.f2aa ${FUNCNAME%.*}); };f.x sourced.when.values
+# bashenv.db.map() { bashenv.A.${FUNCNAME##*.} $(u.f2aa ${FUNCNAME%.*}) ${2:-echo}; }
+# f.x bashenv.db.map
 
-sourced.status.items() {  bashenv.A.${FUNCNAME##*.} $(u.f2aa ${FUNCNAME%.*}); }; f.x sourced.status.items
-sourced.when.items() {  bashenv.A.${FUNCNAME##*.} $(u.f2aa ${FUNCNAME%.*}); }; f.x sourced.when.items
-
-sourced.status.map() { bashenv.A.${FUNCNAME##*.} $(u.f2aa ${FUNCNAME%.*}) ${2:-echo}; }; f.x sourced.status.map
-sourced.when.map() { bashenv.A.${FUNCNAME##*.} $(u.f2aa ${FUNCNAME%.*}) ${2:-echo}; }; f.x sourced.when.map
 
 bashenv.init() {
     sourced.status.reset; sourced.when.reset
-    bashenv.source.kinds --record=sourced.status --record=sourced.when --depth=1 --kind=lib --action=source $(bashenv.root)
-    bashenv.source.kinds --record=sourced.status --record=sourced.when --depth=2 --kind=source --action=source $(bashenv.profiled)
+    bashenv.source.kind --depth=1 --kind=lib --action=source $(bashenv.root)
+    bashenv.source.kind --depth=2 --kind=source --action=source $(bashenv.profiled)
     sourced.status ${FUNCNAME} 0
     sourced.when ${FUNCNAME} $(date +"%s")
+    echo $(date +"%s")
 }
 f.x bashenv.init
 
@@ -1403,22 +1421,22 @@ f.x sa.shutdown.all
 tbird.logged() (NSPR_LOG_MODULES=SMTP:4,IMAP:4 NSPR_LOG_FILE=/tmp/thunderbird-$$.log thunderbird)
 f.x tbird.logged
 
-guard.mkguard() (
+source.mkguard() (
     : '${_name} # create ${_name}.guard.sh in the right folder'
     set -Eeuo pipefail; shopt -s nullglob noclobber
     local -r _name=${1:?'expecting a name'}
     local -r _kind=${2:-tbs}
     local -r _where="$(bashenv.root)/profile.d"
     local -r _installd="${_where}/install.d"
-    local -r _guard="${_where}/${_name}.guard.sh"
+    local -r _guard="${_where}/${_name}.source.sh"
     local -r _install="${_installd}/${_name}.${_kind}.install.sh"
     [[ -f "${_guard}" ]] && return $(u.error "${_guard} already exists?")
-    xzcat "${_where}/_template.guard.sh.xz" | sed "s/\${g}/${_name}/g" > "${_guard}"
+    xzcat "${_where}/_template.source.sh.xz" | sed "s/\${g}/${_name}/g" > "${_guard}"
     [[ -r "${_install}" ]] || cp --no-clobber "${_installd}/_template.tbs.install.sh" "${_install}"
     >&2 git -C "$(bashenv.root)" status ${_guard} ${_install}
     echo "${_guard}"
 )
-f.x guard.mkguard
+f.x source.mkguard
 
 guard.missing() (
     set -Eeuo pipefail; shopt -s nullglob
