@@ -1,5 +1,4 @@
-# usage: [guard | source] bcompare.guard.sh [--install] [--verbose] [--trace]
-_guard=$(path.basename ${BASH_SOURCE})
+${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
 
 bcompare() (
     QT_GRAPHICSSYSTEM=native command bcompare "$@"
@@ -12,6 +11,6 @@ bcompare.session() {
 f.complete bcompare.session
 bcompare.session
 
-loaded "${BASH_SOURCE}"
+sourced
 
 

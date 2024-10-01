@@ -1,4 +1,4 @@
-_guard=$(path.basename ${BASH_SOURCE})
+${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
 
 sudo.alacritty() (
     local _title=${1:?'expecting a title'}; shift
@@ -29,7 +29,5 @@ watch.dmesg() (
 )
 f.x watch.dmesg
 
-unset _guard
-loaded "${BASH_SOURCE}"
-
+sourced
 

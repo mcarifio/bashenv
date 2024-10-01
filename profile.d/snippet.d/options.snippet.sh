@@ -29,7 +29,7 @@ example.options() (
             --) shift; break;;
             # --*) break;; ## break on unknown switch, pass it along
             --*) >&2 echo "${FUNCNAME}: unknown switch ${_a}, stop processing switches"; break;;
-            # --*) return $(u.error "${FUNCNAME} unknown switch "${_a}", stoppping") ## error on unknown switch
+            # --*) return $(u.error "${FUNCNAME} unknown switch '${_a}', stopping");; ## error on unknown switch
             *) break;;
         esac
         shift

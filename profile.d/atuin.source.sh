@@ -1,5 +1,4 @@
-# usage: [guard | source] atuin.guard.sh [--install] [--verbose] [--trace]
-_guard=$(path.basename ${BASH_SOURCE})
+${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
 
 atuin.env() {
     true || return $(u.error "${FUNCNAME} failed")
@@ -13,4 +12,4 @@ atuin.session() {
 }
 f.x atuin.session
 
-loaded "${BASH_SOURCE}"
+sourced

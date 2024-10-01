@@ -1,5 +1,4 @@
-# usage: [guard | source] _template.guard.sh [--install] [--verbose] [--trace]
-_guard=$(path.basename ${BASH_SOURCE})
+${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
 
 bun.session() {
     source <(${FUNCNAME%.*} completions) || return $(u.error "${FUNCNAME} could not load bun completions")
@@ -7,4 +6,5 @@ bun.session() {
 f.x bun.session
 bun.session
 
-loaded "${BASH_SOURCE}"
+sourced
+

@@ -1,9 +1,7 @@
-# dnf and decl must come first
 # https://unix.stackexchange.com/questions/403181/how-to-pin-a-package-in-dnf-fedora
 # dnf install 'dnf-command(versionlock)'
 
-# usage: [guard | source] dnf.guard.sh [--install] [--verbose] [--trace]
-_guard=$(path.basename ${BASH_SOURCE})
+${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
 
 dnf() (
     : 'sudo dnf ...'
@@ -100,5 +98,6 @@ dnf.install() (
 )
 f.x dnf.install
 
-loaded "${BASH_SOURCE}"
+sourced
+
 

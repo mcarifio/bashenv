@@ -1,6 +1,5 @@
-# guard isn't sufficient here?
-[[ -r ${ASDF_DIR:-~/opt/asdf/current}/asdf.sh ]] || return 0
-export ASDF_DATA_DIR=~/opt/asdf/current
+${1:-false} || [[ -r ${ASDF_DIR:-${HOME}/opt/asdf/current}/asdf.sh ]] || return 0
+export ASDF_DATA_DIR=${HOME}/opt/asdf/current
 source ${ASDF_DATA_DIR}/asdf.sh
 
 # is plugin
@@ -24,19 +23,17 @@ asdf.install() (
     : '[--url=${_plugin_url}] ${_plugin} ${_version} ## install ${_plugin} ${_verision} from ${_url}'
     set -Eeuo pipefail
 
-    if (( ${#@} )) ; then
-        for _a in "${@}"; do
-            case "${_a}" in
-		--url=*) local _url="${_a##*=}"
-                         local _plugin=$(path.basename "${_url}")
-                         _plugin=${_plugin/asdf-/}
-                         asdf plugin-add "${_plugin}" "${_url}";;
-                --) shift; break;;
-                *) break;;
-            esac
-            shift
-        done
-    fi
+    for _a in "${@}"; do
+        case "${_a}" in
+	    --url=*) local _url="${_a##*=}"
+                     local _plugin=$(path.basename "${_url}")
+                     _plugin=${_plugin/asdf-/}
+                     asdf plugin-add "${_plugin}" "${_url}";;
+            --) shift; break;;
+            *) break;;
+        esac
+        shift
+    done
     
     local _pkg=${1:-${_plugin:?'expecting a package'}}
     local _version=${2:-latest}
@@ -152,4 +149,5 @@ asdf.install.all() (
 )
 f.x asdf.install.all
 
-loaded "${BASH_SOURCE}"
+sourced
+

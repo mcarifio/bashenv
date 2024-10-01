@@ -1,5 +1,4 @@
-# usage: [guard | source] bash.guard.sh [--install] [--verbose] [--trace]
-_guard=$(path.basename ${BASH_SOURCE})
+${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
 
 bash.source() (
     : 'bash.ec ${function-name} => ec +${lineno} ${pathname} # suitable for emacs'
@@ -25,4 +24,5 @@ f.x bash.shopt
 export _bash_shopt=${BASHOPTS}
 bash.shopt
 
-loaded "${BASH_SOURCE}"
+sourced
+

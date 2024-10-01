@@ -1,5 +1,4 @@
-# usage: [guard | source] amber.guard.sh [--install] [--verbose] [--trace]
-_guard=$(path.basename ${BASH_SOURCE})
+${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
 
 amber.env() {
     true || return $(u.error "${FUNCNAME} failed")
@@ -11,5 +10,4 @@ amber.session() {
 }
 f.x amber.session
 
-unset _guard
-loaded "${BASH_SOURCE}"
+sourced

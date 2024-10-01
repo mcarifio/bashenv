@@ -1,4 +1,4 @@
-# bbinstall.* installs "packages" in various ways such as brew, asdf, curl, dnf, apt and so forth.
+# ${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
 
 binstall.tbs() (
     set -Eeuo pipefail; shopt -s nullglob
@@ -460,3 +460,5 @@ binstall.all() (
     for _b in $(find $(bashenv.folders) -name \*.${_kind}.\*.sh -type f -executable -print0); do ${_b}; done
 )
 f.x binstall.all
+
+sourced

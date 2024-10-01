@@ -1,3 +1,5 @@
+${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
+
 copyq.run() (
     set -Eeuo pipefail
     local _flatpak=com.github.hluk.copyq
@@ -9,13 +11,13 @@ copyq.run() (
         false || u.error "${FUNCNAME%%.*} not found"
     fi            
 )
-
+f.x copyq.run
 
 # TODO mike@carif.io: fix this; invoke copyq.run() manually til then.
-copyq._session() (
+copyq.env() (
     copyq.run || return $(u.error "${FUNCNAME} failed") &
 )
-f.x copyq._session
-# u.singleton copyq.session
+f.x copyq.env
 
-loaded "${BASH_SOURCE}"
+sourced
+

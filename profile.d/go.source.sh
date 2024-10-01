@@ -1,5 +1,4 @@
-# creation: guard.mkguard ${_name}
-_guard=$(path.basename ${BASH_SOURCE})
+${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
 
 # Wrap go if needed.
 # go() ( command ${FUNCNAME} "$@"; )
@@ -17,8 +16,6 @@ go.env() {
     : '# called (once) by .bash_profile'
     export GOBIN=${HOME}/.local/bin
     mkdir -p $(go env GOPATH)
-    local -r _goenv="$(dirname $(go env GOENV))"
-    [[ -d "${_goenv}" ]] || >&2 echo "${_goenv} not found, continuing..."
 }
 f.x go.env
 
@@ -26,9 +23,9 @@ go.session() {
     : '# called by .bashrc'
     local -r _shell=${1:-$(u.shell)}
     local -r _cmd=${2:-${FUNCNAME%.*}}
-    u.have gocomplete && complete -C gocomplete ${_cmd} || return $(u.error "gocomplete missing")
+    u.have gocomplete || return $(u.error "gocomplete missing")
+    complete -C gocomplete ${_cmd} 
 }
 f.x go.session
 
-unset _guard
-loaded "${BASH_SOURCE}"
+sourced

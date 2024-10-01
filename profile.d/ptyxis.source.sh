@@ -15,33 +15,7 @@ if (( ${_option[trace]} )) && ! bashenv.is.tracing; then
     set -x
 fi
 
-# install by distro id by (runtime) dispatching to distro install function
-# eval "${_guard}.install() ( ${_guard}.install.\$(os-release.id); )"
-ptyxis.install() (
-    set -uEeo pipefail
-    u.have flatpak || sudo dnf install -y flatpak || return $(u.error "${FUNCNAME} failed to install flatpak")
-    flatpak install --assumeyes --or-update --user \
-            --from https://nightly.gnome.org/repo/appstream/org.gnome.Ptyxis.Devel.flatpakref || return $(u.error "${FUNCNAME} failed")
-)
-f.x ptyxis.install
-
-# source ${_guard}.guard.sh --install
-if (( ${_option[install]} )) && ! u.have ${_guard}; then
-    ${_guard}.install || return $(u.error "${_guard}.install failed")
-fi
-
-
 # _guard itself
-
-# not working
-ptyxis() (
-    : '# run the ptyxis terminal'
-    set -uEeo pipefail
-    # configuration: ~/.var/app/org.gnome.Ptyxis.Devel/**
-    flatpak run org.gnome.Ptyxis.Devel &
-)
-f.x ptyxis
-
 
 ptyxis.doc() (
     set -uEeo pipefail

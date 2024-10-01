@@ -1,11 +1,11 @@
-# shutdown in a machine specific way
-shutdown() (
-    for d in ~/.config/keepassxc ~/Documents/e; do
-	rsync.local $d
-    done
-    dnf upgrade -y
-    sudo shutdown -h now    
+sa.shutdown.others() (
+    for m in clubber milhous; do ssh ${m} sudo /usr/sbin/shutdown -h now; done
+    [[ -d /run/media/mcarifio/home ]] && >&2 echo "pack the home nvme drive"
+    sudo /usr/sbin/shutdown -h now
 )
-f.complete shutdown
+f.complete sa.shutdown.others
 
 loaded "${BASH_SOURCE}"
+
+
+

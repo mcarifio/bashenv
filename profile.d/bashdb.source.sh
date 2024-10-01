@@ -1,5 +1,4 @@
-# creation: guard.mkguard ${_name}
-_guard=$(path.basename ${BASH_SOURCE})
+${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
 
 bashdb() ( command ${FUNCNAME} "$@"; )
 f.x bashdb
@@ -28,5 +27,4 @@ bashdb.session() {
 }
 f.x bashdb.session
 
-unset _guard
-loaded "${BASH_SOURCE}"
+sourced
