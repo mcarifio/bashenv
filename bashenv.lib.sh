@@ -1468,7 +1468,7 @@ sourced.missing() (
         done
     done | sort | uniq
 )
-f.x guard.missing
+f.x sourced.missing
 
 sourced || true
 
