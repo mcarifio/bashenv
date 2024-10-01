@@ -1,3 +1,5 @@
+${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
+
 path.frontier.dir() (
     local _root=${1:-${PWD}}
     cat <<- EOF | forward.py /dev/stdin "${_root}"
@@ -7,7 +9,7 @@ for root, dirs, files in os.walk('${_root}'):
     print(os.path.abspath(root))
 EOF
 )
-f.complete path.frontier.dir
+f.x path.frontier.dir
 
 pyz() {
     : '${url.zip} # download a python zip file and run it. something like pipx'
@@ -16,15 +18,17 @@ pyz() {
     local -r _pyz=$(basename ${_url})
     python ${_pyz} "$@"
 }
-f.complete pyz
+f.x pyz
 
+# see binstall.pip
 python.pip() (
     python -m pip install -U pip
     python -m pip install -U "$@"
 )
-f.complete python.pip
+f.x python.pip
 
-loaded "${BASH_SOURCE}"
+sourced || true
+
 
 
     

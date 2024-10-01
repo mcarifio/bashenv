@@ -1,9 +1,4 @@
-# creation: guard.mkguard ${_name}
-_guard=$(path.basename ${BASH_SOURCE})
-
-# Wrap exa if needed.
-# exa() ( command ${FUNCNAME} "$@"; )
-# f.x exa
+${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
 
 unalias ls &> /dev/null || true
 ls() ( exa "$@"; )
@@ -28,6 +23,4 @@ exa.session() {
 }
 f.x exa.session
 
-
-unset _guard
-loaded "${BASH_SOURCE}"
+sourced || true

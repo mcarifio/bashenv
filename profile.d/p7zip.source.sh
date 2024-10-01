@@ -1,5 +1,4 @@
-# creation: guard.mkguard ${_name}
-_guard=$(path.basename ${BASH_SOURCE})
+${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
 
 # Wrap p7zip if needed.
 # p7zip() ( command ${FUNCNAME} "$@"; )
@@ -27,5 +26,4 @@ p7zip.session() {
 }
 f.x p7zip.session
 
-unset _guard
-loaded "${BASH_SOURCE}"
+sourced || true

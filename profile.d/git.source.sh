@@ -1,19 +1,4 @@
-# usage: [guard | source] git.guard.sh [--install] [--verbose] [--trace]
-_guard=$(path.basename ${BASH_SOURCE})
-declare -A _option=([install]=0 [verbose]=0 [trace]=0)
-_undo=''; trap -- 'eval ${_undo}; unset _option _undo; trap -- - RETURN' RETURN
-local -a _rest=( $(u.parse _option "$@") )
-if (( ${_option[trace]} )) && ! bashenv.is.tracing; then
-    _undo+='set +x;'
-    set -x
-fi
-if (( ${_option[install]} )); then
-    if u.have ${_guard}; then
-        >&2 echo ${_guard} already installed
-    else
-        u.bad "${BASH_SOURCE} --install # not implemented"
-    fi
-fi
+${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
 
 # TODO mike@carifio 02/20/24: probably obsolete
 git.url.folder() (
@@ -25,7 +10,7 @@ git.url.folder() (
     [[ "${_url}" =~ ^([^@]*@)?([^:]+):([^/]+)/(.*)\.git$ ]] && { echo ${_suffix}/${BASH_REMATCH[2]}/${BASH_REMATCH[3]}/${BASH_REMATCH[4]}/${BASH_REMATCH[4]}; return 0; }
     echo ${_suffix}/${_url}    
 )
-declare -fx url.git.folder
+f.x url.git.folder
 
 
 # TODO mike@carif.io 02/20/24: probably obsolete
@@ -40,7 +25,7 @@ git.pn2url() (
   # git clone ${_url} ${_work_dir}
   echo ${_url}
 )
-declare -fx git.pn2url
+f.x git.pn2url
 
 
 
@@ -59,7 +44,7 @@ git.clcd() {
     [[ -r ${_folder}/.envrc ]] && u.have dotenv && dotenv allow ${_folder}
     cd ${_folder}
 }
-declare -fx git.clcd
+f.x git.clcd
 
 
 git.unzip() (
@@ -72,6 +57,7 @@ git.unzip() (
     mv ${_tmpdir}/* $(path.md ${_here})
     rm -rf ${_tmpdir}
 )
-declare -fx git.unzip
+f.x git.unzip
 
-loaded "${BASH_SOURCE}"
+sourced || true
+

@@ -1,7 +1,14 @@
-# if PS1 doesn't end with $p add it.
-[[ -n "${p}" ]] && return 0
-export p=' '
-PS1="${PS1:0:-1}p "
 
-loaded "${BASH_SOURCE}"
+PS1.env() {
+    export __bashenv_PS1_initial="${PS1}"
+    export p=' '
+}
+f.x PS1.env
+
+PS1.session() {
+    PS1="${__bashenv_PS1_initial}\$p "
+}
+f.x PS1.session
+
+sourced || true
 

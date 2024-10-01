@@ -1,25 +1,10 @@
-# usage: [guard | source] gio.guard.sh [--install] [--verbose] [--trace]
-
-_guard=$(path.basename ${BASH_SOURCE})
-declare -A _option=([install]=0 [verbose]=0 [summarize]=0 [trace]=0)
-_undo=''; trap -- 'eval ${_undo}; unset _option _undo; trap -- - RETURN' RETURN
-
-# declare -a _rest=( $(u.parse _option "$@") )
-&> /dev/null u.parse _option "$@"
-# declare -p _option
-
-if (( ${_option[trace]} )) && ! bashenv.is.tracing; then
-    _undo+='set +x;'
-    set -x
-fi
-
-# _gio itself
+${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
 
 desktop.data_dirs() (
     : 'desktop.data_dirs # return all directories to look for .desktop files'
     echo ${XDG_DATA_DIRS//:/\/applications } /usr/share/xfce4/helpers ${HOME}/.local/share/applications /usr/share/applications;
 )
-f.complete desktop.data_dirs
+f.x desktop.data_dirs
 
 # find the full pathname of an application's desktop file by searching for it in well known locations.
 desktop.which() ( 
@@ -31,7 +16,7 @@ desktop.which() (
     done
     return $(u.error "${_app} not found")
 )
-f.complete desktop.which
+f.x desktop.which
 
 desktop.exec() (
     : '${_exec} # get Exec= from a .desktop file'
@@ -62,7 +47,7 @@ desktop.launch() (
     shift
     (( _sudo )) && (set -x; sudo -E gio launch "${_desktop}" "$@") || (set -x; gio launch "${_desktop}" "$@")
 )
-f.complete desktop.launch
+f.x desktop.launch
 
 
 desktop.run() (
@@ -70,7 +55,7 @@ desktop.run() (
     local -r _app=${1?'expecting an app'}; shift
     desktop.launch $(desktop.which ${_app}) "$@"
 )
-f.complete desktop.run
+f.x desktop.run
 
 
 desktop.grep.exec() (
@@ -82,7 +67,7 @@ desktop.grep.exec() (
 	command grep -e "^Exec=[[:space:]]*${_re}" $(2>/dev/null find "${_d}" -maxdepth 1 -name \*.desktop -print) /dev/null
     done | sort | uniq
 )
-f.complete desktop.grep.exec
+f.x desktop.grep.exec
 
 desktop.grep.basename() (
     : "desktop.grep.basename ${re} # find all .desktop files whose basename matches ${re}, e.g. desktop.grep.basename '/.*Edge'"
@@ -92,6 +77,6 @@ desktop.grep.basename() (
 	2>/dev/null find "${_d}" -maxdepth 1 -regex "${_re}"'\.desktop$' -print
     done
 )
-f.complete desktop.grep.basename
+f.x desktop.grep.basename
 
-loaded "${BASH_SOURCE}"
+sourced || true

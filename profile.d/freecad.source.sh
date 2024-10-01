@@ -1,5 +1,4 @@
-# creation: guard.mkguard ${_name}
-_guard=$(path.basename ${BASH_SOURCE})
+${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
 
 # Wrap freecad if needed.
 freecad() ( LD_PRELOAD=/usr/lib64/libdrm_amdgpu.so.1 command ${FUNCNAME} "$@"; )
@@ -27,5 +26,4 @@ freecad.session() {
 }
 f.x freecad.session
 
-unset _guard
-loaded "${BASH_SOURCE}"
+sourced || true

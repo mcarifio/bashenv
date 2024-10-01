@@ -1,5 +1,4 @@
-# creation: guard.mkguard ${_name}
-_guard=$(path.basename ${BASH_SOURCE})
+${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
 
 # Wrap fzf if needed.
 # fzf() ( command ${FUNCNAME} "$@"; )
@@ -25,5 +24,4 @@ fzf.session() {
 }
 f.x fzf.session
 
-unset _guard
-loaded "${BASH_SOURCE}"
+sourced || true

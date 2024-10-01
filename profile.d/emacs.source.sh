@@ -1,31 +1,4 @@
-# dnf install -y emacs
-# systemctl --user enable --now emacs-modified-$(os-release.id)
-# journalctl --user --unit emacs-modified--$(os-release.id) -b 0
-# loginctl enable-linger ${USER}
-
-_guard=$(path.basename ${BASH_SOURCE})
-declare -A _option=([install]=0 [verbose]=0 [summarize]=0 [trace]=0)
-_undo=''; trap -- 'eval ${_undo}; unset _option _undo; trap -- - RETURN' RETURN
-
-# declare -a _rest=( $(u.parse _option "$@") )
-&> /dev/null u.parse _option "$@"
-# declare -p _option
-
-if (( ${_option[trace]} )) && ! bashenv.is.tracing; then
-    _undo+='set +x;'
-    set -x
-fi
-
-if (( ${_option[install]} )); then
-    if u.have ${_guard}; then
-        >&2 echo ${_guard} already installed
-    elif [[ -x "${BASH_SOURCE/.guard./.install.}" ]] ; then
-        "${BASH_SOURCE/.guard./.install.}"
-    else        
-        $(u.here)/guard.install.sh ${BASH_SOURCE%%.*}
-    fi
-fi
-
+${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
 
 ec() (
     : '[${_pathname}] ## run emacsclient after starting emacs.service'
@@ -152,4 +125,5 @@ emacs.env() (
 )
 f.x emacs.env
 
-loaded "${BASH_SOURCE}"
+sourced || true
+

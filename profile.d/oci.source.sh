@@ -1,4 +1,5 @@
-# oci config
+${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
+
 export OCI_CLI_SUPPRESS_FILE_PERMISSIONS_WARNING=True
 export OCI_CLI_CONFIG_FILE=${HOME}/.config/cloud/oci/config
 
@@ -8,4 +9,5 @@ oci.session() {
 f.x oci.session
 oci.session
 
-loaded "${BASH_SOURCE}"
+sourced || true
+
