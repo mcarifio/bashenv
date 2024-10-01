@@ -1438,8 +1438,10 @@ source.mkguard() (
 )
 f.x source.mkguard
 
-guard.missing() (
+sourced.missing() (
     set -Eeuo pipefail; shopt -s nullglob
+    return $(u.error "${FUNCNAME} needs redoing")
+    
     local -i _installer=0
 
     if (( ${#@} )) ; then
@@ -1468,7 +1470,6 @@ guard.missing() (
 )
 f.x guard.missing
 
-# bashenv.loaded || echo "bashenv not loaded"
-# loaded "${BASH_SOURCE}"
-sourced
+sourced || true
+
 
