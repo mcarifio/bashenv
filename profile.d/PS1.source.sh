@@ -1,4 +1,3 @@
-
 PS1.env() {
     export __bashenv_PS1_initial="${PS1}"
     export p=' '

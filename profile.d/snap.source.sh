@@ -1,21 +1,23 @@
-${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
+${1:-false} || type -P $(path.basename.part ${BASH_SOURCE} 0) &> /dev/null || return 0
 
 snap() (
     sudo $(type -P ${FUNCNAME}) "$@"
 )
 f.x snap
 
-snap.docs() (
+snap.doc.urls() ( echo ; ) # urls here
+f.x snap.doc.urls
+
+snap.doc() (
     set -Eeuo pipefail; shopt -s nullglob
-    local -nu _docs=${FUNCNAME%.*}_urls # e.g. UV_DOCS
-    set -x; xdg-open ${_docs:-} "$@" # hard-code urls here if desired
+    for _u in $(${FUNCNAME}.urls); do xdg-open ${_u}; done
 )
-f.x snap.docs
+f.x snap.doc
 
 snap.env() {
     : '# called (once) by .bash_profile'
     systemctl is-active snapd &> /dev/null || echo "${FUNCNAME} snapd not active" >&2
-)
+}
 f.x snap.env
 
 snap.session() {
@@ -23,11 +25,14 @@ snap.session() {
     local -r _shell=${1:-$(u.shell)}
     local -r _cmd=${2:-${FUNCNAME%.*}}
     local -r _completions=/usr/share/bash-completion/completions
-    source.if ${_completions}/${_cmd}.${_shell} ${_completions}/${_cmd}
+    source.if ${_completions}/${_cmd}{,.${_shell}}
 }
 f.x snap.session
 
-snap.installer() ( ls -1 $(bashenv.profiled)/binstall.d/*snapd*.*.binstall.sh; )
+snap.installer() (
+    set -Eeuo pipefail # DO NOT shopt -s nullglob
+    binstall.installer ${FUNCNAME%.*}
+)
 f.x snap.installer
 
 sourced || true

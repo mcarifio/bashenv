@@ -25,19 +25,19 @@ f.x f.x
 # handle function switches like --var or --var=value
 # usage: --switch=*) eval case.update "${_a}";;
 # usage: --switch) eval case.update "${_a}";;
-case.update() {
-    return $(u.error "${FUNCNAME} broken")
-    local -r _switch=${1:?"${FUNCNAME} expecting a switch --left or --left=value"}
-    local -r _true=${2:-1}
-    local -r _prefix=${3:-_}
+# case.update() {
+#     return $(u.error "${FUNCNAME} broken")
+#     local -r _switch=${1:?"${FUNCNAME} expecting a switch --left or --left=value"}
+#     local -r _true=${2:-1}
+#     local -r _prefix=${3:-_}
 
-    # --var=value
-    # usage: --left=*) eval $(sw.update ${_a}); >&2 echo ${_left};;
-    # repl testing: [[ "literal" =~ --([^=]+)(=(.+))?$ ]] && declare -p BASH_REMATCH
-    [[ "${_switch}" =~ --([^=]+)(=(.+))?$ ]] || return $(u.error "${FUNCNAME} '${_switch}' wrong format, expecting a switch --left or --left=value")
-    printf '%s%s="%s"' ${_prefix} ${BASH_REMATCH[1]} ${BASH_REMATCH[3]:-${_true}}
-}
-f.x case.update
+#     # --var=value
+#     # usage: --left=*) eval $(sw.update ${_a}); >&2 echo ${_left};;
+#     # repl testing: [[ "literal" =~ --([^=]+)(=(.+))?$ ]] && declare -p BASH_REMATCH
+#     [[ "${_switch}" =~ --([^=]+)(=(.+))?$ ]] || return $(u.error "${FUNCNAME} '${_switch}' wrong format, expecting a switch --left or --left=value")
+#     printf '%s%s="%s"' ${_prefix} ${BASH_REMATCH[1]} ${BASH_REMATCH[3]:-${_true}}
+# }
+# f.x case.update
 
 u.field() (
     local _record=${1:?"${FUNCNAME} expecting a record 0:1:2:..."}
@@ -206,7 +206,14 @@ source.if() {
 }
 f.x source.if
 
-source.all() { for _f in "$@"; do source ${_f}; done; }
+source.all() {
+    for _f in "$@"; do
+        echo -n ${_f} >&2
+        source ${_f}
+        echo " => $?" >&2
+    done
+}
+
 f.x source.all
 
 f.folder() (
@@ -246,17 +253,17 @@ f.apply() (
 )
 f.complete f.apply
 
-loaded0() {
-    : 'make an exported function ${name}.loaded that always succeeds.'
-    local _name="$(path.basename ${1:?'expecting a name'})"
-    local _predicate=${_name}.loaded
-    local _pathname=${_name}.pathname
-    eval "${_predicate}() ( return 0; )"
-    f.x ${_predicate}
-    eval "${_pathname}() (echo $(realpath -s $1); )"
-    f.x ${_pathname}
-}
-f.x loaded0
+# loaded0() {
+#     : 'make an exported function ${name}.loaded that always succeeds.'
+#     local _name="$(path.basename ${1:?'expecting a name'})"
+#     local _predicate=${_name}.loaded
+#     local _pathname=${_name}.pathname
+#     eval "${_predicate}() ( return 0; )"
+#     f.x ${_predicate}
+#     eval "${_pathname}() (echo $(realpath -s $1); )"
+#     f.x ${_pathname}
+# }
+# f.x loaded0
 
 declare -Aix __bashenv_sourced=()
 sourced.reset() { __bashenv_sourced=(); }
@@ -315,35 +322,35 @@ f.complete readline.bind
 # u -- utility functions
 
 # Not working. Doesn't side effect _options associative array.
-u.parse() {
-    : 'local -A _my_options=([one]=1 [two]=2); local -a _rest=( $(u.parse _my_options --one=won --three=3 -- x y) ) # see _u.parse.example()'
-    local -n _options=${1:?'expecting an associative array'}; shift
-    local -i _position=0
-    local -a _line=( "$@" )
-    if (( ${#_line[@]} )) ; then
-        for _a in "${_line[@]}"; do
-            case "${_a}" in
-                --) shift; ((++_position)); break;;
-                # --something=some_value => _options[something]=some_value
-                --*=*) [[ "${_a}" =~ --([^=]+)=(.+) ]] && _options[${BASH_REMATCH[1]}]="${BASH_REMATCH[2]}";;
-                # --something => _options[something]=1
-	        --*) _options[${_a:2}]=1;;
-                *) break;;
-            esac
-            shift
-            ((++_position))
-        done
-    fi
-    # printf '%s ' ${_line[@]:${_position}}
-}
-f.x u.parse
+# u.parse() {
+#     : 'local -A _my_options=([one]=1 [two]=2); local -a _rest=( $(u.parse _my_options --one=won --three=3 -- x y) ) # see _u.parse.example()'
+#     local -n _options=${1:?'expecting an associative array'}; shift
+#     local -i _position=0
+#     local -a _line=( "$@" )
+#     if (( ${#_line[@]} )) ; then
+#         for _a in "${_line[@]}"; do
+#             case "${_a}" in
+#                 --) shift; ((++_position)); break;;
+#                 # --something=some_value => _options[something]=some_value
+#                 --*=*) [[ "${_a}" =~ --([^=]+)=(.+) ]] && _options[${BASH_REMATCH[1]}]="${BASH_REMATCH[2]}";;
+#                 # --something => _options[something]=1
+# 	        --*) _options[${_a:2}]=1;;
+#                 *) break;;
+#             esac
+#             shift
+#             ((++_position))
+#         done
+#     fi
+#     # printf '%s ' ${_line[@]:${_position}}
+# }
+# f.x u.parse
 
-_u.parse.example() (
-    declare -A _o=([author]=$USER)
-    declare -a _rest=( $(u.parse _o --trace=1 --author=$HOSTNAME+$USER --foo=bar -- one two three) )
-    printf '%s ' ${FUNCNAME}; declare -p _o
-    printf '%s ' ${_rest[@]}
-)
+# _u.parse.example() (
+#     declare -A _o=([author]=$USER)
+#     declare -a _rest=( $(u.parse _o --trace=1 --author=$HOSTNAME+$USER --foo=bar -- one two three) )
+#     printf '%s ' ${FUNCNAME}; declare -p _o
+#     printf '%s ' ${_rest[@]}
+# )
 
 
 
@@ -351,8 +358,8 @@ _u.parse.example() (
 # u.map
 u.map() {
     : '${f} ${item} ... # apply $f to each item in the list echoing the result'
-    local _f=${1:?'expecting a function'}; shift
-    for _a in "$@"; do ${_f} ${_a} || return $(u.error "${_f} ${_a}"); done
+    local _f=${1:?"${FUNCNAME} expecting a function"}; shift
+    for _a in "$@"; do ${_f} ${_a} || return $(u.error "${FUNCNAME} ${_f} ${_a}"); done
 }
 __u.map.complete() {
     local _command=$1 _word=$2 _previous_word=$3
@@ -670,9 +677,13 @@ u.map.mkall path.readable
 u.have() (
     : '${command} # succeeds iff ${command} is defined.'
     set -Eeuo pipefail
-    type -p ${1?:'expecting a command'} >/dev/null
+    local _option=${2:-'-p'}
+    type ${_option} ${1?:"${FUNCNAME} expecting a command"} >/dev/null
 )
 f.x u.have
+
+u.haveP() ( u.have ${1?:"${FUNCNAME} expecting a command"} -P; )
+f.x u.haveP
 
 u.have.all() (
     : '${command} # succeeds iff ${command} is defined.'
@@ -681,6 +692,15 @@ u.have.all() (
     return 0
 )
 f.x u.have.all
+
+u.haveP.all() (
+    : '${command} # succeeds iff ${command} is defined.'
+    set -Eeuo pipefail
+    for _c in $@; do u.haveP ${_c} || return 1; done
+    return 0
+)
+f.x u.haveP.all
+
 
 flatpak.have() (
     : '${command} # succeeds iff ${command} is defined.'
@@ -806,29 +826,29 @@ f.x bashenv.is.tracing
 bashenv.is.elf() ( file --mime-type ${1:?'expecting a pathname'} | grep --silent application/x-executable; )
 f.x bashenv.is.elf
 
-bashenv.source.kind() {
-    : '[--depth=$i] [--kind=${extension}] [--action=${command}]'
+# bashenv.source.kind() {
+#     : '[--depth=$i] [--kind=${extension}] [--action=${command}]'
     
-    local -i _depth=1
-    local _kind=source
-    local _action=source
+#     local -i _depth=1
+#     local _kind=source
+#     local _action=source
 
-    for _a in "${@}"; do
-        case "${_a}" in
-            --depth=*) _depth="${_a##*=}";;
-            --kind=*) _kind="${_a##*=}";;
-            --action=*) _action="${_a##*=}";;
-            --) shift; break;;
-            --*) return $(u.error "${FUNCNAME} unknown switch '${_a}', stopping");;
-            *) break;;
-        esac
-        shift
-    done
+#     for _a in "${@}"; do
+#         case "${_a}" in
+#             --depth=*) _depth="${_a##*=}";;
+#             --kind=*) _kind="${_a##*=}";;
+#             --action=*) _action="${_a##*=}";;
+#             --) shift; break;;
+#             --*) return $(u.error "${FUNCNAME} unknown switch '${_a}', stopping");;
+#             *) break;;
+#         esac
+#         shift
+#     done
     
-    (( _depth > 0 )) || return $(u.error "${FUNCNAME} depth ${_depth} < 1, stopping.")
-    u.map.trees ${_depth} ${_kind} ${_action} $@
-}
-f.x bashenv.source.kind
+#     (( _depth > 0 )) || return $(u.error "${FUNCNAME} depth ${_depth} < 1, stopping.")
+#     u.map.trees ${_depth} ${_kind} ${_action} $@
+# }
+# f.x bashenv.source.kind
 
 # bashenv.A associate array "base"
 u.f2v() ( local -u _name=${1//./_}; echo ${_name}; )
@@ -964,22 +984,22 @@ bashenv.mkA __bashenv_db
 # f.x bashenv.db.map
 
 
-bashenv.init0() {
-    sourced.status.reset
-    sourced.when.reset
-    bashenv.source.kind --depth=1 --kind=lib --action=source $(bashenv.profiled)
-    bashenv.source.kind --depth=1 --kind=source --action=source $(bashenv.profiled)
-    sourced.status ${FUNCNAME} 0 > /dev/null
-    sourced.when ${FUNCNAME} $(date +"%s") > /dev/null
-}
-f.x bashenv.init0
+# bashenv.init0() {
+#     sourced.status.reset
+#     sourced.when.reset
+#     bashenv.source.kind --depth=1 --kind=lib --action=source $(bashenv.profiled)
+#     bashenv.source.kind --depth=1 --kind=source --action=source $(bashenv.profiled)
+#     sourced.status ${FUNCNAME} 0 > /dev/null
+#     sourced.when ${FUNCNAME} $(date +"%s") > /dev/null
+# }
+# f.x bashenv.init0
 
-bashenv.init1() {
-    for _s in $(bashenv.libs) $(bashenv.sources); do
-        source ${_s} || echo "${_s} failed" >&2
-    done
-}
-f.x bashenv.init1
+# bashenv.init1() {
+#     for _s in $(bashenv.libs) $(bashenv.sources); do
+#         source ${_s} || echo "${_s} failed" >&2
+#     done
+# }
+# f.x bashenv.init1
 
 bashenv.paths() {
     path.add.all $(home)/go/bin $(home)/opt/*/current/bin $(home)/.config/*/bin \
@@ -991,25 +1011,19 @@ f.x bashenv.paths
 
 bashenv.init() {
     bashenv.paths
-    source.all $(bashenv.libs) $(bashenv.sources)
+    for _l in $(bashenv.libs); do source "${_l}"; done
+    for _s in $(bashenv.sources); do source "${_s}"; done
 }
 f.x bashenv.init
-
-#     # export $(u.f2v ${FUNCNAME})=$(date +"%s")
-# bashenv.loaded0() {
-#     local _e=$(u.f2v ${FUNCNAME})
-#     [[ -n "$1" ]] && export ${_e}=$(date +"%s")
-#     local -i _result=$(eval $(printf 'echo ${%s}' ${_e}))
-#     return $(( ! _result ))
-# }
-# f.x bashenv.loaded0
-
 
 bashenv.loaded() {
     local -i _init="$(sourced.history bashenv.init)"
     return $(( ! _init ))
 }
 f.x bashenv.loaded
+
+bashenv.initialized() ( return 0; )
+f.x bashenv.initialized
 
 bashenv.session.functions() (
     declare -Fpx | cut -f3 -d' ' | grep -e '\.session$'
@@ -1087,37 +1101,33 @@ u.map.trees() {
 }
 f.x u.map.trees
 
-find.regex() (
-    local -i _depth=1
-    local _regex='' # "[^#]+\.${_kind}\.sh\$"
+# find.regex() (
+#     local -i _depth=1
+#     local _regex='' # "[^#]+\.${_kind}\.sh\$"
 
-    for _a in "${@}"; do
-        case "${_a}" in
-            --depth=*) _depth="${_a##*=}";;
-            --regex=*) _regex="${_a##*=}";;
-            --) shift; break;;
-            --*) return $(u.error "${FUNCNAME} unknown switch '${_a}', stopping");;
-            *) break;;
-        esac
-        shift
-    done
+#     for _a in "${@}"; do
+#         case "${_a}" in
+#             --depth=*) _depth="${_a##*=}";;
+#             --regex=*) _regex="${_a##*=}";;
+#             --) shift; break;;
+#             --*) return $(u.error "${FUNCNAME} unknown switch '${_a}', stopping");;
+#             *) break;;
+#         esac
+#         shift
+#     done
     
-    (( _depth > 0 )) || return $(u.error "${FUNCNAME} depth ${_depth} < 1, stopping.")
-    [[ -z "${_regex}" ]] && return $(u.error "${FUNCNAME} expecting --regex=something, not supplied")
+#     (( _depth > 0 )) || return $(u.error "${FUNCNAME} depth ${_depth} < 1, stopping.")
+#     [[ -z "${_regex}" ]] && return $(u.error "${FUNCNAME} expecting --regex=something, not supplied")
 
-    for _d in $(seq 1 ${_depth}); do find $@ -mindepth ${_d} -maxdepth ${_d} -type f -regex "${_regex}"; done
-)
-f.x find.regex
+#     for _d in $(seq 1 ${_depth}); do find $@ -mindepth ${_d} -maxdepth ${_d} -type f -regex "${_regex}"; done
+# )
+# f.x find.regex
 
-bashenv.libs() ( find.regex --depth=1 --regex='^[^#]+\.lib\.sh$' $(bashenv.profiled); )
+bashenv.libs() ( find $(bashenv.profiled) -mindepth 1 -maxdepth 1 -regex '^[^#]+\.lib\.sh$'; )
 f.x bashenv.libs
 
-bashenv.sources() ( find.regex --depth=1 --regex='^[^#]+\.source\.sh$' $(bashenv.profiled); )
+bashenv.sources() ( find $(bashenv.profiled) -mindepth 1 -maxdepth 1 -regex '^[^#]+\.source\.sh$'; )
 f.x bashenv.libs
-
-
-
-
 
 u.or() (echo "$@" | cut -d' ' -f1)
 f.x u.or
@@ -1188,30 +1198,30 @@ u.where() { realpath -Lms ${1:-${BASH_SOURCE}}/..; }
 f.x u.where
 u.map.mkall u.where # u.where.all
 
-u.xwalk() {
-    local _top=${1:?'expecting a root directory'}
-    shift || true
-    local _ext=${1:-sh}
-    shift || true
-    find -L ${_top} -path \*/enabled.d/\*.${_ext} -type f -executable -exec '{}' $* \;
-}
-f.x u.xwalk
+# u.xwalk() {
+#     local _top=${1:?'expecting a root directory'}
+#     shift || true
+#     local _ext=${1:-sh}
+#     shift || true
+#     find -L ${_top} -path \*/enabled.d/\*.${_ext} -type f -executable -exec '{}' $* \;
+# }
+# f.x u.xwalk
 
 u.mkurl() {
     local _self=${FUNCNAME[0]}
-    local _url=${1:?'expecting a url'}
-    local _pn=${2:?'expecting a pathname'}
-    printf "#!/usr/bin/env xdg-open\n%s" ${_url} | install -m 0755 /dev/stdin ${_pn}
+    local _url=${1:?"${FUNCNAME} expecting a url"}
+    local _pn=${2:?"${FUNCNAME} expecting a pathname"}
+    printf "#!/usr/bin/env xdg-open\n%s\n" ${_url} | install -m 0755 /dev/stdin ${_pn}
 }
 f.x u.mkurl
 
 # never can remember the entire name
-if u.have com.github.johnfactotum.Foliate; then
-    foliate() { command com.github.johnfactotum.Foliate $* & }
-    # from epel
-    # nb: there are snap and flatpak installs as well. they suck.
-    f.x foliate # dnf install foliate
-fi
+# if u.have com.github.johnfactotum.Foliate; then
+#     foliate() { command com.github.johnfactotum.Foliate $* & }
+#     # from epel
+#     # nb: there are snap and flatpak installs as well. they suck.
+#     f.x foliate # dnf install foliate
+# fi
 
 u.all-hosts() (arp $@ | tail -n+2 | cut -c1-25 | sort | uniq)
 f.x u.all-hosts # hping3
