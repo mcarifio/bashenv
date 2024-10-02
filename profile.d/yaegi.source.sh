@@ -1,21 +1,4 @@
-# usage: [guard | source] ${guard}.guard.sh [--install] [--verbose] [--trace]
-# creation: guard=something envsubst < _template.guard.sh > something.guard.sh
-
-# Front matter. Parse the source command line. Install by platform if --install,
-# trace (and revert) if --trace.
-_guard=$(path.basename ${BASH_SOURCE})
-
-# not working
-_yaegi.parse() (
-    : '## example: parse callers arglist'
-    set -uEeo pipefail
-    shopt -s nullglob
-    declare -A _yaegi_options=([file]="${PWD}/${FUNCNAME}" [comment]="${HOSTNAME}:and_some_stuff" [trace]=0)
-    local -a _rest=( $(u.parse _yaegi_options --foo=bar --user=${USER} --trace 1 2 3) )
-    printf '%s ' ${FUNCNAME}; declare -p _yaegi_options; printf '%s ' ${_rest[@]}
-)
-# TODO mike@carif.io: logic needs fixing
-f.x _yaegi.parse
+${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) rlwrap || return 0
 
 # go repl
 yaegi() (
@@ -43,4 +26,12 @@ yaegi.session() {
 }
 f.x yaegi.session
 
-loaded "${BASH_SOURCE}"
+
+yaegi.installer() (
+    set -Eeuo pipefail; # shopt -s nullglob
+    # ls colorcodes output
+    ls -1 $(bashenv.profiled)/binstall.d/*${FUNCNAME%.*}*.*.binstall.sh
+)
+f.x yaegi.installer
+
+sourced || true

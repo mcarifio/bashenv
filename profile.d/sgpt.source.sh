@@ -1,8 +1,4 @@
-sgpt() (
-    : 'python -m dbg -m ${FUNCNAME} "$@"'
-    python -m ${FUNCNAME} "$@"
-)
-f.complete sgpt
+${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
 
 # Shell-GPT integration BASH v0.2
 _sgpt_readline() {
@@ -13,11 +9,21 @@ _sgpt_readline() {
 }
 f.x _sgpt_readline
 
+sgpt() (
+    : 'python -m dbg -m ${FUNCNAME} "$@"'
+    python -m ${FUNCNAME} "$@"
+)
+f.x sgpt
+
+
 sgpt.session() {
-    bind -x '"\C-xl"':_sgpt_readline || u.error
+    bind -x '"\C-xl"':_sgpt_readline || return $(u.error "${FUNCNAME} failed")
 }
 f.x sgpt.session
-sgpt.session
 
-loaded "${BASH_SOURCE}"
+sgpt.installer() ( ls -1 $(bashenv.profiled)/binstall.d/*shell_gpt*.*.binstall.sh; )
+f.x sgpt.installer
+
+sourced || true
+
 

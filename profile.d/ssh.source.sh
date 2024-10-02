@@ -1,14 +1,15 @@
+${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
+
 ssh.scan() {
     set -Eeuo pipefail
     for ip in $(arp.scan $@); do ssh ${ip} id > /dev/null && echo ${ip}; done
 }
-f.complete ssh.scan
+f.x ssh.scan
 
 
 ssh.keygen() (
     : 'ssh.keygen [--trace] [-m=PEM] [--file=some/path/name] [--comment="${string}"] [--password="${password}"] ...'
-    set -uEeo pipefail
-    shopt -s nullglob
+    set -uEeo pipefail; shopt -s nullglob
     local _file="${PWD}/${FUNCNAME}"
     local _comment="${HOSTNAME}:${_file}"
     local _password=''
@@ -17,12 +18,12 @@ ssh.keygen() (
     if (( ${#@} )) ; then
         for _a in "${@}"; do
             case "${_a}" in
-		--file=*) _file=${_a#--file=};;
-		--comment=*) _comment=${_a#--comment=};;
-		--password=*) _password=${_a#--password=};;
-		--trace) _trace='-x';;
-		
+		--file=*) _file="${_a##*=}";;
+		--comment=*) _comment="${_a##*=}";;
+		--password=*) _password="${_a##*=}";;
+		--trace) _trace='-x';;		
                 --) shift; break;;
+                --*) >&2 echo "${FUNCNAME}: unknown switch ${_a}, stop processing switches"; break;;
                 *) break;;
             esac
             shift
@@ -35,7 +36,7 @@ ssh.keygen() (
     (set ${_trace}; ssh-keygen -f "${_file}" -C "${_comment}" -N "${_password}" "$@"; )
     
 )
-f.complete ssh.keygen
+f.x ssh.keygen
 
 
 
@@ -51,7 +52,7 @@ ssh.mkpair() (
     ssh-keygen -q -N ''   -f "${_keyfile}" -C "${_comment}"
     wl-copy -n < "${_pub}" && >&2 echo "'${_pub}' copied to clipboard"
 )
-f.complete ssh.mkpair
+f.x ssh.mkpair
 
 
 ssh.User() (
@@ -62,7 +63,7 @@ ssh.User() (
         echo ${USER}
     fi
 )
-f.complete ssh.User
+f.x ssh.User
 
 ssh.HostName() (
     if [[ "$1" =~ @(.*)$ ]] ; then
@@ -71,7 +72,7 @@ ssh.HostName() (
         echo "$1"
     fi
 )
-f.complete ssh.HostName
+f.x ssh.HostName
 
 ssh.IdentityFile() (
     set -Eeuo pipefail
@@ -84,7 +85,7 @@ ssh.IdentityFile() (
     local _f=~/.ssh/keys.d/quad/${_remote_host}_id_rsa
     [[ -r ${_f} ]] && { echo ${_f}; return 0; }
 )
-f.complete ssh.IdentityFile
+f.x ssh.IdentityFile
 
 ssh.ssh0() (
     : 'ssh.ssh [${user}@]?${host} $*'
@@ -96,7 +97,7 @@ ssh.ssh0() (
     [[ -n "${_IdentityFile}" ]] && _options+="-o IdentityFile=${_IdentityFile}"
     (set -x; command ssh "$@" "${_options}" ${_target})
 )
-f.complete ssh.ssh0
+f.x ssh.ssh0
 
 
 ssh.i() (
@@ -113,7 +114,7 @@ ssh.i() (
         >&2 echo "IdentityFile ${_id_rsa} not found"
     fi
 )
-f.complete ssh.i
+f.x ssh.i
 
 
 ssh.x() (
@@ -121,23 +122,36 @@ ssh.x() (
     local -r _host=${1:?'expecting a host'}; shift
     ssh -fY ${_host} env GDK_BACKEND=x11 "$@"
 )
-f.complete ssh.x
+f.x ssh.x
 
 ssh.terminator() (
     set -Eeuo pipefail
     local -r _host=${1:?'expecting a host'}; shift
     ssh.x ${_host} terminator --hidden --title=\${USER}@\${HOSTNAME} --name=\${USER}@\${HOSTNAME} "$@"
-); f.complete ssh.terminator
+); f.x ssh.terminator
 
 ssh.terminator.all() (
     set -Eeuo pipefail
     u.map ssh.terminator "$@"
 )
-f.complete ssh.terminator.all
+f.x ssh.terminator.all
 
 ssh.env() {
     touch ${HOME}/hushlogin
 }
 f.x ssh.env
 
-loaded "${BASH_SOURCE}"
+ssh.session() {
+    : '# called by .bashrc'
+    local -r _shell=${1:-$(u.shell)}
+    local -r _cmd=${2:-${FUNCNAME%.*}}
+    local -r _completions=/usr/share/bash-completion/completions
+    source.if ${_completions}/${_cmd}.${_shell} ${_completions}/${_cmd}
+}
+f.x ssh.session
+
+ssh.installer() ( ls -1 $(bashenv.profiled)/binstall.d/*openssh-clients*.*.binstall.sh; )
+f.x ssh.installer
+
+sourced || true
+

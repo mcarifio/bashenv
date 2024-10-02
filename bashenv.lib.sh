@@ -206,6 +206,9 @@ source.if() {
 }
 f.x source.if
 
+source.all() { for _f in "$@"; do source ${_f}; done; }
+f.x source.all
+
 f.folder() (
     for _d in "$@"; do
         [[ -d "${_d}" ]] || continue
@@ -484,6 +487,8 @@ f.complete bashenv.lib
 
 bashenv.profiled() ( find $(bashenv.root) -mindepth 1 -maxdepth 1 -name profile*.d -type d; )
 f.x bashenv.profiled
+bashenv.binstalld() ( find $(bashenv.root) -mindepth 1 -maxdepth 2 -name binstall*.d -type d; )
+f.x bashenv.binstalld
 
 
 path() (echo ${PATH} | tr ':' '\n')
@@ -959,13 +964,34 @@ bashenv.mkA __bashenv_db
 # f.x bashenv.db.map
 
 
+bashenv.init0() {
+    sourced.status.reset
+    sourced.when.reset
+    bashenv.source.kind --depth=1 --kind=lib --action=source $(bashenv.profiled)
+    bashenv.source.kind --depth=1 --kind=source --action=source $(bashenv.profiled)
+    sourced.status ${FUNCNAME} 0 > /dev/null
+    sourced.when ${FUNCNAME} $(date +"%s") > /dev/null
+}
+f.x bashenv.init0
+
+bashenv.init1() {
+    for _s in $(bashenv.libs) $(bashenv.sources); do
+        source ${_s} || echo "${_s} failed" >&2
+    done
+}
+f.x bashenv.init1
+
+bashenv.paths() {
+    path.add.all $(home)/go/bin $(home)/opt/*/current/bin $(home)/.config/*/bin \
+                 $(home)/bin $(home)/.local/bin \
+                 $(bashenv.root)/bin $(bashenv.root)/.local/bin
+    
+}
+f.x bashenv.paths
+
 bashenv.init() {
-    sourced.status.reset; sourced.when.reset
-    bashenv.source.kind --depth=1 --kind=lib --action=source $(bashenv.root)
-    bashenv.source.kind --depth=2 --kind=source --action=source $(bashenv.profiled)
-    sourced.status ${FUNCNAME} 0
-    sourced.when ${FUNCNAME} $(date +"%s")
-    echo $(date +"%s")
+    bashenv.paths
+    source.all $(bashenv.libs) $(bashenv.sources)
 }
 f.x bashenv.init
 
@@ -1048,16 +1074,50 @@ u.map.trees() {
     local _action=${1:?'expecting an action'}; shift
     local -i _status
     # traverse breadth first
-    for _depth in $(seq 1 ${_depth}); do
-        for _f in $(find $@ -mindepth ${_depth} -maxdepth ${_depth} -type f -regex "[^#]+\.${_kind}\.sh\$"); do
+    for _d in $(seq 1 ${_depth}); do
+        for _f in $(find $@ -mindepth ${_d} -maxdepth ${_d} -type f -regex "[^#]+\.${_kind}\.sh\$"); do
             ${_action} "${_f}"
             _status=$?
-            { sourced.status "${_f}" ${_status}; sourced.when "${_f}" $(date +"%s"); sourced.action "${_f}" "${_action}"; } &> /dev/null
-            (( _status )) && echo "${FUNCNAME}: ${_action} ${_f} => ${_status}"
+            sourced.status "${_f}" ${_status} > /dev/null
+            sourced.when "${_f}" $(date +"%s") > /dev/null
+            sourced.action "${_f}" "${_action}" > /dev/null
+            (( _status )) && echo "${FUNCNAME}: ${_action} ${_f} => ${_status}" >&2
         done        
     done
 }
 f.x u.map.trees
+
+find.regex() (
+    local -i _depth=1
+    local _regex='' # "[^#]+\.${_kind}\.sh\$"
+
+    for _a in "${@}"; do
+        case "${_a}" in
+            --depth=*) _depth="${_a##*=}";;
+            --regex=*) _regex="${_a##*=}";;
+            --) shift; break;;
+            --*) return $(u.error "${FUNCNAME} unknown switch '${_a}', stopping");;
+            *) break;;
+        esac
+        shift
+    done
+    
+    (( _depth > 0 )) || return $(u.error "${FUNCNAME} depth ${_depth} < 1, stopping.")
+    [[ -z "${_regex}" ]] && return $(u.error "${FUNCNAME} expecting --regex=something, not supplied")
+
+    for _d in $(seq 1 ${_depth}); do find $@ -mindepth ${_d} -maxdepth ${_d} -type f -regex "${_regex}"; done
+)
+f.x find.regex
+
+bashenv.libs() ( find.regex --depth=1 --regex='^[^#]+\.lib\.sh$' $(bashenv.profiled); )
+f.x bashenv.libs
+
+bashenv.sources() ( find.regex --depth=1 --regex='^[^#]+\.source\.sh$' $(bashenv.profiled); )
+f.x bashenv.libs
+
+
+
+
 
 u.or() (echo "$@" | cut -d' ' -f1)
 f.x u.or
@@ -1111,12 +1171,6 @@ __ether.wake.complete() {
 }
 f.complete ether.wake
 u.map.mkall either.wake
-
-gnome.restart() (
-    : 'https://www.linuxuprising.com/2020/07/how-to-restart-gnome-shell-from-command.html, only works for X'
-    busctl --user call org.gnome.Shell /org/gnome/Shell org.gnome.Shell Eval s 'Meta.restart("Restarting…")'
-)
-f.x gnome.restart
 
 u.folder() (
     : '[${_folder}] #> return the folder name'
@@ -1336,8 +1390,8 @@ zlib.mv() (
 )
 f.x zlib.mv
 
-for c in kind kubectl glab lab; do u.have ${c} && source <(${c} completion bash); done
-for c in /usr/share/bash-completion/completions/{docker,dhclient,nmcli,nmap,ip}; do u.have ${c} && source ${c}; done
+# for c in kind kubectl glab lab; do u.have ${c} && source <(${c} completion bash); done
+# for c in /usr/share/bash-completion/completions/{docker,dhclient,nmcli,nmap,ip}; do u.have ${c} && source ${c}; done
 
 # dnf install gcc-toolset-11
 # src1 /opt/rh/gcc-toolset-11/enable
@@ -1418,21 +1472,18 @@ f.x sa.shutdown
 sa.shutdown.all() (dnf.off milhouse clubber)
 f.x sa.shutdown.all
 
-tbird.logged() (NSPR_LOG_MODULES=SMTP:4,IMAP:4 NSPR_LOG_FILE=/tmp/thunderbird-$$.log thunderbird)
-f.x tbird.logged
-
 source.mkguard() (
     : '${_name} # create ${_name}.guard.sh in the right folder'
     set -Eeuo pipefail; shopt -s nullglob
     local -r _name=${1:?'expecting a name'}
     local -r _kind=${2:-tbs}
     local -r _where="$(bashenv.root)/profile.d"
-    local -r _installd="${_where}/install.d"
+    local -r _installd="${_where}/binstall.d"
     local -r _guard="${_where}/${_name}.source.sh"
-    local -r _install="${_installd}/${_name}.${_kind}.install.sh"
+    local -r _install="${_installd}/${_name}.${_kind}.binstall.sh"
     [[ -f "${_guard}" ]] && return $(u.error "${_guard} already exists?")
     xzcat "${_where}/_template.source.sh.xz" | sed "s/\${g}/${_name}/g" > "${_guard}"
-    [[ -r "${_install}" ]] || cp --no-clobber "${_installd}/_template.tbs.install.sh" "${_install}"
+    [[ -r "${_install}" ]] || cp --no-clobber "${_installd}/_template.tbs.binstall.sh" "${_install}"
     >&2 git -C "$(bashenv.root)" status ${_guard} ${_install}
     echo "${_guard}"
 )

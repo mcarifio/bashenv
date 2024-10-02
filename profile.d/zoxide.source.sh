@@ -1,17 +1,16 @@
-# creation: guard.mkguard ${_name}
-_guard=$(path.basename ${BASH_SOURCE})
+${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
 
-# Wrap zoxide if needed.
 # zoxide() ( command ${FUNCNAME} "$@"; )
 # f.x zoxide
 
+zoxide.doc.urls() ( echo ; ) # urls here
+f.x zoxide.doc.urls
 
-zoxide.docs() (
+zoxide.doc() (
     set -Eeuo pipefail; shopt -s nullglob
-    local -nu _docs=${FUNCNAME%.*}_urls # e.g. UV_DOCS
-    set -x; xdg-open ${_docs:-} "$@" # hard-code urls here if desired
+    for _u in $(${FUNCNAME}.urls); do xdg-open ${_u}; done
 )
-f.x zoxide.docs
+f.x zoxide.doc
 
 zoxide.env() {
     : '# called (once) by .bash_profile'
@@ -25,5 +24,10 @@ zoxide.session() {
 }
 f.x zoxide.session
 
-unset _guard
-loaded "${BASH_SOURCE}"
+zoxide.installer() (
+    set -Eeuo pipefail # DO NOT shopt -s nullglob
+    binstall.installer ${FUNCNAME%.*}
+)
+f.x zoxide.installer
+
+sourced || true

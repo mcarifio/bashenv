@@ -178,14 +178,15 @@ binstall.cargo() (
     set -Eeuo pipefail; shopt -s nullglob
     u.have ${FUNCNAME##*.} || return $(u.error "${FUNCNAME}: ${FUNCNAME##*.} not on path, stopping.")
 
-    local _pkg=''
+    local _pkg='' _options=''
     declare -a _cmds=()
 
     for _a in "${@}"; do
         case "${_a}" in
             --pkg=*) _pkg="${_a##*=}";;
             --cmd=*) _cmds+="${_a##*=}";;            
-
+            --git=*) _options+=" ${_a}";;
+            --git) return $(u.error "${FUNCNAME} expecting --git=url, got just --git");;
             --*) >&2 echo "${FUNCNAME}: unknown switch ${_a}, stop processing switches"; break;;
             --) shift; break;;
             *) break;;
@@ -195,16 +196,22 @@ binstall.cargo() (
 
     [[ -z "${_pkg}" ]] && return $(u.error "${FUNCNAME} expecting --pkg=\${something}")
     u.have cargo || path.add ~/.cargo/bin
-    cargo install ${_pkg} $@
+    cargo install ${_options} ${_pkg} $@
 )
 f.x binstall.cargo
 
 binstall.check() (
     set -Eeuo pipefail; shopt -s nullglob
+    echo >&2
     for _command in "$@"; do
         local _exec="$(u.or $(type -p ${_command}) ${_command})"
-        printf '%s (%s):\n' "${_command}" "${_exec}" >&2
-        ${_command} --version &> /dev/null && ${_command} --version >&2 || ${_command} version >&2
+        printf '%s (%s): ' "${_command}" "${_exec}" >&2
+        # For each possible ${_command} switch
+        for _switch in --version version -V --help; do
+            # ... attempt the command with the switch silently. If it succeeds issue it again and break.
+            ${_command} ${_switch} &> /dev/null && (set -x; ${_command} ${_switch}) >&2 && break
+        done
+        echo >&2
     done
 )
 f.x binstall.check
@@ -424,6 +431,13 @@ binstall.git() (
 )
 f.x binstall.git
 
+binstall.installer() (
+    set -Eeuo pipefail
+    local _pkg=${1:?"${FUNCNAME} expecting a _pkg"}
+    find $(bashenv.binstalld) -mindepth 1 -maxdepth 1 -name "*${_pkg}*.*.binstall.sh" -type f -executable | grep --invert-match '\.tbs\.'
+)
+f.x binstall.installer
+
 binstall.mkbinstall() (
     set -Eeuo pipefail; shopt -s nullglob
 
@@ -451,14 +465,24 @@ binstall.mkbinstall() (
 )
 f.x binstall.mkbinstall
 
-
-
-binstall.all() (
+binstall.installers() (
+    : '#> echo all executable binstallers in all binstall*.d directories that are not tbs'
     set -Eeuo pipefail; shopt -s nullglob
-    # local _kind=${FUNCNAME%*.}
-    local _kind=install
-    for _b in $(find $(bashenv.folders) -name \*.${_kind}.\*.sh -type f -executable -print0); do ${_b}; done
+    find $(bashenv.binstalld) -mindepth 1 -maxdepth 1 -name \*.\*.${FUNCNAME%.*}.sh -type f -executable | grep --invert-match '\.tbs\.'
 )
-f.x binstall.all
+f.x binstall.installers
 
-sourced
+binstall.preference() (
+    : 'the preference order for multiple binstallers'
+    echo dnf asdf cargo pip
+)
+f.x binstall.preference
+
+binstall.installers.preferred() (
+    binstall.preference >&2
+    return $(error "${FUNCNAME} tbs")
+)
+f.x binstall.installers.preferred
+
+sourced || true
+

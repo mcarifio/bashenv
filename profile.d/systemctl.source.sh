@@ -1,3 +1,5 @@
+${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
+
 systemctl.start() (
     local _service=${1:?'expecting a service'}; shift
     systemctl --quiet is-active ${_service} || systemctl start ${_service} || { journalctl --user-unit ${_service}; return $(u.error "can't start ${_service}"); }
@@ -22,4 +24,23 @@ systemctl.env() {
 }
 f.x systemctl.env
 
-loaded "${BASH_SOURCE}"
+
+systemctl.session() {
+    : '# called by .bashrc'
+    local -r _shell=${1:-$(u.shell)}
+    local -r _cmd=${2:-${FUNCNAME%.*}}
+    local -r _completions=/usr/share/bash-completion/completions
+    # completions already established?
+    # source.if ${_completions}/${_cmd}.${_shell} ${_completions}/${_cmd}
+}
+f.x systemctl.session
+
+
+# systemd is usually installed with the base system.
+systemctl.installer() (
+    set -Eeuo pipefaile; shopt -s nullglob
+    ls -1 $(bashenv.profiled)/binstall.d/*${FUNCNAME%.*}*.*.binstall.sh
+)
+f.x systemctl.installer
+
+sourced || true

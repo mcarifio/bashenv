@@ -1,3 +1,5 @@
+# ${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
+
 zlib.root() (
     : '[${_folder}...] # return the first folder that actually exists or '
     f.folder ${@:-/run/media/${USER}/home/${USER}/Documents/e ${HOME}/Documents/e}; )
@@ -12,7 +14,7 @@ zlib.category() (
     declare -a _cat=( ${_one//./ } )
     (( ${#_cat[@]} > 2 )) && echo ${_cat[1]};
 )
-f.complete zlib.category
+f.x zlib.category
 
 zlib.category.pathname() (
     set -Eeuo pipefail
@@ -20,7 +22,7 @@ zlib.category.pathname() (
     local _root=${2:-$(zlib.root)}
     find ${_root} -type d -name ${_cat}    
 )
-f.complete zlib.category.pathname
+f.x zlib.category.pathname
 
 zlib.categorize.folder() (
     set -Eeuo pipefail
@@ -30,13 +32,13 @@ zlib.categorize.folder() (
         mv -v "$f" "${f%%.*}.${_category}.${f##*.}"
     done
 )
-f.complete zlib.categorize.folder
+f.x zlib.categorize.folder
 
 function zlib.compressed? (
     : 'zlib.is-compressed ${pathname} # sets $? to 0 iff ${pathname} is compressed'
     file -b ${1?'expecting a pathname'} | grep --quiet 'compressed data'
 )
-f.complete zlib.compressed?
+f.x zlib.compressed?
 
 zlib.format() (
     : 'zlib.format ${pathname} # |> returns the category of a pathname, e.g. foo.rs.pdf.xz returns pdf, foo.pdf returns pdf'
@@ -49,7 +51,7 @@ zlib.format() (
     (( ${_len} == 2 )) && echo ${_cat[1]}
     (( ${_len} > 2 )) && echo ${_cat[2]}
 )
-f.complete zlib.format
+f.x zlib.format
 
 
 zlib.target() (
@@ -84,7 +86,7 @@ zlib.target() (
 	return 1
     fi    
 )
-f.complete zlib.target
+f.x zlib.target
 
 
 zlib.mv() (
@@ -101,7 +103,7 @@ zlib.mv() (
     [[ -f "${_part}" ]] && return $(u.error "${_part} indicates ${_pathname} download not complete, skipping...")
     mv -v "${_src}" $(zlib.target "${2:-''}" "${1:?'expecting a pathname'}")
 )
-f.complete zlib.mv
+f.x zlib.mv
 
 zlib.mv.all() (
     : 'zlib.mv-all *.{pdf,epub} # mv all matching pathnames to a target based on the pathname "category"'
@@ -114,7 +116,7 @@ zlib.mv.all() (
         zlib.mv "${_src}" $(zlib.target '' "${_src}") || true
     done
 )
-f.complete zlib.mv
+f.x zlib.mv
 
 zlib.categorize.all() (
     local _category=${1:?'expecting a category'}; shift
@@ -147,8 +149,6 @@ zlib.cat.tree() (
 )
 f.x zlib.cat.tree
 
-
 source <($(bashenv.root)/.local/bin/mksearchable.sh --regenerate --function=fx --name=e.locate "$(zlib.root)")
 
-loaded "${BASH_SOURCE}"
-
+sourced || true

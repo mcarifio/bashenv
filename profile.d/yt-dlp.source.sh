@@ -1,29 +1,19 @@
-_guard=$(path.basename ${BASH_SOURCE})
-
-_yt-dlp.parse() (
-    : '## example: parse callers arglist'
-    set -uEeo pipefail
-    shopt -s nullglob
-    declare -A _ytdlp_options=([file]="${PWD}/${FUNCNAME}" [comment]="${HOSTNAME}:and_some_stuff" [trace]=0)
-    local -a _rest=( $(u.parse _ytdlp_options --foo=bar --user=${USER} --trace 1 2 3) )
-    printf '%s ' ${FUNCNAME}; declare -p _ytdlp_options; printf '%s ' ${_rest[@]}
-)
-
+${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
 
 yt-dlp() (
     command ${FUNCNAME} -f bestaudio+bestvideo "$@" ## urls
 )
 f.x yt-dlp
 
-# TODO mike@carif.io: logic needs fixing
-f.x _yt-dlp.parse
 
-yt-dlp.docs() (
-    set -Eeuo pipefail
-    local -nu _docs=${FUNCNAME%.*}_urls # e.g. UV_DOCS
-    set -x; xdg-open ${_docs:-} "$@" https://github.com/yt-dlp/yt-dlp
+yt-dlp.doc.urls() ( echo "https://github.com/yt-dlp/yt-dlp"; ) # urls here
+f.x yt-dlp.doc.urls
+
+yt-dlp.doc() (
+    set -Eeuo pipefail; shopt -s nullglob
+    for _u in $(${FUNCNAME}.urls); do xdg-open ${_u}; done
 )
-
+f.x yt-dlp.doc
 
 yt-dlp.env() {
     true || return $(u.error "${FUNCNAME} failed")
@@ -35,4 +25,11 @@ yt-dlp.session() {
 }
 f.x yt-dlp.session
 
-loaded "${BASH_SOURCE}"
+
+yt-dlp.installer() (
+    set -Eeuo pipefail # DO NOT shopt -s nullglob
+    binstall.installer ${FUNCNAME%.*}
+)
+f.x yt-dlp.installer
+
+sourced || true

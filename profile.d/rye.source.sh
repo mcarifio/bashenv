@@ -1,22 +1,11 @@
-# usage: [guard | source] ${guard}.guard.sh [--install] [--verbose] [--trace]
-# creation: guard=something envsubst < _template.guard.sh > something.guard.sh
+${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
 
-# Front matter. Parse the source command line. Install by platform if --install,
-# trace (and revert) if --trace.
-_guard=$(path.basename ${BASH_SOURCE})
-
-# not working
-_rye.parse() (
-    : '## example: parse callers arglist'
-    set -uEeo pipefail
-    shopt -s nullglob
-    declare -A _rye_options=([file]="${PWD}/${FUNCNAME}" [comment]="${HOSTNAME}:and_some_stuff" [trace]=0)
-    local -a _rest=( $(u.parse _rye_options --foo=bar --user=${USER} --trace 1 2 3) )
-    printf '%s ' ${FUNCNAME}; declare -p _rye_options; printf '%s ' ${_rest[@]}
+rye.docs() (
+    set -Eeuo pipefail; shopt -s nullglob
+    local -nu _docs=${FUNCNAME%.*}_urls # e.g. UV_DOCS
+    set -x; xdg-open ${_docs:-} https://rye.astral.sh/ "$@" # hard-code urls here if desired
 )
-
-# TODO mike@carif.io: logic needs fixing
-f.x _rye.parse
+f.x rye.docs
 
 
 rye.env() {
@@ -29,4 +18,7 @@ rye.session() {
 }
 f.x rye.session
 
-loaded "${BASH_SOURCE}"
+rye.installer() ( ls -1 $(bashenv.profiled)/binstall.d/*${FUNCNAME%.*}*.*.binstall.sh; )
+
+sourced || true
+

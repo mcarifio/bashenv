@@ -1,3 +1,4 @@
+${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
 # usage: [guard | source] trunk.guard.sh [--install] [--verbose] [--trace]
 
 # Front matter. Parse the source command line. Install by platform if --install,
@@ -46,3 +47,4 @@ trunk.session() {
 f.x trunk.session
 
 loaded "${BASH_SOURCE}"
+sourced || true

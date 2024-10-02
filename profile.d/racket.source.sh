@@ -1,35 +1,32 @@
 ${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
 
-xargs.1() ( command ${FUNCNAME%.*} --max-args=1 "$@"; )
-f.x xargs.1
+racket() ( command ${FUNCNAME} "$@"; )
+f.x racket
 
 
-xargs.docs() (
+racket.docs() (
     set -Eeuo pipefail; shopt -s nullglob
     local -nu _docs=${FUNCNAME%.*}_urls # e.g. UV_DOCS
     set -x; xdg-open ${_docs:-} "$@" # hard-code urls here if desired
 )
-f.x xargs.docs
+f.x racket.docs
 
-xargs.env() {
+racket.env() {
     : '# called (once) by .bash_profile'
     true || return $(u.error "${FUNCNAME} failed")
 }
-f.x xargs.env
+f.x racket.env
 
-xargs.session() {
+racket.session() {
     : '# called by .bashrc'
     local -r _shell=${1:-$(u.shell)}
     local -r _cmd=${2:-${FUNCNAME%.*}}
-    source.if /usr/share/bash-completion/completions/${_cmd}.${_shell}
+    local -r _completions=/usr/share/bash-completion/completions
+    source.if ${_completions}/${_cmd}.${_shell} ${_completions}/${_cmd}
 }
-f.x xargs.session
+f.x racket.session
 
-xargs.installer() (
-    set -Eeuo pipefail; # shopt -s nullglob
-    # ls colorcodes output
-    ls -1 $(bashenv.profiled)/binstall.d/*findutils*.*.binstall.sh
-)
-f.x xargs.installer
+racket.installer() ( ls -1 $(bashenv.profiled)/binstall.d/*${FUNCNAME%.*}*.*.binstall.sh; )
+f.x racket.installer
 
 sourced || true

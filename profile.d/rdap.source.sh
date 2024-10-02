@@ -1,32 +1,7 @@
-# usage: [guard | source] _template.guard.sh [--install] [--verbose] [--trace]
+${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
 
-# Front matter. Parse the source command line. Install by platform if --install,
-# trace (and revert) if --trace.
-_guard=$(path.basename ${BASH_SOURCE})
-declare -A _option=([install]=0 [verbose]=0 [summarize]=0 [trace]=0)
-_undo=''; trap -- 'eval ${_undo}; unset _option _undo; trap -- - RETURN' RETURN
-
-# declare -a _rest=( $(u.parse _option "$@") )
-&> /dev/null u.parse _option "$@"
-# declare -p _option
-
-if (( ${_option[trace]} )) && ! bashenv.is.tracing; then
-    _undo+='set +x;'
-    set -x
-fi
-
-rdap.install() (
-    : 'install the go openrdap client, see https://github.com/openrdap/rdap'
-    set -Eeuo pipefail
-    set -x
-    { u.have go && go install github.com/openrdap/rdap/cmd/rdap@master; } || return $(u.error "${FUNCNAME} failed.")
-)
-f.x rdap.install
-
-# source ${_guard}.guard.sh --install
-if (( ${_option[install]} )) && ! u.have ${_guard}; then
-    ${_guard}.install ${_rest} || return $(u.error "${_guard}.install failed")
-fi
+rdap() ( command ${FUNCNAME} "$@"; )
+f.x rdap
 
 rdap.exists() (
     : '${_tld} # return 0 iff top level domain ${_tld} exists'
@@ -53,15 +28,29 @@ rdap.summary() (
 )
 f.x rdap.summary
 
+rdap.docs() (
+    set -Eeuo pipefail; shopt -s nullglob
+    local -nu _docs=${FUNCNAME%.*}_urls # e.g. UV_DOCS
+    set -x; xdg-open ${_docs:-} "$@" # hard-code urls here if desired
+)
+f.x rdap.docs
 
 rdap.env() {
+    : '# called (once) by .bash_profile'
     true || return $(u.error "${FUNCNAME} failed")
 }
 f.x rdap.env
 
 rdap.session() {
-    true || return $(u.error "${FUNCNAME} failed")
+    : '# called by .bashrc'
+    local -r _shell=${1:-$(u.shell)}
+    local -r _cmd=${2:-${FUNCNAME%.*}}
+    # local -r _completions=/usr/share/bash-completion/completions
+    # source.if ${_completions}/${_cmd}.${_shell} ${_completions}/${_cmd}
 }
 f.x rdap.session
 
-loaded "${BASH_SOURCE}"
+rdap.installer() ( ls -1 $(bashenv.profiled)/binstall.d/*${FUNCNAME%.*}*.*.binstall.sh; )
+f.x rdap.installer
+
+sourced || true

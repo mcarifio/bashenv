@@ -1,3 +1,5 @@
+${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
+
 cb.cp() (
     : '# copy /dev/stdin to clipboard under wayland'
     wl-copy -n
@@ -10,6 +12,4 @@ cb.pn() (
 )
 f.complete cb.pn
 
-loaded "${BASH_SOURCE}"
-
-
+sourced || true

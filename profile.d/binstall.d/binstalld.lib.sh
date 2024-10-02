@@ -24,7 +24,7 @@ binstalld.dispatch() (
     local _installer=binstall.${_kind}
     ${_installer} --pkg="${_pkg}" "$@" >&2 || return $(u.error "${FUNCNAME} ${_installer} failed")
     if ! (( ${#_cmds[*]} )) ; then
-        [[ dnf = ${_kind} ]] && _cmds=( $(rpm -ql ${_pkg} | grep --basic-regexp '^/usr/bin/') ) || _cmds+=${_pkg}
+        [[ dnf = ${_kind} ]] && _cmds=( $(rpm -ql ${_pkg} | grep --extended-regexp '^/usr/s?bin/') ) || _cmds+=${_pkg}
     fi
     [[ -n "${_postinstall}" ]] && ${_postinstall} --pkg=${_pkg}
     binstall.check ${_cmds[*]} >&2

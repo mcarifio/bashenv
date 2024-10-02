@@ -1,10 +1,7 @@
-# creation: guard.mkguard ${_name}
-_guard=$(path.basename ${BASH_SOURCE})
+${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
 
-# Wrap rg if needed.
 # rg() ( command ${FUNCNAME} "$@"; )
 # f.x rg
-
 
 rg.docs() (
     set -Eeuo pipefail; shopt -s nullglob
@@ -23,9 +20,11 @@ rg.session() {
     : '# called by .bashrc'
     local -r _shell=${1:-$(u.shell)}
     local -r _cmd=${2:-${FUNCNAME%.*}}
-    source.if /usr/share/bash-completion/completions/${_cmd}.${_shell}
+    source.if /usr/share/bash-completion/completions/${_cmd}{,.${_shell}}
 }
 f.x rg.session
 
-unset _guard
-loaded "${BASH_SOURCE}"
+rg.installer() ( ls -1 $(bashenv.profiled)/binstall.d/ripgrep.*.binstall.sh; )
+f.x rg.installer
+
+sourced || true
