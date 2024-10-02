@@ -1,4 +1,4 @@
-${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
+${1:-false} || u.haveP $(path.basename.part ${BASH_SOURCE} 0) || return 0
 
 # TODO mike@carifio 02/20/24: probably obsolete
 git.url.folder() (
@@ -10,7 +10,7 @@ git.url.folder() (
     [[ "${_url}" =~ ^([^@]*@)?([^:]+):([^/]+)/(.*)\.git$ ]] && { echo ${_suffix}/${BASH_REMATCH[2]}/${BASH_REMATCH[3]}/${BASH_REMATCH[4]}/${BASH_REMATCH[4]}; return 0; }
     echo ${_suffix}/${_url}    
 )
-f.x url.git.folder
+f.x git.url.folder
 
 
 # TODO mike@carif.io 02/20/24: probably obsolete
@@ -60,4 +60,3 @@ git.unzip() (
 f.x git.unzip
 
 sourced || true
-
