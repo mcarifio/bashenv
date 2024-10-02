@@ -149,6 +149,7 @@ zlib.cat.tree() (
 )
 f.x zlib.cat.tree
 
-source <($(bashenv.root)/.local/bin/mksearchable.sh --regenerate --function=fx --name=e.locate "$(zlib.root)")
+zlib.env() { source <(mksearchable.sh --regenerate --function=fx --name=e.locate "$(zlib.root)"); }
+f.x zlib.env
 
 sourced || true

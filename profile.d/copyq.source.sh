@@ -15,6 +15,7 @@ f.x copyq.run
 
 # TODO mike@carif.io: fix this; invoke copyq.run() manually til then.
 copyq.env() (
+    [[ -z "${DISPLAY}" ]] && return $(u.error "${FUNCNAME} need a windowing system") 1
     copyq.run || return $(u.error "${FUNCNAME} failed") &
 )
 f.x copyq.env

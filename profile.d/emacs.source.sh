@@ -120,6 +120,7 @@ export VISUAL="${EDITOR}"
 emacs.env() (
     : '[${_pathname}] ## run emacsclient after starting emacs.service'
     set -Eeuo pipefail
+    [[ -z "${DISPLAY}" ]] && return $(u.error "${FUNCNAME} needs windowing to run the emacs systemd service") 1
     emacs.server || return $(u.error "cannot start emacs service in login shell $$")
     loginctl enable-linger ${USER}
 )

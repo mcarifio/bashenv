@@ -1010,9 +1010,36 @@ bashenv.paths() {
 f.x bashenv.paths
 
 bashenv.init() {
+    local -i _trace=0
+    for _a in "${@}"; do
+        case "${_a}" in
+            --trace) _trace=1;;
+            --) shift; break;;
+            --*) return $(u.error "${FUNCNAME} unknown switch '${_a}', stopping");; ## error on unknown switch
+            *) break;;
+        esac
+        shift
+    done
+
     bashenv.paths
-    for _l in $(bashenv.libs); do source "${_l}"; done
-    for _s in $(bashenv.sources); do source "${_s}"; done
+    (( _trace )) && echo ${PATH} >&2
+
+    for _l in $(bashenv.libs); do
+        (( _trace )) && printf '%s => ' ${_l} >&2
+        source "${_l}"
+        (( _trace )) && printf '%s\n' $? >&2
+    done
+    for _s in $(bashenv.sources); do
+        (( _trace )) && printf '%s => ' ${_s} >&2
+        source "${_s}"
+        (( _trace )) && printf '%s\n' $? >&2
+    done
+
+    for _f in $(bashenv.env.functions); do
+        (( _trace )) && printf '%s => ' ${_f} >&2
+        ${_f}
+        (( _trace )) && printf '%s\n' $? >&2        
+    done    
 }
 f.x bashenv.init
 
@@ -1025,6 +1052,17 @@ f.x bashenv.loaded
 bashenv.initialized() ( return 0; )
 f.x bashenv.initialized
 
+bashenv.env.functions() (
+    declare -Fpx | cut -f3 -d' ' | grep -e '\.env$'
+)
+f.x bashenv.env.functions
+
+bashenv.env.start() {
+    for f in $(bashenv.env.functions); do $f || u.error "$f failed"; done
+}
+f.x bashenv.env.start
+
+
 bashenv.session.functions() (
     declare -Fpx | cut -f3 -d' ' | grep -e '\.session$'
 )
@@ -1034,6 +1072,8 @@ bashenv.session.start() {
     for f in $(bashenv.session.functions); do $f || u.error "$f failed"; done
 }
 f.x bashenv.session.start
+
+
 
 bashenv.update() (
     : '# git pull the latest changes'
