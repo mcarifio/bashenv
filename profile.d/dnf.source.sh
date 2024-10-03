@@ -65,9 +65,7 @@ dnf.from() (
 )
 f.x dnf.from
 
-
-
-fc.upgrade() (
+fedora.upgrade() (
     local -i _next_version=${1:-$(( $(os-release.version) + 1 ))}
     >&2 echo "upgrade from version $(os-release.version) to ${_next_version}"
     dnf upgrade --allowerasing -y
@@ -75,7 +73,7 @@ fc.upgrade() (
     dnf system-upgrade download -y --nogpgcheck --releasever=${_next_version}
     dnf system-upgrade reboot
 )
-f.x fc.upgrade
+f.x fedora.upgrade
 
 dnf.id.last() (
     dnf history list last|tail -n1|cut -d'|' -f1
@@ -98,6 +96,13 @@ dnf.install() (
 )
 f.x dnf.install
 
-sourced
+function dnf.is-installed (
+    : '${_pkg} ## returns 0 iff ${_pkg} is installed (works with versions)'
+    dnf list installed ${1:?"${FUNCNAME} expecting a package"} &> /dev/null
+)
+f.x dnf.is-installed
+
+sourced || true
+
 
 
