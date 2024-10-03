@@ -661,6 +661,23 @@ path.mpt() (
 )
 f.x path.mpt
 
+# usage (in function): local _first_readable_pathname="$(path.first x y z ~/.bash_profile)" || echo "no readable path found" >&2
+path.first() (
+    : '${_pathname}* # return the first pathname that is readable with status 0. otherwise return status 1'
+    set -Eeuo pipefail; shopt -s nullglob
+    for _a in "$@"; do
+        [[ -r "${_a}" ]] && { echo "$(realpath -Lm ${_a})"; return 0; }
+    done
+    return 1
+)
+f.x path.first
+
+path.contents.clean() (
+    : 'remove blank lines and comments from a set of files or stdin'
+    sed '/^\s*$/d; s/#.*//' $@
+)
+f.x path.contents.clean
+
 path.mpcd() (cd $(dirname $(path.mp ${1:?'expecting a pathname'})))
 f.x path.mpcd
 

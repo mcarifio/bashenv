@@ -1,4 +1,4 @@
-${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
+${1:-false} || u.haveP $(path.basename.part ${BASH_SOURCE} 0) || return 0
 
 slack() (
     : '# logs to ~/.config/Slack/logs/default/*'
@@ -7,12 +7,14 @@ slack() (
 )
 f.x slack
 
-slack.docs() (
-    set -Eeuo pipefail
-    local -nu _docs=${FUNCNAME%.*}_urls # e.g. UV_DOCS
-    set -x; xdg-open ${_docs:-} "$@" # hard-code urls here if desired
+slack.doc.urls() ( echo ; ) # urls here
+f.x slack.doc.urls
+
+slack.doc() (
+    set -Eeuo pipefail; shopt -s nullglob
+    for _u in $(${FUNCNAME}.urls); do xdg-open ${_u}; done
 )
-f.x slack.docs
+f.x slack.doc
 
 slack.env() {
     : '# called (once) by .bash_profile'
