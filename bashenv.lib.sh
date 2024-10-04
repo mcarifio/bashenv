@@ -269,7 +269,7 @@ path.folder() (
 f.x path.folder
 
 f.folder() (
-    echo -n "fix " $(caller 1)
+    echo -n "fix " $(caller 1) >&2
     path.folder "$@"
 )
 f.x f.folder
