@@ -268,6 +268,12 @@ path.folder() (
 )
 f.x path.folder
 
+f.folder() (
+    echo -n "fix " $(caller 1)
+    path.folder "$@"
+)
+f.x f.folder
+
 find.newest() (
     local _pattern="${1:?'expecting a pathname pattern'}"
     local _dir="${_pattern%/*}"
