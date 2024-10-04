@@ -1072,20 +1072,33 @@ bashenv.init() {
 
     for _f in $(bashenv.env.functions); do
         (( _trace )) && printf '%s => ' ${_f} >&2
-        ${_f}
+        ${_f} || true
         (( _trace )) && printf '%s\n' $? >&2        
-    done    
+    done
+    # TODO mike@carif.io: fix return status
+    f.status ${FUNCNAME} 0
 }
 f.x bashenv.init
 
-bashenv.loaded() {
-    local -i _init="$(sourced.history bashenv.init)"
-    return $(( ! _init ))
-}
-f.x bashenv.loaded
+bashenv.init.succeeded() { return $(f.status ${FUNCNAME/.succeeded/}); }
+f.x bashenv.init.succeeded
 
-bashenv.initialized() ( return 0; )
-f.x bashenv.initialized
+
+f.status.reset() { declare -iAxg __bashenv_f_status=(); }
+f.x f.status.reset
+
+f.status() {
+    declare -iAxg __bashenv_f_status
+    local _key=${1:?"${FUNCNAME} expecting a function name"}
+    declare -fx ${_key} || return $(u.error "${FUNCNAME} no function named '${_key}'")
+    if [[ -n "$2" ]]; then
+        __bashenv_f_status["${_key}"]=$2
+    else
+        local _status=${__bashenv_f_status["${_key}"]}
+        [[ -n "${_status}" ]] && return ${_status} || return $(u.error "${FUNCNAME} no status for function '${_key}'")
+    fi
+}
+f.x f.status
 
 bashenv.env.functions() (
     declare -Fpx | cut -f3 -d' ' | grep -e '\.env$'
@@ -1607,5 +1620,3 @@ sourced.missing() (
 f.x sourced.missing
 
 sourced || true
-
-

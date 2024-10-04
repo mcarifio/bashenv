@@ -33,3 +33,4 @@ bashenv.start() {
 }
 
 bashenv.start bashenv.init
+# bashenv.init.succeeded returns the status of the last bashenv.init call
