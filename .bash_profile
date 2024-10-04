@@ -11,18 +11,18 @@ bashenv.start() {
     local _pathname="${HOME}/${_initializer}"
     # declare -p _pathname
 
-    if [[ -n "${SSH_CONNECTION}" ]]; then
-        echo "ssh from ${SSH_CLIENT}" >&2
-        next "${_initializer}"
-        return 0
-    fi
-    
     # Source all the local libraries. Unfortunately order matters, so this has limited usefulness.
     for _l in ${_bashenv}/*.lib.sh; do
         # declare -p _l
         source ${_l}
     done
 
+    if [[ -n "${SSH_CONNECTION}" ]]; then
+        echo "${HOSTNAME} ssh connection ${SSH_CONNECTION}" >&2
+        next "${_initializer}"
+        return 0
+    fi
+    
     # ${_initializer} plays a role similar to hushlogin.
     if [[ -e "${_pathname}" ]]; then
         echo "${_initializer} $(< ${_pathname}) ## found ${_pathname}" >&2
