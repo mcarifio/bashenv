@@ -26,10 +26,11 @@ example.options() (
             --doo=*) _doo="${_a##*=}";;
             --many=*) _many+=( "${_a##*=}" );;
             --pairs=*) _pairs["$(u.field ${_a##*=})"]="$(u.field ${_a##*=} 1)";;
+
             --) shift; break;;
             # --*) break;; ## break on unknown switch, pass it along
-            --*) >&2 echo "${FUNCNAME}: unknown switch ${_a}, stop processing switches"; break;;
-            # --*) return $(u.error "${FUNCNAME} unknown switch '${_a}', stopping");; ## error on unknown switch
+            # --*) >&2 echo "${FUNCNAME}: unknown switch ${_a}, stop processing switches"; break;;
+            --*) return $(u.error "${FUNCNAME} unknown switch '${_a}', stopping");; ## error on unknown switch
             *) break;;
         esac
         shift
