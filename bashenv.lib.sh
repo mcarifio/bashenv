@@ -1,5 +1,3 @@
-# f
-
 # https://www.gnu.org/software/bash/manual/html_node/Programmable-Completion.html
 
 # bashenv traffics (mostly) in bash functions that follow these conventions:
@@ -9,10 +7,7 @@
 #       fn's arguments
 #   - the first line of the function definition is : 'text' which acts as a docstring
 
-# name -> date
-# unset __bashenv_loaded || true
-
-declare -Axig __bashenv_fx
+# declare -Axig __bashenv_fx
 f.x() {
     : '${_f}... # export functions ${_f}...'
     declare -Aigx __bashenv_fx
@@ -24,6 +19,12 @@ f.x f.x
 
 f.x.reset() { declare -Axig __bashenv_fx=(); }
 f.x f.x.reset
+
+f.x.declare() {
+    : '#> return all functions loaded (so far)'
+    declare -p -Aigx __bashenv_fx
+}
+f.x f.x.declare
 
 f.x.keys() {
     : '#> return all functions loaded (so far)'
@@ -60,22 +61,25 @@ f.x.item() (
 )
 f.x f.x.item
 
-# handle function switches like --var or --var=value
-# usage: --switch=*) eval case.update "${_a}";;
-# usage: --switch) eval case.update "${_a}";;
-# case.update() {
-#     return $(u.error "${FUNCNAME} broken")
-#     local -r _switch=${1:?"${FUNCNAME} expecting a switch --left or --left=value"}
-#     local -r _true=${2:-1}
-#     local -r _prefix=${3:-_}
+f.status.reset() { declare -iAxg __bashenv_f_status=(); }
+f.x f.status.reset
 
-#     # --var=value
-#     # usage: --left=*) eval $(sw.update ${_a}); >&2 echo ${_left};;
-#     # repl testing: [[ "literal" =~ --([^=]+)(=(.+))?$ ]] && declare -p BASH_REMATCH
-#     [[ "${_switch}" =~ --([^=]+)(=(.+))?$ ]] || return $(u.error "${FUNCNAME} '${_switch}' wrong format, expecting a switch --left or --left=value")
-#     printf '%s%s="%s"' ${_prefix} ${BASH_REMATCH[1]} ${BASH_REMATCH[3]:-${_true}}
-# }
-# f.x case.update
+f.status() {
+    declare -iAxg __bashenv_f_status
+    local _key=${1:?"${FUNCNAME} expecting a function name"}
+    declare -fx ${_key} || return $(u.error "${FUNCNAME} no function named '${_key}'")
+    if [[ -n "$2" ]]; then
+        __bashenv_f_status["${_key}"]=$2
+    else
+        local _status=${__bashenv_f_status["${_key}"]}
+        [[ -n "${_status}" ]] && return ${_status} || return $(u.error "${FUNCNAME} no status for function '${_key}'")
+    fi
+}
+f.x f.status
+
+
+
+
 
 u.field() (
     local _record=${1:?"${FUNCNAME} expecting a record 0:1:2:..."}
@@ -84,7 +88,6 @@ u.field() (
     echo "${_result[${_field}]}"
 )
 f.x u.field
-
 
 u.error() (
     local -i _status=${2:-$?}; (( _status )) || _status=1
@@ -127,6 +130,7 @@ f.x f.tbs
 
 # f.exists
 f.exists.sig() (echo ${FUNCNAME%.sig} req _f bash+function no_default)
+
 f.exists() {
     : '${f} # return 0 iff bash function ${f} exists (is defined)'
     local _f=${1:?'expecting a bashenv function'}
@@ -236,7 +240,6 @@ f.x f.mkcompleter.generate
 # f.mkcompleter u.map required 'bashenv function' 'f.loaded.match' rest int none
 
 
-
 source.if() {
     for _f in "$@"; do
         [[ -r "${_f}" ]] && source ${_f}
@@ -254,7 +257,7 @@ source.all() {
 
 f.x source.all
 
-f.folder() (
+path.folder() (
     for _d in "$@"; do
         [[ -d "${_d}" ]] || continue
         echo "${_d}"
@@ -263,15 +266,15 @@ f.folder() (
     echo >&2 "No folder found in '$@'"
     return 1
 )
-f.x f.folder
+f.x path.folder
 
-f.newest() (
+find.newest() (
     local _pattern="${1:?'expecting a pathname pattern'}"
     local _dir="${_pattern%/*}"
     local _name="${_pattern##*/}"
     find "${_dir}" -name "'${_name}'" -type f -printf '%T@ %p\n' | sort -n | tail -n 1 | cut -d' ' -f2-
 )
-f.x f.newest
+f.x find.newest
 
 # plus1, useful to test u.map next
 example.plus1() (
@@ -303,8 +306,7 @@ f.complete f.apply
 # }
 # f.x loaded0
 
-declare -Aix __bashenv_sourced=()
-sourced.reset() { __bashenv_sourced=(); }
+sourced.reset() { declare -Aixg __bashenv_sourced=(); }
 f.x sourced.reset
 
 sourced() {
@@ -437,22 +439,6 @@ __u.map.mkall.complete() {
 f.complete u.map.mkall
 
 
-# __f.loaded.match.complete() {
-#     local _command=$1 _word=$2 _previous_word=$3
-#     local -i _position=${COMP_CWORD} _arg_length=${#COMP_WORDS[@]}
-#     COMPREPLY=()
-#     if ((_position == 1)); then
-#         COMPREPLY=($(f.loaded.match "$2"))
-#     else
-#         echo >&2
-#         f.doc >&2 f.loaded.match
-#         echo >&2 "f.loaded.match takes one argument, currently ${_previous_word}"
-#         echo -n "${COMP_LINE} "
-#     fi
-# }
-# f.complete f.loaded.match
-
-# f.doc
 f.doc() {
     : '${function} # echos the docstring of a function to stdout'
     local _f=${1:?'expecting a function'}
@@ -507,9 +493,9 @@ f.complete home
 # Return the full pathname of the bashenv root directory, usually something like ${HOME}/bashenv.
 # Depends on where you placed it however.
 eval "bashenv.root() ( echo $(dirname $(realpath ${BASH_SOURCE})); )"
-f.complete bashenv.root
+f.x bashenv.root
 eval "bashenv.lib() ( echo $(realpath -P ${BASH_SOURCE}); )"
-f.complete bashenv.lib
+f.x bashenv.lib
 
 bashenv.profiled() ( find $(bashenv.root) -mindepth 1 -maxdepth 1 -name profile*.d -type d; )
 f.x bashenv.profiled
@@ -794,97 +780,11 @@ __f.complete.for.complete() {
 }
 f.complete f.complete.for
 
-## guard
-
-# guard.for() {
-#     : 'guard.for ${command}... # returns 0 iff all ${commands} are on PATH '
-#     u.have "${1:?'expecting a command'}" $2
-# }
-# f.x guard.for
-
-# _guard() {
-#     : '_guard ${pathname} [${command}] # source ${pathname} iff ${command} resolves'
-#     local _pathname=${1:-'expecting a pathname'}
-#     shift
-#     local _for=${2:-$(path.basename ${_pathname})}
-#     shift
-#     local _flatpak=${3:-}
-#     shift
-#     guard.for ${_for} || return 0
-#     source ${_pathname} "$@" || return $(u.error "${_pathname} => $?")
-#     u.call ${_for}.env "$@" || return $(u.error "${_for}.env => $?")
-# }
-# f.x _guard
-# guard() {
-#     : 'guard ${pathname} [${command}] # source ${pathname} iff ${command} resolves. print errors but ignores return values'
-#     # guard has a private helper _guard which simplifies the calling expression.
-#     _${FUNCNAME} "$@" || true
-# }
-# f.complete guard
-
-# # lib() is a hack to make map.tree work
-# lib() {
-#     source ${1:?'expecting a lib file like foo.lib.sh'} || return $(u.error "${FUNCNAME} ${_pathname} => $?")
-# }
-# f.x lib
-
-# bashenv.*
-
-
-
-bashenv.install.exe() (
-    set -Eeuo pipefail
-    local _url=${1:-'expecting a url'}
-    local _target="${2:-$(path.mp \"${HOME}/.local/bin/$(basename \"${_url}\")\")}"
-    wget "${_url}" -O "${_target}"
-    chmod +x "${_target}"
-)
-f.complete bashenv.install.exe
-
-bashenv.install.zip() (
-    : '${_url} ${_folder} ## fetch and unzip a remote zip file, moving all executables to ${_folder}'
-    set -Eeuo pipefail
-    local _url=${1:-'expecting a url'}
-    local _folder="${2:-$(path.mp \"${HOME}/.local/bin\")}"
-    # _tmp, a working folder in /tmp, to unzip ${_url}
-    local _tmp="$(mktemp --suffix=${FUNCNAME})"
-    # _tmp always removed regardless of success
-    trap -- "rm -rf ${_tmp}; trap - RETURN;" RETURN
-    curl -sSL "${_url}" | bsdtar -C "${_tmp}" -s '|[^/]*/||' -xf -
-    for _f in "${_tmp}/*"; do bashenv.is.elf "${_f}" && install --target-directory="${_folder}" "${_f}"; done
-)
-f.complete bashenv.install.zip
-
-
 bashenv.is.tracing() { grep --silent x <<< $-; }
 f.x bashenv.is.tracing
 
 bashenv.is.elf() ( file --mime-type ${1:?'expecting a pathname'} | grep --silent application/x-executable; )
 f.x bashenv.is.elf
-
-# bashenv.source.kind() {
-#     : '[--depth=$i] [--kind=${extension}] [--action=${command}]'
-    
-#     local -i _depth=1
-#     local _kind=source
-#     local _action=source
-
-#     for _a in "${@}"; do
-#         case "${_a}" in
-#             --depth=*) _depth="${_a##*=}";;
-#             --kind=*) _kind="${_a##*=}";;
-#             --action=*) _action="${_a##*=}";;
-#             --) shift; break;;
-#             --*) return $(u.error "${FUNCNAME} unknown switch '${_a}', stopping");;
-#             *) break;;
-#         esac
-#         shift
-#     done
-    
-#     (( _depth > 0 )) || return $(u.error "${FUNCNAME} depth ${_depth} < 1, stopping.")
-#     u.map.trees ${_depth} ${_kind} ${_action} $@
-# }
-# f.x bashenv.source.kind
 
 # bashenv.A associate array "base"
 u.f2v() ( local -u _name=${1//./_}; echo ${_name}; )
@@ -980,62 +880,6 @@ bashenv.mkA __sourced_when
 
 declare -Ax __bashenv_db
 bashenv.mkA __bashenv_db
-# bashenv.db() { bashenv.A $(u.f2aa ${FUNCNAME}) ${1:?"${FUNCNAME} expecting a key"} ${2:-}; }
-# f.x bashenv.db
-
-# # bashenv.db.keys0() { printf '%s\n' ${!__bashenv_db[@]}; }
-# # f.x bashenv.db.keys0
-
-# bashenv.db.keys() { bashenv.A.${FUNCNAME##*.} $(u.f2aa ${FUNCNAME%.*}); }
-# f.x bashenv.db.keys
-
-                    
-# # bashenv.db.values0() { printf '%s\n' ${__bashenv_db[@]}; }
-# # f.x bashenv.db.values0
-
-# bashenv.db.values() { bashenv.A.${FUNCNAME##*.} $(u.f2aa ${FUNCNAME%.*}); }
-# f.x bashenv.db.values
-
-
-# # bashenv.db.items0() {
-# #     local -r _delim=${1:-:};
-# #     for _key in "${!__bashenv_db[@]}"; do printf '%s%s%s\n' ${_key} ${_delim} ${__bashenv_db["${_key}"]}; done; }
-# # f.x bashenv.db.items0
-
-# bashenv.db.items() {  bashenv.A.${FUNCNAME##*.} $(u.f2aa ${FUNCNAME%.*}); }
-# f.x bashenv.db.items
-
-# # bashenv.db.map0() {
-# #     local _action=${1:?"${FUNCNAME} expecting an action"}
-# #     u.have ${_action} || return $(u.error "${FUNCNAME} no action ${_action}")
-# #     for _p in $(bashenv.db.items); do
-# #         local -a _pair=( ${_p/: } )
-# #         local _key=${_pair[0]} _value=${_pair[1]}
-# #         ${_action} ${_key} ${_value} || true
-# #     done        
-# # }
-# # f.x bashenv.db.map0
-
-# bashenv.db.map() { bashenv.A.${FUNCNAME##*.} $(u.f2aa ${FUNCNAME%.*}) ${2:-echo}; }
-# f.x bashenv.db.map
-
-
-# bashenv.init0() {
-#     sourced.status.reset
-#     sourced.when.reset
-#     bashenv.source.kind --depth=1 --kind=lib --action=source $(bashenv.profiled)
-#     bashenv.source.kind --depth=1 --kind=source --action=source $(bashenv.profiled)
-#     sourced.status ${FUNCNAME} 0 > /dev/null
-#     sourced.when ${FUNCNAME} $(date +"%s") > /dev/null
-# }
-# f.x bashenv.init0
-
-# bashenv.init1() {
-#     for _s in $(bashenv.libs) $(bashenv.sources); do
-#         source ${_s} || echo "${_s} failed" >&2
-#     done
-# }
-# f.x bashenv.init1
 
 bashenv.paths() {
     path.add.all $(home)/go/bin $(home)/opt/*/current/bin $(home)/.config/*/bin \
@@ -1082,23 +926,6 @@ f.x bashenv.init
 
 bashenv.init.succeeded() { return $(f.status ${FUNCNAME/.succeeded/}); }
 f.x bashenv.init.succeeded
-
-
-f.status.reset() { declare -iAxg __bashenv_f_status=(); }
-f.x f.status.reset
-
-f.status() {
-    declare -iAxg __bashenv_f_status
-    local _key=${1:?"${FUNCNAME} expecting a function name"}
-    declare -fx ${_key} || return $(u.error "${FUNCNAME} no function named '${_key}'")
-    if [[ -n "$2" ]]; then
-        __bashenv_f_status["${_key}"]=$2
-    else
-        local _status=${__bashenv_f_status["${_key}"]}
-        [[ -n "${_status}" ]] && return ${_status} || return $(u.error "${FUNCNAME} no status for function '${_key}'")
-    fi
-}
-f.x f.status
 
 bashenv.env.functions() (
     declare -Fpx | cut -f3 -d' ' | grep -e '\.env$'
@@ -1364,129 +1191,6 @@ f.x pn.deparen
 
 
 
-pdf.mv() {
-    # if [[ -r "$1" ]]; then
-    #   >&2 printf "'%s' not found\n" "$1"
-    #   return 1
-    # fi
-    : pdf.mv ${_src} ${_location} [${_prefix}]
-    local _src="$1"
-    local _prefix="${2:-$(basename ${_src} .pdf)}"
-    local _location="${3:-${PWD}}"
-    local _date=$(pdf.creationdate "${_src}")
-    if [[ -z "${_date}" ]]; then
-        printf >&2 "no creation date found for %s\n" "${_src}"
-        return 1
-    fi
-
-    mv -v "${_src}" "$(md ${_location})/${_prefix}-${_date}.pdf"
-}
-f.x pdf.mv
-
-zlib.title() {
-    local _title=${1:?'expecting a pathname'}
-    _title=${_title%%---*}
-    if [[ "${_title}" =~ ^([^[[:punct:]]]+)$ ]]; then
-        _title=${BASH_REMATCH[1]}
-    fi
-    _title=${_title,,}
-    _title=${_title// /-}
-    echo ${_title}
-}
-f.x zlib.title
-
-zlib.lastname0() {
-    if [[ "$1" =~ [[:space:]]by[[:space:]][a-zA-Z]+[[:space:]]([a-zA-Z]+) ]]; then
-        echo ${BASH_REMATCH[1],,}
-    fi
-}
-
-# fix later
-zlib.lastname() {
-    local _pathname=${1:?'need a pathname'}
-    [[ -r "${_pathname}" ]] || {
-        echo >&2 "'${_pathname}' not readable."
-        return 1
-    }
-    local _result=$(pdf.author "${_pathname}" &>/dev/null) || true
-    [[ -n "${_lastname}" ]] && {
-        echo ${_lastname}
-        return 0
-    }
-    if [[ "${_pathname}" =~ ---([^[[:punct:]]+).*--- ]]; then
-        declare -a _name=(${BASH_REMATCH[1],,})
-        echo ${_name[-1]}
-    fi
-}
-
-zlib.date() {
-    local _pathname=${1:?'need a pathname'}
-    [[ -r "${_pathname}" ]] || {
-        echo >&2 "'${_pathname}' not readable."
-        return 1
-    }
-    local _result=$(pdf.creationdate "${_pathname}" &>/dev/null) || true
-    if [[ -n "${_result}" ]]; then
-        echo ${_result}
-    elif [[ "${_pathname}" =~ ---([[:digit:]]{4}) ]]; then
-        echo ${BASH_REMATCH[1],,}
-    fi
-}
-f.x zlib.date
-
-zlib.mv() (
-    # zlib.mv ${_src} ${_dir} [${_title} [${_lastname} [${_yyyy}]]]
-    # zlib.mv [--dir=pathname] [--title=prefix] [--author=name] [--date=yyyy] doc.{epub,pdf}
-
-    set -Eeuo pipefail
-    local _dir="${PWD}" _title="" _lastname="" _date=""
-    if ((${#@})); then
-        for _a in "${@}"; do
-            case "${_a}" in
-            --dir=*) _dir="${_a#--dir=}" ;;
-            --title=*) _title="${_a#--title=}" ;;
-            --lastname=*) _lastname="${_a#--lastname=}" ;;
-            --date=*) _date="${_a#--date=}" ;;
-            --)
-                shift
-                break
-                ;;
-            *) break ;;
-            esac
-            shift
-        done
-    fi
-
-    local _src="${1:?'expecting a file name'}"
-    [[ -e "${_src}" ]] || {
-        echo >&2 "${_src} not found"
-        return 1
-    }
-
-    [[ -e "${_dir}" && ! -d "${_dir}" ]] && {
-        echo >&2 "${_dir} is a file"
-        return 1
-    }
-    [[ ! -d "${_dir}" ]] && {
-        echo >&2 "${_dir} does not exist"
-        return 1
-    }
-    [[ -z "${_title}" ]] && _title=$(zlib.title "${_src}")
-    [[ -z "${_lastname}" ]] && _lastname=$(zlib.lastname "${_src}")
-    [[ -z "${_date}" ]] && _date=$(zlib.date "${_src}")
-    local _ext=${_src##*.}
-    local _dest="${_dir}/${_title}-${_lastname}-${_date}.${_ext}"
-
-    if [[ "${_ext}" = pdf ]]; then
-        mv "${_src}" "${_dest}"
-        xz "${_dest}"
-        echo >&2 "${_dest}"
-    else
-        mv "${_src}" "${_dest}"
-        echo >&2 "${_dest}"
-    fi
-)
-f.x zlib.mv
 
 # for c in kind kubectl glab lab; do u.have ${c} && source <(${c} completion bash); done
 # for c in /usr/share/bash-completion/completions/{docker,dhclient,nmcli,nmap,ip}; do u.have ${c} && source ${c}; done
@@ -1552,12 +1256,6 @@ f.x mnt.iso
 
 url.exists() (curl --HEAD --silent ${1:?'expecting a url'} &>/dev/null)
 f.x url.exists
-
-function f.defined? {
-    : 'f.defined? ${function} ... # true if all functions are defined'
-    type -t -- "$@" >/dev/null
-}
-f.x f.defined?
 
 sa.shutdown() (
     for _h in "$@"; do

@@ -79,6 +79,25 @@ binstall.curl() (
 )    
 f.x binstall.curl
 
+
+binstall.zip() (
+    : '${_url} ${_folder} ## fetch and unzip a remote zip file, moving all executables to ${_folder}'
+    set -Eeuo pipefail
+    local _url=${1:-'expecting a url'}
+    local _folder="${2:-$(path.mp \"${HOME}/.local/bin\")}"
+    # _tmp, a working folder in /tmp, to unzip ${_url}
+    local _tmp="$(mktemp --suffix=${FUNCNAME})"
+    # _tmp always removed regardless of success
+    trap -- "rm -rf ${_tmp}; trap - RETURN;" RETURN
+    curl -sSL "${_url}" | bsdtar -C "${_tmp}" -s '|[^/]*/||' -xf -
+    for _f in "${_tmp}/*"; do bashenv.is.elf "${_f}" && install --target-directory="${_folder}" "${_f}"; done
+)
+f.x binstall.zip
+
+
+
+
+
 binstall.sh() (
     : '${_url} ... # fetch a script remotely and run it'
     set -Eeuo pipefail; shopt -s nullglob
