@@ -16,6 +16,7 @@ declare -Ax __bashenv_fx=()
 
 f.x() {
     : '${_f}... # export functions ${_f}...'
+    declare -Agx __bashenv_fx
     for _f in "$@"; do
         declare -fx ${_f} && __bashenv_fx["${_f}"]="$(date +"%s")" || return $(u.error "${_f} not exported")
     done
@@ -1038,8 +1039,7 @@ bashenv.init() {
         shift
     done
 
-    bashenv.paths
-    (( _trace )) && echo ${PATH} >&2
+    bashenv.paths; (( _trace )) && echo ${PATH} >&2
 
     for _l in $(bashenv.libs); do
         (( _trace )) && printf '%s => ' ${_l} >&2
