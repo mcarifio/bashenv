@@ -12,16 +12,53 @@
 # name -> date
 # unset __bashenv_loaded || true
 
-declare -Ax __bashenv_fx=()
-
+declare -Axig __bashenv_fx
 f.x() {
     : '${_f}... # export functions ${_f}...'
-    declare -Agx __bashenv_fx
+    declare -Aigx __bashenv_fx
     for _f in "$@"; do
         declare -fx ${_f} && __bashenv_fx["${_f}"]="$(date +"%s")" || return $(u.error "${_f} not exported")
     done
 }
 f.x f.x
+
+f.x.reset() { declare -Axig __bashenv_fx=(); }
+f.x f.x.reset
+
+f.x.keys() {
+    : '#> return all functions loaded (so far)'
+    declare -Aigx __bashenv_fx
+    printf '%s\n' ${!__bashenv_fx[@]}
+}
+f.x f.x.keys
+
+f.x.match() (
+    : '${prefix:-""} #> echo all bashenv functions matching ${prefix} '
+    f.x.keys | command grep -E "$1"
+)
+f.x f.x.match
+
+f.x.value() {
+    declare -Aigx __bashenv_fx
+    echo ${__bashenv_fx["$1"]};
+}
+f.x f.x.value
+
+f.x.items() (
+    local _fmt=${1:-'[%s]=%s '}
+    for _key in $(f.x.keys); do
+        printf "${_fmt}" ${_key} $(f.x.value ${_key})
+    done
+)
+f.x f.x.items
+
+f.x.item() (
+    local _value=$(f.x.value ${1:?"${FUNCNAME} expecting a key"})
+    local _fmt=${2:-'%s %s\n'}
+    [[ -n "${_value}" ]] || return $(u.error "${FUNCNAME} no value for key '$1'")
+    printf "${_fmt}" $1 ${_value}
+)
+f.x f.x.item
 
 # handle function switches like --var or --var=value
 # usage: --switch=*) eval case.update "${_a}";;
@@ -274,39 +311,32 @@ sourced() {
     local _s=${1:-${BASH_SOURCE[1]}}
     [[ -z "${_s}" ]] && return $(u.error "${FUNCNAME} expecting a pathname")
     local _pn="$(realpath -Lm ${_s})"
+    declare -Aixg __bashenv_sourced
     __bashenv_sourced["${_pn}"]=$(date +"%s")
 }
 f.x sourced
-
-loaded() {
-    local _s=${1:-${BASH_SOURCE[1]}}
-    [[ -z "${_s}" ]] && return $(u.error "${FUNCNAME} expecting a pathname")
-    local _pn="$(realpath -Lm ${_s})"
-    __bashenv_sourced["${_pn}"]=$(date +"%s")
-    echo fix ${BASH_SOURCE[1]}:${BASH_LINENO[1]} >&2    
-}
-f.x loaded
-
 
 sourced.when() {
     local _s=${1:-${BASH_SOURCE[1]}}
     [[ -z "${_s}" ]] && return $(u.error "${FUNCNAME} expecting a pathname")
     local _pn="$(realpath -Lm ${_s})"
+    declare -Aixg __bashenv_sourced
     local -i _timestamp=${__bashenv_sourced["${_pn}"]}
     echo ${_timestamp}
 }
 f.x sourced.when
 
-sourced.pathnames() { for _pn in "${!__bashenv_sourced[@]}"; do printf '%s\n' ${_pn}; done; }
+sourced.pathnames() {
+    declare -Aixg __bashenv_sourced
+    for _pn in "${!__bashenv_sourced[@]}"; do printf '%s\n' ${_pn}; done
+}
 f.x sourced.pathnames
 
-sourced.times() { for _pn in "${!__bashenv_sourced[@]}"; do printf '%s %s\n' ${_pn} ${__bashenv_sourced["${_pn}"]}; done; }
+sourced.times() {
+    declare -Aixg __bashenv_sourced
+    for _pn in "${!__bashenv_sourced[@]}"; do printf '%s %s\n' ${_pn} ${__bashenv_sourced["${_pn}"]}; done
+}
 f.x sourced.times
-
-f.loaded.list() (
-    f.loaded | command grep -e "\.loaded$"
-)
-f.x f.loaded.list
 
 
 # readline;
@@ -316,7 +346,7 @@ readline.bind() (
     # grep --quiet --no-messages --fixed-strings \"${_key_sequence}\" >> ~/.inputrc
     bind -x $(printf '"%s":%s' ${_key_sequence} ${_function})
 )
-f.complete readline.bind
+f.x readline.bind
 
 
 
@@ -407,18 +437,6 @@ __u.map.mkall.complete() {
 f.complete u.map.mkall
 
 
-# f.loaded
-# f.loaded() {
-#     : '#> return all functions loaded (so far)'
-#     printf '%s\n' ${!__bashenv_loaded[@]}
-# }
-# f.complete f.loaded
-
-# f.loaded.match
-# f.loaded.match() {
-#     : '${prefix:-""} #> echo all bashenv functions matching ${prefix} '
-#     f.loaded | command grep -e "^$1"
-# }
 # __f.loaded.match.complete() {
 #     local _command=$1 _word=$2 _previous_word=$3
 #     local -i _position=${COMP_CWORD} _arg_length=${#COMP_WORDS[@]}
