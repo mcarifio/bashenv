@@ -9,7 +9,7 @@ example.options() (
     set -Eeuo pipefail; shopt -s nullglob
     echo -e "\n\n** ${FUNCNAME} unparsed args: " "$@" >&2 
 
-    local -A _flags=(
+    local -A _known=(
         [bool]=0
         [var]='default_var'
         [varo]='default_varo'
@@ -21,7 +21,7 @@ example.options() (
                              
    
     echo "** ${FUNCNAME} keywords initialized:" >&2
-    declare -p _flags _many _pairs >&2
+    declare -p _known _many _pairs >&2
 
     for _a in "${@}"; do
         case "${_a}" in
@@ -36,23 +36,23 @@ example.options() (
                  local _key="${BASH_REMATCH[2]}" _value="${BASH_REMATCH[4]:-1}"
                  [[ -z "${_key}" && -n "${_value}" ]] && return $(u.error "${FUNCNAME} switch '${_a}' has no key")
                  declare -p _key _value >&2
-                 [[ -v _flags["${_key}"] ]] || return $(u.error "${FUNCNAME} '--${_key}' is not a valid switch")
-                 _flags["${_key}"]="${_value}";; 
+                 ## [[ -v _known["${_key}"] ]] && _known["${_key}"]="${_value}" || _unknown+="${_a} "  ## accumulate unknown switches
+                 [[ -v _known["${_key}"] ]] && _known["${_key}"]="${_value}" || return $(u.error "${FUNCNAME} '--${_key}' is not a valid switch");;
             *) break;;
         esac
         shift
     done
 
     echo "** ${FUNCNAME} args parsed" >&2
-    declare -p _flags _many _pairs >&2
+    declare -p _known _many _pairs >&2
 
     echo "** ${FUNCNAME} check args" >&2
-    [[ -v _flags[var] ]] || return $(u.error "${FUNCNAME} --var=something is required")
+    [[ -v _known[var] ]] || return $(u.error "${FUNCNAME} --var=something is required")
 
-    (( _flags[bool] > -1 )) || return $(u.error "${FUNCNAME} _bool is ${_bool}, expecting _bool > -1")
+    (( _known[bool] > -1 )) || return $(u.error "${FUNCNAME} _bool is ${_bool}, expecting _bool > -1")
     
     echo "** ${FUNCNAME} all options" >&2
-    declare -p _flags _many _pairs >&2
+    declare -p _known _many _pairs >&2
     
     # assign remaining arguments
     local _first="${1:?\"${FUNCNAME} expecting first argument\"}"; shift
@@ -74,13 +74,16 @@ example.options() (
 
 simple.options() (
     set -Eeuo pipefail; shopt -s nullglob
-    local -A _flags=(
+    # known flags with default values
+    local -A _known=(
         [bool]=0
         [var]='default_var' ## required
         [varo]='default_varo'
         [doo]='default doo'
         [dot.dot]=..
     )
+    # unknown flags that are acculated and passed through in the body
+    local _unknown=''
 
     for _a in "${@}"; do
         case "${_a}" in
@@ -88,17 +91,17 @@ simple.options() (
             --*) [[ "${_a}" =~ ^--(([^=]+)?(=(.+))?)$ ]] || return $(u.error "${FUNCNAME} re failed")
                  local _key="${BASH_REMATCH[2]}" _value="${BASH_REMATCH[4]:-1}"
                  [[ -z "${_key}" && -n "${_value}" ]] && return $(u.error "${FUNCNAME} switch '${_a}' has no key")
-                 [[ -v _flags["${_key}"] ]] || return $(u.error "${FUNCNAME} '--${_key}' is not a valid switch")
-                 _flags["${_key}"]="${_value}";; 
+                 ## [[ -v _known["${_key}"] ]] && _known["${_key}"]="${_value}" || return $(u.error "${FUNCNAME} '--${_key}' is not a valid switch");;
+                 [[ -v _known["${_key}"] ]] && _known["${_key}"]="${_value}" || _unknown+="${_a} ";;
             *) break;;
         esac
         shift
     done
 
     # var required
-    [[ -v _flags[var] ]] || return $(u.error "${FUNCNAME} --var=something is required")
+    [[ -v _known[var] ]] || return $(u.error "${FUNCNAME} --var=something is required")
     # bool must be in range
-    (( _flags[bool] > -1 )) || return $(u.error "${FUNCNAME} _bool is ${_bool}, expecting _bool > -1")
+    (( _known[bool] > -1 )) || return $(u.error "${FUNCNAME} _bool is ${_bool}, expecting _bool > -1")
     
     # positional arguments: first two are required
     local _first="${1:?\"${FUNCNAME} expecting first argument\"}"; shift
@@ -107,7 +110,7 @@ simple.options() (
     local -a _rest=( "$@" )
 
     # body
-    declare -p _flags _first _second _rest
+    declare -p _known _unknown _first _second _rest
 )
 
     

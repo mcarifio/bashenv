@@ -1,5 +1,5 @@
 set -Eeuo pipefail; shopt -s nullglob
-# set -x; source $(u.here)/../binstall.source.sh
+source $(u.here)/../binstall.source.sh
 
 binstalld.dispatch() (
     set -Eeuo pipefail; shopt -s nullglob

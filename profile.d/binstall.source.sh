@@ -450,6 +450,33 @@ binstall.git() (
 )
 f.x binstall.git
 
+binstall.npm() (
+    set -Eeuo pipefail; shopt -s nullglob
+    # known flags with default values
+    local -A _known=(
+        [pkg]='' ## required
+    )
+    local _unknown=''
+
+    for _a in "${@}"; do
+        case "${_a}" in
+            --) shift; break;;
+            --*) [[ "${_a}" =~ ^--(([^=]+)?(=(.+))?)$ ]] || return $(u.error "${FUNCNAME} re failed")
+                 local _key="${BASH_REMATCH[2]}" _value="${BASH_REMATCH[4]:-1}"
+                 [[ -z "${_key}" && -n "${_value}" ]] && return $(u.error "${FUNCNAME} switch '${_a}' has no key")
+                 [[ -v _known["${_key}"] ]] && _known["${_key}"]="${_value}" || _unknown+="${_a} ";;
+            *) break;;
+        esac
+        shift
+    done
+
+    [[ -n "${_known[pkg]}" ]] || return $(u.error "${FUNCNAME} expecting --pkg=something")
+    npm install -g npm
+    npm install -g ${_known[pkg]} ${_unknown} $@
+)
+f.x binstall.npm
+
+
 binstall.installer() (
     set -Eeuo pipefail
     local _pkg=${1:?"${FUNCNAME} expecting a _pkg"}
