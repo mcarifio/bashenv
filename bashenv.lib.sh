@@ -392,6 +392,14 @@ f.x readline.bind
 # )
 
 
+# usage: local -Ai _source=([one]=1 [two]=2)
+#        eval $(A.clone _target $(declare -p _source))
+#        declare -p _target ## copy of _source
+A.clone() (
+    : '${_new_aaname} ${_old_aaname} [ix;] # create '
+    [[ "$(declare -p ${2:?'expecting a declare'})" =~ ^declare[[:space:]]-([[:alpha:]]+)[[:space:]][^=]+=\((.*+)\) ]] && { echo -n "declare -${BASH_REMATCH[1]/x/} ${1}=("; printf '%s ' ${BASH_REMATCH[2]}; echo ")"; }
+)
+f.x A.clone;
 
 # TODO mike@carif.io: rename u.map to f.map
 # u.map
