@@ -41,7 +41,7 @@ mksearchable() (
         sudo chown ${USER}:${USER} "${_db}"
     fi
 
-    [[ -n "${_fname}" ]] && printf '%s() ( locate --database "%s" "$@"; ); declare -fx %s;' ${_fname} "${_db}" ${_fname}
+    [[ -n "${_fname}" && -r "${_db}" ]] && printf '%s() ( locate --database "%s" "$@"; ); f.x %s;' ${_fname} "${_db}" ${_fname}
 )
 
 main() (

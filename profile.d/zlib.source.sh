@@ -250,7 +250,19 @@ zlib.mv.all() (
 f.x zlib.mv
 
 zlib.env() {
-    source <(mksearchable.sh --regenerate --fname=e.locate "$(zlib.root)")
+    # source <(mksearchable.sh --regenerate --fname=e.locate "$(zlib.root)")
+    local _regenerate=''
+    for _a in "${@}"; do
+        case "${_a}" in
+            --regenerate) _regenerate='--regenerate ';;
+            --) shift; break;;
+            --*) return $(u.error "${FUNCNAME} received unknown switch '${_a}', stopping.") 1;;
+            *) break;;
+        esac
+        shift
+    done
+    
+    source <(mksearchable.sh ${_regenerate} --fname=e.locate "$(zlib.root)")
 }
 f.x zlib.env
 
