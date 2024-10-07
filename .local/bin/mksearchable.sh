@@ -33,11 +33,14 @@ mksearchable() (
 
     local -r _root="${1:-$(realpath -Lm ${0%/*}/..)}"; shift || true
     [[ -z "${_fname}" ]] && _fname=${_root##*/}.locate
-    local -r _db="${1:-${_root}/${_fname}.db}}"; shift || true
+    local -r _db=$(realpath -Lm "${1:-${_root}/../${_fname}.db}"); shift || true
 
     # index ${_root}
-     [[ ! -r "${_db}" || (( _regenerate )) ]] && \
-         sudo updatedb --require-visibility=yes --output="${_db}" --database-root="${_root}"
+    if [[ ! -r "${_db}" || (( _regenerate )) ]]; then
+        sudo updatedb --require-visibility yes --output "${_db}" --database-root "${_root}"
+        sudo chown ${USER}:${USER} "${_db}"
+    fi
+
     [[ -n "${_fname}" ]] && printf '%s() ( locate --database "%s" "$@"; ); declare -fx %s;' ${_fname} "${_db}" ${_fname}
 )
 
