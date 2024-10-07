@@ -356,45 +356,6 @@ readline.bind() (
 )
 f.x readline.bind
 
-
-
-# u -- utility functions
-
-# Not working. Doesn't side effect _options associative array.
-# u.parse() {
-#     : 'local -A _my_options=([one]=1 [two]=2); local -a _rest=( $(u.parse _my_options --one=won --three=3 -- x y) ) # see _u.parse.example()'
-#     local -n _options=${1:?'expecting an associative array'}; shift
-#     local -i _position=0
-#     local -a _line=( "$@" )
-#     if (( ${#_line[@]} )) ; then
-#         for _a in "${_line[@]}"; do
-#             case "${_a}" in
-#                 --) shift; ((++_position)); break;;
-#                 # --something=some_value => _options[something]=some_value
-#                 --*=*) [[ "${_a}" =~ --([^=]+)=(.+) ]] && _options[${BASH_REMATCH[1]}]="${BASH_REMATCH[2]}";;
-#                 # --something => _options[something]=1
-# 	        --*) _options[${_a:2}]=1;;
-#                 *) break;;
-#             esac
-#             shift
-#             ((++_position))
-#         done
-#     fi
-#     # printf '%s ' ${_line[@]:${_position}}
-# }
-# f.x u.parse
-
-# _u.parse.example() (
-#     declare -A _o=([author]=$USER)
-#     declare -a _rest=( $(u.parse _o --trace=1 --author=$HOSTNAME+$USER --foo=bar -- one two three) )
-#     printf '%s ' ${FUNCNAME}; declare -p _o
-#     printf '%s ' ${_rest[@]}
-# )
-
-
-# usage: local -Ai _source=([one]=1 [two]=2)
-#        eval $(A.clone _target $(declare -p _source))
-#        declare -p _target ## copy of _source
 A.clone() (
     : '${_new_aaname} ${_old_aaname} [ix;] # create '
     [[ "$(declare -p ${2:?'expecting a declare'})" =~ ^declare[[:space:]]-([[:alpha:]]+)[[:space:]][^=]+=\((.*+)\) ]] && { echo -n "declare -${BASH_REMATCH[1]/x/} ${1}=("; printf '%s ' ${BASH_REMATCH[2]}; echo ")"; }

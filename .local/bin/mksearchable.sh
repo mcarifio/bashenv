@@ -12,49 +12,37 @@ set -Eeuo pipefail; shopt -s nullglob
 # mksearchable --function --name=foo ~/Documents/e names the bash function `foo`.
 
 mksearchable() (
-    : '[${_root} [${_db}]] ## generate plocate database at pathname _db of content rooted at pathname _root'
+    : '[${_root}] ## generate plocate database at pathname _db of content rooted at pathname _root'
     set -Eeuo pipefail; shopt -s nullglob
 
     # parse flags
-    local -i _function=0 _fx=0 _regenerate=0
-    local _name='' # _db=''
+    local -i _regenerate=0
+    local _fname=''
     
-    if (( ${#@} )) ; then
-        for _a in "${@}"; do
-            case "${_a}" in
-		--function) _function=1;;
-                --function=*) _function=1; _fx=1;;
-                --name=*) _name=${_a##*=};;
-                --regenerate) _regenerate=1;;
-                # --db=*) _db=${_a##*=};;
-                --) shift; break;;
-                *) break;;
-            esac
-            shift
-        done
-    fi
+    for _a in "${@}"; do
+        case "${_a}" in
+            --fname=*) _fname=${_a##*=};;
+            --regenerate) _regenerate=1;;
+            # --db=*) _db=${_a##*=};;
+            --) shift; break;;
+            --*) return $(u.error "${FUNCNAME} received unknown switch '${_a}', stopping.") 1;;
+            *) break;;
+        esac
+        shift
+    done
 
     local -r _root="${1:-$(realpath -Lm ${0%/*}/..)}"; shift || true
-    [[ -z "${_name}" ]] && _name=${_root##*/}
-    local -r _fname=${_name}.locate
-    # [[ -z "${_db}" ]] && _db="${_root}/${_name}.locate.db}"
-    local -r _db="${2:-${_root}/${_name}.locate.db}}"
+    [[ -z "${_fname}" ]] && _fname=${_root##*/}.locate
+    local -r _db="${1:-${_root}/${_fname}.db}}"; shift || true
 
     # index ${_root}
-    [[ ! -r "${_db}" || (( _regenerate )) ]] && updatedb --require-visibility yes --output "${_db}" --database-root "${_root}"
-
-    if (( _function )); then
-        printf '%s() ( locate --database "%s" "$@"; );' ${_fname} "${_db}"
-        (( _fx )) && printf 'declare -fx %s;' ${_fname}
-        echo
-    else
-        echo "${_db}"
-    fi    
+     [[ ! -r "${_db}" || (( _regenerate )) ]] && \
+         sudo updatedb --require-visibility=yes --output="${_db}" --database-root="${_root}"
+    [[ -n "${_fname}" ]] && printf '%s() ( locate --database "%s" "$@"; ); declare -fx %s;' ${_fname} "${_db}" ${_fname}
 )
 
 main() (
-    (( ${#@} )) && mksearchable "$@" || mksearchable --function=fx
+    mksearchable "$@"
 )
 
-# usage: source <(mksearchable --function=fx [${_root}])
 main "$@"

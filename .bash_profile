@@ -1,15 +1,12 @@
 # .bash_profile
 
-next() ( printf '%s %s\n' ${1:?"${FUNCNAME} needs an initializer name"} "[--trace] ## ${FUNCNAME}" >&2; ) 
-
-
 bashenv.start() {
+    : '${_initializer} ## the function that initializes the bash environment'
+    # _initializer is a little misleading since $(bashenv.root)/*.lib.sh is sourced regardless.
+
     local _bashenv="$(dirname $(realpath -Lm ${BASH_SOURCE}))" ## .bash_profile is a symlink to bashenv/.bash_profile
-    # declare -p _bashenv
     local _initializer=${1:-${FUNCNAME%.*}.init}
-    # declare -p _initializer
     local _pathname="${HOME}/${_initializer}"
-    # declare -p _pathname
 
     # Source all the local libraries. Unfortunately order matters, so this has limited usefulness.
     for _l in ${_bashenv}/*.lib.sh; do
@@ -19,7 +16,7 @@ bashenv.start() {
 
     if [[ -n "${SSH_CONNECTION}" ]]; then
         echo "${HOSTNAME} ssh connection ${SSH_CONNECTION}" >&2
-        next "${_initializer}"
+        printf '%s\n' "${_initializer} [--trace] ## next" >&2
         return 0
     fi
     
@@ -28,9 +25,9 @@ bashenv.start() {
         echo "${_initializer} $(< ${_pathname}) ## found ${_pathname}" >&2
         ${_initializer} $(< ${_pathname})
     else
-        next "${_initializer}"
+        printf '%s\n' "${_initializer} [--trace] ## next" >&2
     fi
 }
+f.x bashenv.start
 
 bashenv.start bashenv.init
-# bashenv.init.succeeded returns the status of the last bashenv.init call

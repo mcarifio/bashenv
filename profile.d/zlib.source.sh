@@ -132,7 +132,7 @@
 
 zlib.root() (
     : '[${_folder}...] # return the first folder that actually exists or '
-    f.folder ${@:-/run/media/${USER}/home/${USER}/Documents/e ${HOME}/Documents/e}; )
+    path.folder ${@:-/run/media/${USER}/home/${USER}/Documents/e ${HOME}/Documents/e}; )
 f.x zlib.root
 
 zlib.category() (
@@ -246,40 +246,12 @@ zlib.mv.all() (
         zlib.mv "${_src}" $(zlib.target '' "${_src}") || true
     done
 )
+
 f.x zlib.mv
 
-zlib.categorize.all() (
-    local _category=${1:?'expecting a category'}; shift
-    for _f in "$@"; do
-	_src=${_f%%*/}
-	declare -a _parts=( ${_src//./ } )
-	local -i _start=1
-	(( ${#_parts[@]} > 2 )) && _start=2
-	local _type=${_parts[1]}
-	[[ ${_type} != pdf && ${_type} != epub ]] && continue
-	local _target=${_parts[0]}.${_category}$(printf '.%s' ${_parts[@]:${_start}})
-	mv -v ${_f} ${_target}
-    done
-)
-f.x zlib.categorize.all
-
-zlib.cat.tree() (
-    : '${_root:-$PWD} # add/change the suffix of every .pdf/.epub file in a tree to match its directory'
-    # foo/something.bar.pdf -> foo/something.foo.pdf
-    for _f in $(find ${1:-${PWD}} -type f -name \*.pdf -o -name \*.epub); do
-        local _cat=$(basename $(dirname ${_f}))
-	local _src=${_f%%*/}
-	declare -a _parts=( ${_src//./ } )
-	local -i _start=1
-	(( ${#_parts[@]} > 2 )) && _start=2
-	local _type=${_parts[1]}
-	local _target=${_parts[0]}.${_cat}$(printf '.%s' ${_parts[@]:${_start}})
-	mv -v ${_f} "${_target}"
-    done    
-)
-f.x zlib.cat.tree
-
-zlib.env() { source <(mksearchable.sh --regenerate --function=fx --name=e.locate "$(zlib.root)"); }
+zlib.env() {
+    source <(mksearchable.sh --regenerate --fname=e.locate "$(zlib.root)")
+}
 f.x zlib.env
 
 sourced || true
