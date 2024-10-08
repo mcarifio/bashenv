@@ -2,13 +2,9 @@
 # invoked by ~/.config/autostart.desktop
 
 set -Eeuo pipefail
-shopt -s nullglob
-[[ "$0" = */bashdb ]] && shift
 
 # Does gnome autostart login first?
-bashenv=$(bashenv.root 2>/dev/null || echo ${HOME}/bashenv/.bash_profile.d)
-# source ${bashenv}/desktop.sh
-# source ${bashenv}/ssh.sh
+_bashenv=$(bashenv.root 2>/dev/null || echo ${HOME}/bashenv/.bash_profile.d)
 
 sudo.alacritty() (
     local _title=$1; shift || true
@@ -35,27 +31,16 @@ d.run() (
 )
 
 
-
-
-# start apps
-
-# emacs client
-# ec
-
-# wayland clipboard
-# desktop.run copyq.desktop
-# https://copyq.readthedocs.io/en/latest/known-issues.html
-# QT_QPA_PLATFORM=xcb /usr/bin/copyq --start-server hide
-
-
 # thunderbird email client
-desktop.run mozilla-thunderbird
+# desktop.run thunderbird
+thunderbird &
 
 # gnome-terminal
 desktop.run Terminal
 
 # slack
 # desktop.run Slack
+slack &
 
 # desktop.run Tabby
 
@@ -66,19 +51,20 @@ desktop.run Terminal
 # local terminator
 # desktop.run terminator-spider
 # remote terminators
-d.run ${HOSTNAME} milhous clubber
+# d.run ${HOSTNAME} milhous clubber
+d.run ${HOSTNAME} slipjack algernon
 
 # can't have too many browsers
 # chrome browser
 desktop.run google-chrome
 # edge browser, flatpak
-desktop.run Edge
+desktop.run microsoft-edge
 # opera
 # opera &
 # chromium
 # desktop.run chromium-browser
 # vivaldi
-# desktop.run vivaldi
+desktop.run vivaldi
 
 # @install/bash: { sudo flatpak install https://github.com/atlas-engineer/nyxt/releases/download/3.3.0/nyxt-3.3.0.flatpak; }
 # @doc: { https://nyxt.atlas.engineer/documentation }
@@ -95,10 +81,10 @@ desktop.run Edge
 # desktop.run caprine
 
 # dropbox
-desktop.run dropbox
+# desktop.run dropbox
 
 # morgan
-desktop.run morgen --hidden
+# desktop.run morgen --hidden
 
 # rdp client
 # desktop.run Remmina

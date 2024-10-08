@@ -2,14 +2,13 @@ ${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
 
 thunderbird() (
     set -Eeuo pipefail; shopt -s nullglob
-    local -i _log=0 _default_log_pathname=/tmp/${FUNCNAME}-$$.log _log_pathname=''
+    local -i _log=0
+    local _default_log_pathname=/tmp/${FUNCNAME}-$$.log _log_pathname=''
     for _a in "${@}"; do
         case "${_a}" in
             --log) _log=1; _log_pathname=${_default_log_pathname};;
             --log=*) _log=1; _log_pathname="${_a##*=}";;
             --) shift; break;;
-            # --*) break;; ## break on unknown switch, pass it along
-            # --*) >&2 echo "${FUNCNAME}: unknown switch ${_a}, stop processing switches"; break;;
             --*) return $(u.error "${FUNCNAME} unknown switch '${_a}', stopping");; ## error on unknown switch
             *) break;;
         esac
