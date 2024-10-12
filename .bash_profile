@@ -28,6 +28,7 @@ bashenv.start() {
         printf '%s\n' "${_initializer} [--trace] ## next" >&2
     fi
 }
-f.x bashenv.start
 
 bashenv.start bashenv.init
+f.x bashenv.start
+
