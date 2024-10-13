@@ -1,135 +1,5 @@
 # ${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
 
-#---
-# pdf.mv() {
-#     # if [[ -r "$1" ]]; then
-#     #   >&2 printf "'%s' not found\n" "$1"
-#     #   return 1
-#     # fi
-#     : pdf.mv ${_src} ${_location} [${_prefix}]
-#     local _src="$1"
-#     local _prefix="${2:-$(basename ${_src} .pdf)}"
-#     local _location="${3:-${PWD}}"
-#     local _date=$(pdf.creationdate "${_src}")
-#     if [[ -z "${_date}" ]]; then
-#         printf >&2 "no creation date found for %s\n" "${_src}"
-#         return 1
-#     fi
-
-#     mv -v "${_src}" "$(md ${_location})/${_prefix}-${_date}.pdf"
-# }
-# f.x pdf.mv
-
-# zlib.title() {
-#     local _title=${1:?'expecting a pathname'}
-#     _title=${_title%%---*}
-#     if [[ "${_title}" =~ ^([^[[:punct:]]]+)$ ]]; then
-#         _title=${BASH_REMATCH[1]}
-#     fi
-#     _title=${_title,,}
-#     _title=${_title// /-}
-#     echo ${_title}
-# }
-# f.x zlib.title
-
-# zlib.lastname0() {
-#     if [[ "$1" =~ [[:space:]]by[[:space:]][a-zA-Z]+[[:space:]]([a-zA-Z]+) ]]; then
-#         echo ${BASH_REMATCH[1],,}
-#     fi
-# }
-
-# # fix later
-# zlib.lastname() {
-#     local _pathname=${1:?'need a pathname'}
-#     [[ -r "${_pathname}" ]] || {
-#         echo >&2 "'${_pathname}' not readable."
-#         return 1
-#     }
-#     local _result=$(pdf.author "${_pathname}" &>/dev/null) || true
-#     [[ -n "${_lastname}" ]] && {
-#         echo ${_lastname}
-#         return 0
-#     }
-#     if [[ "${_pathname}" =~ ---([^[[:punct:]]+).*--- ]]; then
-#         declare -a _name=(${BASH_REMATCH[1],,})
-#         echo ${_name[-1]}
-#     fi
-# }
-
-# zlib.date() {
-#     local _pathname=${1:?'need a pathname'}
-#     [[ -r "${_pathname}" ]] || {
-#         echo >&2 "'${_pathname}' not readable."
-#         return 1
-#     }
-#     local _result=$(pdf.creationdate "${_pathname}" &>/dev/null) || true
-#     if [[ -n "${_result}" ]]; then
-#         echo ${_result}
-#     elif [[ "${_pathname}" =~ ---([[:digit:]]{4}) ]]; then
-#         echo ${BASH_REMATCH[1],,}
-#     fi
-# }
-# f.x zlib.date
-
-# zlib.mv() (
-#     # zlib.mv ${_src} ${_dir} [${_title} [${_lastname} [${_yyyy}]]]
-#     # zlib.mv [--dir=pathname] [--title=prefix] [--author=name] [--date=yyyy] doc.{epub,pdf}
-
-#     set -Eeuo pipefail
-#     local _dir="${PWD}" _title="" _lastname="" _date=""
-#     if ((${#@})); then
-#         for _a in "${@}"; do
-#             case "${_a}" in
-#             --dir=*) _dir="${_a#--dir=}" ;;
-#             --title=*) _title="${_a#--title=}" ;;
-#             --lastname=*) _lastname="${_a#--lastname=}" ;;
-#             --date=*) _date="${_a#--date=}" ;;
-#             --)
-#                 shift
-#                 break
-#                 ;;
-#             *) break ;;
-#             esac
-#             shift
-#         done
-#     fi
-
-#     local _src="${1:?'expecting a file name'}"
-#     [[ -e "${_src}" ]] || {
-#         echo >&2 "${_src} not found"
-#         return 1
-#     }
-
-#     [[ -e "${_dir}" && ! -d "${_dir}" ]] && {
-#         echo >&2 "${_dir} is a file"
-#         return 1
-#     }
-#     [[ ! -d "${_dir}" ]] && {
-#         echo >&2 "${_dir} does not exist"
-#         return 1
-#     }
-#     [[ -z "${_title}" ]] && _title=$(zlib.title "${_src}")
-#     [[ -z "${_lastname}" ]] && _lastname=$(zlib.lastname "${_src}")
-#     [[ -z "${_date}" ]] && _date=$(zlib.date "${_src}")
-#     local _ext=${_src##*.}
-#     local _dest="${_dir}/${_title}-${_lastname}-${_date}.${_ext}"
-
-#     if [[ "${_ext}" = pdf ]]; then
-#         mv "${_src}" "${_dest}"
-#         xz "${_dest}"
-#         echo >&2 "${_dest}"
-#     else
-#         mv "${_src}" "${_dest}"
-#         echo >&2 "${_dest}"
-#     fi
-# )
-# f.x zlib.mv
-
-#---
-
-
-
-
 zlib.root() (
     : '[${_folder}...] # return the first folder that actually exists or '
     path.folder ${@:-/run/media/${USER}/home/${USER}/Documents/e ${HOME}/Documents/e}; )
@@ -236,9 +106,9 @@ zlib.mv() (
 f.x zlib.mv
 
 zlib.mv.all() (
-    : 'zlib.mv-all *.{pdf,epub} # mv all matching pathnames to a target based on the pathname "category"'
+    : 'zlib.mv.all *.*.{pdf,epub} # mv all matching pathnames to a target based on the pathname "category"'
     # _args, the command line arguments. Defaults to *.pdf *.epub
-    local -a _args=( "$@" ); [[ -z "${_args}" ]] && _args=( $(find . -type f -name \*.epub -o -name \*.pdf ! -path '* *') )
+    local -a _args=( "$@" ); [[ -z "${_args}" ]] && _args=( $(find . -type f -name \*.\*.epub -o -name \*.\*.pdf ! -path '* *') )
     for _src in ${_args[@]}; do
         # skip partial downloads
         local _part=$(echo $(dirname "${_src}")/$(path.basename "${_src}").*.${_ext}.part)
