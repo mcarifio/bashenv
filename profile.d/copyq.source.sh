@@ -1,7 +1,14 @@
 ${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
 
+
+# is "my" copyq running?
+copyq.running() ( pgrep -U $(id -u) -x ${FUNCNAME%.*} &> /dev/null; )
+
 copyq.run() (
-    set -Eeuo pipefail
+    set -Eeuo pipefail; shopt -s nullglob
+
+    copyq.running && return 0
+    
     local _flatpak=com.github.hluk.copyq
     if u.have copyq ; then
         QT_QPA_PLATFORM=xcb command copyq "$@"
