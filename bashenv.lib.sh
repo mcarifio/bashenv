@@ -78,7 +78,13 @@ f.status() {
 f.x f.status
 
 
-
+f.match() {
+    : '${_re} [x] ## find functions matching the regular expression, e.g. ^f\.match'
+    local _re=${1:?"${FUNCNAME} expecting a regular expression"}
+    local _x=${2:-}
+    declare -F${_x} | cut -d ' ' -f3 | grep -E "${_re}"
+}
+f.x f.match
 
 
 u.field() (
