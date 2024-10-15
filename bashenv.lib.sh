@@ -306,29 +306,27 @@ f.apply() (
 )
 f.complete f.apply
 
-# loaded0() {
-#     : 'make an exported function ${name}.loaded that always succeeds.'
-#     local _name="$(path.basename ${1:?'expecting a name'})"
-#     local _predicate=${_name}.loaded
-#     local _pathname=${_name}.pathname
-#     eval "${_predicate}() ( return 0; )"
-#     f.x ${_predicate}
-#     eval "${_pathname}() (echo $(realpath -s $1); )"
-#     f.x ${_pathname}
-# }
-# f.x loaded0
-
 sourced.reset() { declare -Aixg __bashenv_sourced=(); }
 f.x sourced.reset
 
-sourced() {
+sourced0() {
     local _s=${1:-${BASH_SOURCE[1]}}
     [[ -z "${_s}" ]] && return $(u.error "${FUNCNAME} expecting a pathname")
     local _pn="$(realpath -Lm ${_s})"
     declare -Aixg __bashenv_sourced
     __bashenv_sourced["${_pn}"]=$(date +"%s")
 }
+f.x sourced0
+
+sourced() {
+    local _s=${1:-${BASH_SOURCE[1]}}
+    [[ -z "${_s}" ]] && return $(u.error "${FUNCNAME} expecting a pathname")
+    local _pn="$(realpath -Lm ${_s})"
+    declare -Aixg __bashenv_sourced_from
+    __bashenv_sourced_from["${_pn}"]=$(date +"%s")
+}
 f.x sourced
+
 
 sourced.when() {
     local _s=${1:-${BASH_SOURCE[1]}}
@@ -767,45 +765,68 @@ f.x bashenv.is.tracing
 bashenv.is.elf() ( file --mime-type ${1:?'expecting a pathname'} | grep --silent application/x-executable; )
 f.x bashenv.is.elf
 
+
+
+# Since associative arrays can't be passed as arguments, generate functions instead. Yuck.
 # bashenv.A associate array "base"
 u.f2v() ( local -u _name=${1//./_}; echo ${_name}; )
 f.x u.f2v
 
-u.f2aa() { echo __${1//./_}; }; f.x u.f2aa
+u.f2aa() { echo __bashenv_${1//./_}; }; f.x u.f2aa
 u.aa2f() {
     local _aa=${1:?"${FUNCNAME} expecting an associating array"}
-    [[ "${_aa}" =~ __([^_]+)_(.+) ]] && echo ${BASH_REMATCH[1]}.${BASH_REMATCH[2]} || return $(u.error "${FUNCNAME} '${_aa}' not expected as __something_else")
+    [[ "${_aa}" =~ __bashenv_([^_]+)_(.+) ]] && echo ${BASH_REMATCH[1]}.${BASH_REMATCH[2]} || return $(u.error "${FUNCNAME} '${_aa}' not expected as __something_else")
 }; f.x u.aa2f
 
-bashenv.A() {
-    local -nx _An=${1:?"${FUNCNAME} expecting a global associative array name"}
-    local _key=${2:?"${FUNCNAME} expecting a key"}
-    [[ -z "${3:-}" ]] || _An["${_key}"]="$3"
-    echo ${_An["${_key}"]}
+bashenv.A.reset() {
+    local -ngx _An=${1:?"${FUNCNAME} expecting a global associative array name"}
+    _An=()
 }
-f.x bashenv.A
+
+bashenv.A.key() {
+    local -ngx _An=${1:?"${FUNCNAME} expecting a global associative array name"}
+    local _key=${2:?"${FUNCNAME} is expecting a key"}
+    [[ -v _An["${_key}"] ]]
+}
 
 bashenv.A.keys() {
-    local -nx _An=${1:?"${FUNCNAME} expecting a global associative array name"}
+    local -ngx _An=${1:?"${FUNCNAME} expecting a global associative array name"}
     printf '%s\n' ${!_An[@]};
 }
 f.x bashenv.A.keys
 
+bashenv.A.keymatch() {
+    local -ngx _An=${1:?"${FUNCNAME} expecting a global associative array name"}
+    local _re=${2:?"${FUNCNAME} is expecting a regular expression"}
+    printf '%s\n' ${!_An[@]} | grep -E "${_re}"
+}
+f.x bashenv.A.keymatch
+
+
+
+bashenv.A.value() {
+    local -ngx _An=${1:?"${FUNCNAME} expecting a global associative array name"}
+    local _key=${2:?"${FUNCNAME} is expecting a key"}
+    [[ -v _An["${_key}"] ]] && echo ${_An["${_key}"]} || return $(u.error "No key '${_key}' in ${_An}.")
+}
+f.x bashenv.A.value
+
 bashenv.A.values() {
-    local -nx _An=${1:?"${FUNCNAME} expecting a global associative array name"}
+    local -ngx _An=${1:?"${FUNCNAME} expecting a global associative array name"}
     printf '%s\n' ${_An[@]}
 }
 f.x bashenv.A.values
 
+
 bashenv.A.items() {
-    local -nx _An=${1:?"${FUNCNAME} expecting a global associative array name"}
+    local -ngx _An=${1:?"${FUNCNAME} expecting a global associative array name"}
     local -r _fmt=${2:-'[%s]=%s\n'};
     for _key in "${!_An[@]}"; do printf "${_fmt}" ${_key} ${_An["${_key}"]}; done
 }
 f.x bashenv.A.items
 
 bashenv.A.map() {
-    local -nx _An=${1:?"${FUNCNAME} expecting a global associative array name"}
+    local -ngx _An=${1:?"${FUNCNAME} expecting a global associative array name"}
     local _action=${2:-echo}
     u.have ${_action} || return $(u.error "${FUNCNAME} no action ${_action}")
     local -a _pair
@@ -818,49 +839,35 @@ bashenv.A.map() {
 }
 f.x bashenv.A.map
 
+
 bashenv.mkA() {
     local _aa=${1:?"${FUNCNAME} expecting a global associative array name"}
-    local -nx _An=${_aa}
+    local -ngx _An=${_aa}
     local _prefix=$(u.aa2f ${_aa})
-    eval $(printf '%s() { bashenv.A $(u.f2aa ${FUNCNAME}) ${1:?"${FUNCNAME} expecting a key"} ${2:-}; };' ${_prefix}); f.x ${_prefix}
-    eval $(printf '%s() { %s=(); };' ${_prefix}.reset ${_aa}); f.x ${_prefix}.reset
-    eval $(printf '%s() { bashenv.A.${FUNCNAME##*.} $(u.f2aa ${FUNCNAME%%.*}) ${2:-echo}; };' ${_prefix}.map); f.x ${_prefix}.map
 
-    for _method in ${_prefix}.{keys,values,items}; do
+    for _method in ${_prefix}.{reset,key,keymatch,keys,value,values,items,map}; do
         eval $(printf '%s() { bashenv.A.${FUNCNAME##*.} $(u.f2aa ${FUNCNAME%%.*}) $1; };' ${_method}); f.x ${_method}
     done
 }; f.x bashenv.mkA
 
 # sourced.from
-declare -Ax __sourced_from
-bashenv.mkA __sourced_from
+declare -Agx __bashenv_sourced_from
+bashenv.mkA __bashenv_sourced_from
 
-declare -Ax __sourced_action
-bashenv.mkA __sourced_action
+# sourced.action
+declare -Agx __bashenv_sourced_action
+bashenv.mkA __bashenv_sourced_action
 
-# 
 # sourced.status
-declare -Ax __sourced_status
-bashenv.mkA __sourced_status
-# sourced.status() { bashenv.A $(u.f2aa ${FUNCNAME}) ${1:?"${FUNCNAME} expecting a key"} ${2:-}; }; f.x sourced.status
-# sourced.status.reset() { __sourced_status=(); }; f.x sourced.status.reset
-# sourced.status.keys() { bashenv.A.${FUNCNAME##*.} $(u.f2aa ${FUNCNAME%.*}); }; f.x sourced.status.keys
-# sourced.status.values() { bashenv.A.${FUNCNAME##*.} $(u.f2aa ${FUNCNAME%.*}); };f.x sourced.status.values
-# sourced.status.items() {  bashenv.A.${FUNCNAME##*.} $(u.f2aa ${FUNCNAME%.*}); }; f.x sourced.status.items
-# sourced.status.map() { bashenv.A.${FUNCNAME##*.} $(u.f2aa ${FUNCNAME%.*}) ${2:-echo}; }; f.x sourced.status.map
+declare -Agx __bashenv_sourced_status
+bashenv.mkA __bashenv_sourced_status
 
 # sourced.when
-declare -Ax __sourced_when
-bashenv.mkA __sourced_when
-# sourced.when() { bashenv.A $(u.f2aa ${FUNCNAME}) ${1:?"${FUNCNAME} expecting a key"} ${2:-}; }; f.x sourced.when
-# sourced.when.reset() { __sourced_db_when=(); }; f.x sourced.when.reset
-# sourced.when.keys() { bashenv.A.${FUNCNAME##*.} $(u.f2aa ${FUNCNAME%.*}); }; f.x sourced.when.keys
-# sourced.when.values() { bashenv.A.${FUNCNAME##*.} $(u.f2aa ${FUNCNAME%.*}); };f.x sourced.when.values
-# sourced.when.items() {  bashenv.A.${FUNCNAME##*.} $(u.f2aa ${FUNCNAME%.*}); }; f.x sourced.when.items
-# sourced.when.map() { bashenv.A.${FUNCNAME##*.} $(u.f2aa ${FUNCNAME%.*}) ${2:-echo}; }; f.x sourced.when.map
+declare -Agx __bashenv_sourced_when
+bashenv.mkA __bashenv_sourced_when
 
-declare -Ax __bashenv_db
-bashenv.mkA __bashenv_db
+# declare -Ax __bashenv_db
+# bashenv.mkA __bashenv_db
 
 bashenv.paths() {
     path.add.all $(home)/go/bin $(home)/opt/*/current/bin $(home)/.config/*/bin \
@@ -904,6 +911,9 @@ bashenv.init() {
     f.status ${FUNCNAME} 0
 }
 f.x bashenv.init
+
+
+
 
 bashenv.init.succeeded() { return $(f.status ${FUNCNAME/.succeeded/}); }
 f.x bashenv.init.succeeded
@@ -1266,36 +1276,9 @@ source.mkguard() (
 )
 f.x source.mkguard
 
-sourced.missing() (
-    set -Eeuo pipefail; shopt -s nullglob
-    return $(u.error "${FUNCNAME} needs redoing")
-    
-    local -i _installer=0
-
-    if (( ${#@} )) ; then
-        for _a in "${@}"; do
-            case "${_a}" in
-                --install) _installer=1;;
-                --) shift; break;;
-                *) break;;
-            esac
-            shift
-        done
-    fi
-    
-    local _cmd=''
-    for _f in $(bashenv.folders); do
-        for _g in ${_f}/*.guard.sh; do
-            _cmd="$(path.basename ${_g%*/})"
-            u.have ${_cmd} && continue
-            printf '%s ' ${_cmd}
-            (( _installer )) || { echo; continue; }
-            printf '# '
-            printf '%s ' $(find $(bashenv.root) -name ${_cmd}.\*.install.sh -type f)
-            echo
-        done
-    done | sort | uniq
-)
+sourced.missing() {
+    for _s in $(bashenv.sources); do sourced.from.key ${_s} || echo ${_s}; done;
+}
 f.x sourced.missing
 
 sourced || true

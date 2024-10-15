@@ -518,9 +518,24 @@ binstall.installers() (
 )
 f.x binstall.installers
 
+binstall.missing() (
+    for _m in $(sourced.missing); do
+        local _guard=$(path.basename.part ${_m} 0)
+        local _installers=( $(binstall.installer ${_guard}) )
+        for _p in $(binstall.preference); do
+            local _installer="$(bashenv.binstalld)/${_guard}.${_p}.binstall.sh"
+            [[ -x "${_installer}" ]] || break
+            ${_installer } || true            
+        done        
+    done
+)
+f.x binstall.missing
+
+
+
 binstall.preference() (
     : 'the preference order for multiple binstallers'
-    echo dnf asdf cargo pip
+    echo dnf asdf cargo AppImage go pip npm sh curl git
 )
 f.x binstall.preference
 
@@ -529,6 +544,8 @@ binstall.installers.preferred() (
     return $(error "${FUNCNAME} tbs")
 )
 f.x binstall.installers.preferred
+
+
 
 sourced || true
 
