@@ -1,6 +1,8 @@
 ${1:-false} || u.haveP $(path.basename.part ${BASH_SOURCE} 0) || return 0
 
 terminator() (
+    : '--host=[${user}@]${host||ip} ...rest ## run terminator perhaps on another host'
+    set -Eeuo pipefail; shopt -s nullglob
     local _host=''
     for _a in "${@}"; do
         case "${_a}" in
@@ -14,7 +16,7 @@ terminator() (
 
     if [[ -n "${_host}" ]]; then
         local _title="${USER}@${HOSTNAME}"
-        ssh ${_host} ${FUNCNAME} --title="${_title}" --name="${_title}" "$@"
+        ssh -Y ${_host} ${FUNCNAME} --title="${_title}" --name="${_title}" "$@"
     else
         command ${FUNCNAME} "$@"
     fi
