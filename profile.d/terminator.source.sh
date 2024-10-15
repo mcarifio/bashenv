@@ -1,54 +1,66 @@
 ${1:-false} || u.haveP $(path.basename.part ${BASH_SOURCE} 0) || return 0
 
-nu() ( command ${FUNCNAME} "$@"; )
-f.x nu
+terminator() (
+    local _host=''
+    for _a in "${@}"; do
+        case "${_a}" in
+            --host=*) _host="${_a##*=}";;
+            --) shift; break;;
+            --*) break;; ## break on unknown switch, pass it along
+            *) break;;
+        esac
+        shift
+    done
 
-nu.doc.urls() ( echo ; ) # urls here
-f.x nu.doc.urls
+    if [[ -n "${_host}" ]]; then
+        local _title="${USER}@${HOSTNAME}"
+        ssh ${_host} ${FUNCNAME} --title="${_title}" --name="${_title}" "$@"
+    else
+        command ${FUNCNAME} "$@"
+    fi
+)
+f.x terminator
 
-nu.doc() (
+terminator.doc.urls() ( echo ; ) # urls here
+f.x terminator.doc.urls
+
+terminator.doc() (
     set -Eeuo pipefail; shopt -s nullglob
     for _u in $(${FUNCNAME}.urls); do xdg-open ${_u}; done
 )
-f.x nu.doc
+f.x terminator.doc
 
-nu.env() {
+terminator.env() {
     : '# called (once) by .bash_profile'
     true || return $(u.error "${FUNCNAME} failed")
 }
-f.x nu.env
+f.x terminator.env
 
-nu.session() {
+terminator.session() {
     : '# called by .bashrc'
     local -r _shell=${1:-$(u.shell)}
     local -r _cmd=${2:-${FUNCNAME%.*}}
     local -r _completions=/usr/share/bash-completion/completions
     source.if ${_completions}/${_cmd}.${_shell} ${_completions}/${_cmd}
 }
-f.x nu.session
+f.x terminator.session
 
-nu.installer() (
+terminator.installer() (
     set -Eeuo pipefail # DO NOT shopt -s nullglob
-    binstall.installer nushell
+    binstall.installer ${FUNCNAME%.*}
 )
-f.x nu.installer
+f.x terminator.installer
 
-nu.config.dir() ( echo "${HOME}/.config/${FUNCNAME%.*}"; )
-f.x nu.config.dir
-
-nu.config() ( echo "$(${FUNCNAME}.dir)/${FUNCNAME##*.}"; ) ## tbs
-f.x nu.config
-
-nu.config.dir() (
+terminator.config.dir() (
     set -Eeuo pipefail; shopt -s nullglob
     local _guard="${FUNCNAME%%.*}"
     local _dir="${HOME}/.config/${_guard}"
     [[ -d "${_dir}" ]] || return $(u.error "${FUNCNAME} '${_dir}' not found")
     echo ${_dir}
 )
-f.x nu.config.dir
+f.x terminator.config.dir
 
-nu.config() (
+terminator.config() (
     set -Eeuo pipefail; shopt -s nullglob
     local _guard="${FUNCNAME%%.*}"
     local _dir="$(${FUNCNAME}.dir)"
@@ -56,7 +68,7 @@ nu.config() (
     [[ -r "${_config}" ]] || return $(u.error "${FUNCNAME} '${_config}' not found")
     echo "${_config}"
 )
-f.x nu.config
+f.x terminator.config
 
 
 sourced || true
