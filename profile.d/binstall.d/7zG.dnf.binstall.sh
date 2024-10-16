@@ -1,0 +1,1 @@
+p7zip.dnf.binstall.sh

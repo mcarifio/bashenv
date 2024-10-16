@@ -1260,19 +1260,39 @@ sa.shutdown.all() (dnf.off milhouse clubber)
 f.x sa.shutdown.all
 
 source.mkguard() (
-    : '${_name} # create ${_name}.guard.sh in the right folder'
+    : '${_name} # create ${_name}.source.sh in the right folder'
     set -Eeuo pipefail; shopt -s nullglob
+
+    local -A _installer=()
+    for _a in "${@}"; do
+        case "${_a}" in
+            --kind=*) _installer[kind]="${_a##*=}";;
+            --pkg=*) _installer[pkg]="${_a##*=}";;
+            --) shift; break;;
+            --* | *) break;;
+        esac
+        shift
+    done
+
+    
     local -r _name=${1:?'expecting a name'}
-    local -r _kind=${2:-tbs}
     local -r _where="$(bashenv.root)/profile.d"
-    local -r _installd="${_where}/binstall.d"
     local -r _guard="${_where}/${_name}.source.sh"
-    local -r _install="${_installd}/${_name}.${_kind}.binstall.sh"
     [[ -f "${_guard}" ]] && return $(u.error "${_guard} already exists?")
     xzcat "${_where}/_template.source.sh.xz" | sed "s/\${g}/${_name}/g" > "${_guard}"
+    >&2 git -C "$(bashenv.root)" status ${_guard}
+
+    declare -p _installer
+    (( ${#_installer[@]} )) || return 0
+    local -r _kind=${_installer[kind]:-dnf}
+    local -r _pkg=${_installer[pkg]:-${_name}}
+    declare -p _kind _pkg
+    
+    local -r _installd="$(bashenv.binstalld)"
+    local -r _install="${_installd}/${_pkg}.${_kind}.binstall.sh"
     [[ -r "${_install}" ]] || cp --no-clobber "${_installd}/_template.tbs.binstall.sh" "${_install}"
-    >&2 git -C "$(bashenv.root)" status ${_guard} ${_install}
-    echo "${_guard}"
+    [[ "${_pkg}" = "${_name}" ]] || ln -srf ${_install} "${_installd}/${_name}.${_kind}.binstall.sh"
+    >&2 git -C "$(bashenv.root)" status ${_installd}
 )
 f.x source.mkguard
 
