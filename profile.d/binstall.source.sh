@@ -542,8 +542,7 @@ f.x binstall.npm
 
 binstall.installer() (
     set -Eeuo pipefail
-    local _pkg=${1:?"${FUNCNAME} expecting a _pkg"}
-    find $(bashenv.binstalld) -mindepth 1 -maxdepth 1 -name "*${_pkg}*.*.binstall.sh" -type f -executable | grep --invert-match '\.tbs\.'
+    binstall.installers ${1:?"${FUNCNAME} expecting a _pkg"}
 )
 f.x binstall.installer
 
@@ -575,13 +574,15 @@ binstall.mkbinstall() (
 f.x binstall.mkbinstall
 
 binstall.installers() (
-    : '${kind} #> echo ${kind} executable binstallers in all binstall*.d directories that are not tbs; kind defaults to *'
+    : '[${_pkg} [${kind}]] #> echo ${kind} executable binstallers in all binstall*.d directories that are not tbs; kind defaults to *'
     set -Eeuo pipefail; shopt -s nullglob
     local _suffix=${FUNCNAME%.*}.sh
     local _binstalld="$(bashenv.binstalld)"
-    local _name=*.${1:-*}.${_suffix}
+    local _name=${1:-*}.${2:-*}.${_suffix}
+    # EXMPL mike@carif.io: find
     # find switch order matters, depth first, then name the type, executable
     # find all executable installers that are not tbs (to be supplied)
+    # set -x    
     find "${_binstalld}" -mindepth 1 -maxdepth 1 -name "${_name}" -not -name \*.tbs.${_suffix} -type f -executable
 )
 f.x binstall.installers
