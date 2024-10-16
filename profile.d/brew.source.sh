@@ -1,4 +1,5 @@
 path.add /home/linuxbrew/.linuxbrew/bin
+
 ${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
 
 brew.env() {
@@ -13,7 +14,5 @@ brew.session() {
 }
 f.x brew.session
 
-# try to run once to avoid adding brew to PATH multiple times
-u.singleton brew.session
+sourced || true
 
-sourced

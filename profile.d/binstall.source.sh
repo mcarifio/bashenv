@@ -10,9 +10,46 @@ f.x binstall.tbs
 # https://formulae.brew.sh/formula/elan-init#default
 binstall.brew() (
     set -Eeuo pipefail; shopt -s nullglob
-    u.have brew && command brew install "$@"
+    local _cmd=${FUNCNAME##*.}
+    u.have ${_cmd}  || return $(u.error "${FUNCNAME}: ${FUNCNAME##*.} not on path, stopping.")
+
+    local _version=latest _toolchain='' _pkg='' _url=''    
+    for _a in "${@}"; do
+        case "${_a}" in
+	    --version=*) _version="${_a##*=}";;
+            --pkg=*) _pkg="${_a##*=}";;
+            --url=*) _url="${_a##*=}";;
+            --) shift; break;;
+            *) break;;
+        esac
+        shift
+    done    
+    [[ -z "${_pkg}" ]] && return $(u.error "${FUNCNAME} expecting --pkg=\${something}")    
+
+    command ${_cmd} install "$@"
 )
 f.x binstall.brew
+
+binstall.snap() (
+    set -Eeuo pipefail; shopt -s nullglob
+    local _cmd=${FUNCNAME##*.}
+    u.have ${_cmd}  || return $(u.error "${FUNCNAME}: ${FUNCNAME##*.} not on path, stopping.")
+    local _version=latest _toolchain='' _pkg='' _url=''    
+    for _a in "${@}"; do
+        case "${_a}" in
+	    --version=*) _version="${_a##*=}";;
+            --pkg=*) _pkg="${_a##*=}";;
+            --url=*) _url="${_a##*=}";;
+            --) shift; break;;
+            *) break;;
+        esac
+        shift
+    done
+    
+    [[ -z "${_pkg}" ]] && return $(u.error "${FUNCNAME} expecting --pkg=\${something}")    
+    sudo $(type -P ${_cmd}) install ${_pkg}  "$@"
+)
+f.x binstall.snap
 
 binstall.asdf() (
     : 'binstall.asdf [--version=latest] ${_plugin} [${_url}]'

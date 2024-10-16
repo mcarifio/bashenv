@@ -31,7 +31,7 @@ f.x ysh.session
 
 ysh.installer() (
     set -Eeuo pipefail
-    binstall.installer oils
+    realpath -Lm $(binstall.installer ${FUNCNAME%.*})
 )
 f.x ysh.installer
 
