@@ -476,9 +476,9 @@ f.x bashenv.root
 eval "bashenv.lib() ( echo $(realpath -P ${BASH_SOURCE}); )"
 f.x bashenv.lib
 
-bashenv.profiled() ( find $(bashenv.root) -mindepth 1 -maxdepth 1 -name profile*.d -type d; )
+bashenv.profiled() ( find $(bashenv.root) -mindepth 1 -maxdepth 1 -name profile\*.d -type d; )
 f.x bashenv.profiled
-bashenv.binstalld() ( find $(bashenv.root) -mindepth 1 -maxdepth 2 -name binstall*.d -type d; )
+bashenv.binstalld() ( find $(bashenv.root) -mindepth 1 -maxdepth 2 -name binstall\*.d -type d; )
 f.x bashenv.binstalld
 
 

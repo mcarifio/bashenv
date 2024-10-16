@@ -1,0 +1,1 @@
+terminator.dnf.binstall.sh

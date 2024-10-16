@@ -6,6 +6,6 @@ post.install() (
     sudo systemctl enable --now snapd.socket
 )
 
-binstalld.dispatch --kind=$(path.basename.part "$0" 1) --pkg=$(path.basename "$0") --postinstall=post.install "$@"
+binstalld.dispatch --kind=$(path.basename.part "$0" 1) --pkg=$(path.basename "$(realpath -Lm "$0")") --postinstall=post.install "$@"
 
 

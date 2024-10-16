@@ -302,6 +302,32 @@ binstall.dnf() (
 )
 f.x binstall.dnf
 
+binstall.dnf.pkg.cmd-pathnames() (
+    : '${pkg}... ## |> pathnames, e.g. /usr/bin/ysh'
+    set -Eeuo pipefail; shopt -s nullglob
+    rpm -ql "$@" | grep --extended-regexp '^/usr/s?bin/' | sort | uniq
+)
+f.x binstall.dnf.pkg.cmd-pathnames
+
+binstall.dnf.pkg.cmds() (
+    : '${pkg}... ## |> cmds'
+    set -Eeuo pipefail; shopt -s nullglob
+    basename -a $(binstall.dnf.pkg.cmd-pathnames "$@") | sort | uniq
+)
+f.x binstall.dnf.pkg.cmds
+
+binstall.dnf.installers-by-cmd() (
+    : '# relative symlink all dnf installers by their cmds. pkg must be installed'
+    set -Eeuo pipefail; shopt -s nullglob
+    for _installer in $(binstall.installers dnf); do
+        for _cmd in $(binstall.dnf.pkg.cmds $(path.basename.part ${_installer} 0)); do
+            ln -srv ${_installer} $(dirname ${_installer})/${_cmd}.dnf.binstall.sh || true
+        done
+    done                  
+)
+
+
+
 binstall.apt() (
     : '[--import=${url}]+ [--add-repo=${url}]+ pkg+'
     set -Eeuo pipefail; shopt -s nullglob
@@ -512,21 +538,28 @@ binstall.mkbinstall() (
 f.x binstall.mkbinstall
 
 binstall.installers() (
-    : '#> echo all executable binstallers in all binstall*.d directories that are not tbs'
+    : '${kind} #> echo ${kind} executable binstallers in all binstall*.d directories that are not tbs; kind defaults to *'
     set -Eeuo pipefail; shopt -s nullglob
-    find $(bashenv.binstalld) -mindepth 1 -maxdepth 1 -name \*.\*.${FUNCNAME%.*}.sh -type f -executable | grep --invert-match '\.tbs\.'
+    local _suffix=${FUNCNAME%.*}.sh
+    local _binstalld="$(bashenv.binstalld)"
+    local _name=*.${1:-*}.${_suffix}
+    # find switch order matters, depth first, then name the type, executable
+    # find all executable installers that are not tbs (to be supplied)
+    find "${_binstalld}" -mindepth 1 -maxdepth 1 -name "${_name}" -not -name \*.tbs.${_suffix} -type f -executable
 )
 f.x binstall.installers
+
+
 
 binstall.missing() (
     for _m in $(sourced.missing); do
         local _guard=$(path.basename.part ${_m} 0)
-        local _installers=( $(binstall.installer ${_guard}) )
+        local -a _installers=( $(binstall.installer ${_guard}) )
         for _p in $(binstall.preference); do
             local _installer="$(bashenv.binstalld)/${_guard}.${_p}.binstall.sh"
             [[ -x "${_installer}" ]] || break
-            ${_installer } || true            
-        done        
+            echo ${_installer} || true 
+        done
     done
 )
 f.x binstall.missing
@@ -535,7 +568,7 @@ f.x binstall.missing
 
 binstall.preference() (
     : 'the preference order for multiple binstallers'
-    echo dnf asdf cargo AppImage go pip npm sh curl git
+    echo dnf asdf cargo AppImage go pip npm sh curl git script
 )
 f.x binstall.preference
 

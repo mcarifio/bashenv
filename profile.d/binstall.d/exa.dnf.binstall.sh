@@ -1,0 +1,1 @@
+eza.dnf.binstall.sh

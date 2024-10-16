@@ -1,0 +1,1 @@
+vagrant.dnf.binstall.sh

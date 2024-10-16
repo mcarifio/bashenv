@@ -1,0 +1,1 @@
+postgresql.dnf.binstall.sh

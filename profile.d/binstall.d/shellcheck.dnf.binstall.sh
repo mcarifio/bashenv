@@ -1,0 +1,1 @@
+ShellCheck.dnf.binstall.sh

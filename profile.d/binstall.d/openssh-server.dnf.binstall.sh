@@ -6,7 +6,7 @@ post.install() (
 )
 
 # installing the server gets the client as well. This might not always be desired.
-binstalld.dispatch --kind=$(path.basename.part "$0" 1) --pkg=$(path.basename "$0") --cmd=/usr/sbin/sshd --postinstall=post.install "$@"
+binstalld.dispatch --kind=$(path.basename.part "$0" 1) --pkg=$(path.basename "$(realpath -Lm "$0")") --cmd=/usr/sbin/sshd --postinstall=post.install "$@"
 
 
 

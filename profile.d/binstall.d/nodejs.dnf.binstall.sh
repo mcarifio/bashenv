@@ -29,6 +29,6 @@ post.install() (
 _default_npm_packages=$(path.first "${ASDF_NPM_DEFAULT_PACKAGES_FILE}" \
                                    "${ASDF_DIR:-/nowhere}}/.default-npm-packages" \
                                    "$(home)/opt/asdf/current/.default-npm-packages)") || true
-binstalld.dispatch --kind=$(path.basename.part "$0" 1) --pkg=$(path.basename "$0") --postinstall=post.install ${_default_npm_packages} "$@"
+binstalld.dispatch --kind=$(path.basename.part "$0" 1) --pkg=$(path.basename "$(realpath -Lm "$0")") --postinstall=post.install ${_default_npm_packages} "$@"
 
 

@@ -1,0 +1,1 @@
+wl-clipboard.dnf.binstall.sh
