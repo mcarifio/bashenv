@@ -1282,12 +1282,10 @@ source.mkguard() (
     xzcat "${_where}/_template.source.sh.xz" | sed "s/\${g}/${_name}/g" > "${_guard}"
     >&2 git -C "$(bashenv.root)" status ${_guard}
 
-    declare -p _installer
     (( ${#_installer[@]} )) || return 0
     local -r _kind=${_installer[kind]:-dnf}
     local -r _pkg=${_installer[pkg]:-${_name}}
-    declare -p _kind _pkg
-    
+
     local -r _installd="$(bashenv.binstalld)"
     local -r _install="${_installd}/${_pkg}.${_kind}.binstall.sh"
     [[ -r "${_install}" ]] || cp --no-clobber "${_installd}/_template.tbs.binstall.sh" "${_install}"
