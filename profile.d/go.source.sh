@@ -1,3 +1,5 @@
+path.add ${HOME}/go/bin
+
 ${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
 
 # Wrap go if needed.
