@@ -5,7 +5,7 @@ ${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
 
 dnf() (
     : 'sudo dnf ...'
-    sudo $(type -P dnf)  --allowerasing --assumeyes "$@" # --allowerasing
+    sudo $(type -P dnf) --assumeyes "$@" # --allowerasing
 )
 f.x dnf
 
