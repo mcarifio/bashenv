@@ -12,7 +12,7 @@ f.x() {
     : '${_f}... # export functions ${_f}...'
     declare -Aigx __bashenv_fx
     for _f in "$@"; do
-        declare -fx ${_f} && __bashenv_fx["${_f}"]="$(date +"%s")" || return $(u.error "${_f} not exported")
+        declare -fx ${_f} && __bashenv_fx["${_f}"]="$(date +"%s")" || return $(u.error "${FUNCNAME} '${_f}' not exported")
     done
 }
 f.x f.x
@@ -139,9 +139,12 @@ f.exists.sig() (echo ${FUNCNAME%.sig} req _f bash+function no_default)
 
 f.exists() {
     : '${f} # return 0 iff bash function ${f} exists (is defined)'
-    local _f=${1:?'expecting a bashenv function'}
+    # printf '%s: ' ${FUNCNAME} >&2; caller 1 >&2
+    local _f=${1:?"${FUNCNAME} expecting a bashenv function"}
     [[ function = $(type -t "${1}") ]]
 }
+f.x f.exists
+
 __f.exists.complete() {
     # wizard style completion
     local _command=$1 _word=$2 _previous_word=$3
@@ -162,19 +165,17 @@ __f.exists.complete() {
     let __previous_position=_position
 }
 
-# This is a pattern. It will make sense after you've seen it a few times.
 # f.complete
 f.complete() {
-    : '${fn} [__${fn}.complete] # export ${fn} for subshells and connect to a completion fn __${fn}.complete iff it exists'
-    local _f=${1:?'expecting a function'}
-    local _fc=__${_f}.complete
-    f.exists ${_f} || return $(u.error "no function '${_f}'")
-    declare -gfx ${_f}
-    __bashenv_fx["${_f}"]=$(date +"%s")
-    f.exists ${_fc} || return 0
-    declare -gfx ${_fc}
-    complete -F ${_fc} ${_f}
+    : '${f} [${completer}] # export ${f} for subshells and connect to a completion function ${completer}. Both must exist.'
+    # printf '%s: ' ${FUNCNAME} >&2; caller 1 >&2
+    f.x "${1:?"${FUNCNAME} expecting a function name"}"
+    f.x "${2:-__complete.${_f}}"
+    complete -F ${_fc} -I ${_f}
 }
+f.x f.complete
+
+
 __f.complete.complete() {
     local _command=$1 _word=$2 _previous_word=$3
     local -i _position=${COMP_CWORD} _arg_length=${#COMP_WORDS[@]}
@@ -198,9 +199,7 @@ __f.complete.complete() {
     fi
     let __previous_position=_position
 }
-f.complete f.complete
-# Unwound the circularity, you can now bash complete f.exists.
-f.complete f.exists
+f.x f.complete
 
 f.complete.4() {
     local -a _frame=($(caller 0))
@@ -213,6 +212,7 @@ f.complete.for() (
     local _command=${1:?'expecting a command'}
     (complete -p ${_command} | cut -d' ' -f3) || true
 )
+f.x f.complete.for
 
 f.complete.init() {
     declare -aig __bashenv_completer_prompted=()
@@ -297,14 +297,14 @@ __example.plus1.complete() {
     local _command=$1 _word=$2 _prev=$3
     printf >&2 "(int...) "
 }
-f.complete example.plus1
+f.x example.plus1
 
 f.apply() (
     local _f=${1:?'expecting a function'}
     shift
     ${_f} "$@"
 )
-f.complete f.apply
+f.x f.apply
 
 sourced.reset() { declare -Aixg __bashenv_sourced=(); }
 f.x sourced.reset
@@ -390,7 +390,7 @@ __u.map.complete() {
     fi
     let __previous_position=_position
 }
-f.complete u.map
+f.x u.map
 
 # u.map.mkall
 u.map.mkall() {
@@ -400,7 +400,7 @@ u.map.mkall() {
     local _all=${_f}.all
     # local _completer=''
     # f.exists __${_f}.complete && _completer=__f${_f}.complete
-    eval $(printf '%s() { u.map %s "$@"; }; f.complete %s %s' ${_all} ${_f} ${_all})
+    eval $(printf '%s() { u.map %s "$@"; }; f.x %s %s' ${_all} ${_f} ${_all})
 }
 __u.map.mkall.complete() {
     local _command=$1 _word=$2 _previous_word=$3
@@ -415,7 +415,7 @@ __u.map.mkall.complete() {
         echo -n "${COMP_LINE} "
     fi
 }
-f.complete u.map.mkall
+f.x u.map.mkall
 
 
 f.doc() {
@@ -442,7 +442,7 @@ __f.doc.complete() {
         echo -n "${COMP_LINE} "
     fi
 }
-f.complete f.doc
+f.x f.doc
 
 running.bash() {
     : '# return 0 iff you are in bash (your parent process is the bash shell)'
@@ -467,7 +467,7 @@ __home.complete() {
         echo -n "${COMP_LINE} "
     fi
 }
-f.complete home
+f.x home
 
 # Return the full pathname of the bashenv root directory, usually something like ${HOME}/bashenv.
 # Depends on where you placed it however.
@@ -483,7 +483,7 @@ f.x bashenv.binstalld
 
 
 path() (echo ${PATH} | tr ':' '\n')
-f.complete path
+f.x path
 
 path.name() {
     : '${_name} ${_pathname} ## export ${_name} iff ${_pathname} exists'
@@ -491,13 +491,13 @@ path.name() {
     local _pathname=${2:?'expecting a readable pathname'}
     [[ -r "${_pathname}" ]] && export ${_name}=${_pathname} || return $(u.error "${_pathname} not readable.")
 }
-f.complete path.name
+f.x path.name
 
 path.login() (
     : '#> Enumerates interesting directories under $(home) to be added to PATH'
     printf '%s:' $(home)/opt/*/current/bin $(home)/.config/*/bin ~/.local/bin
 )
-f.complete path.login
+f.x path.login
 
 # path.add
 path.add() {
@@ -520,10 +520,10 @@ __path.add.complete() {
         compgen -d -- $2
     ))
 }
-f.complete path.add
+f.x path.add
 u.map.mkall path.add # path.add.all
 
-f.complete path.login
+f.x path.login
 
 # path.walk
 path.walk() (
@@ -553,7 +553,7 @@ __path.walk.complete() {
     fi
     let __previous_position=_position
 }
-f.complete path.walk
+f.x path.walk
 
 # path.pn
 path.pn() (
@@ -568,7 +568,7 @@ path.hpn() (
     echo -n ${HOSTNAME}:
     realpath -Lms ${1:-${PWD}}
 )
-f.complete path.hpn
+f.x path.hpn
 u.map.mkall path.hpn
 
 # path.basename
@@ -583,7 +583,7 @@ path.basename0() (
 #     # return list of possible directories https://stackoverflow.com/questions/12933362/getting-compgen-to-include-slashes-on-directories-when-looking-for-files/40227233#40227233a
 #     COMPREPLY=($(compgen -f -- $2))
 # }
-# f.complete path.basename0
+# f.x path.basename0
 
 path.basename.part() (
     : '${_pn} ${_position} # return the nth part of a pathnames basename'
@@ -613,7 +613,7 @@ __path.md.complete() {
     # return list of possible directories https://stackoverflow.com/questions/12933362/getting-compgen-to-include-slashes-on-directories-when-looking-for-files/40227233#40227233a
     COMPREPLY=($(compgen -d -- $2))
 }
-f.complete path.md
+f.x path.md
 
 # path.mkcd
 path.mkcd() {
@@ -626,7 +626,7 @@ __path.mkcd.complete() {
     # return list of possible directories https://stackoverflow.com/questions/12933362/getting-compgen-to-include-slashes-on-directories-when-looking-for-files/40227233#40227233a
     COMPREPLY=($(compgen -d -- $2))
 }
-f.complete path.mkcd
+f.x path.mkcd
 
 path.mp() (
     : '{_p} # make $(dirname ${_p}) if needed and return the entire pathname to the caller. Executed for side effect.'
@@ -725,7 +725,7 @@ __u.call.complete() {
 
     COMPREPLY=($(f.match "$2") $(compgen -c "$2"))
 }
-f.complete u.call
+f.x u.call
 
 
 prompt.command.add() {
@@ -733,8 +733,8 @@ prompt.command.add() {
     u.have ${_f} || return $(u.error "function '${_f}' not found")
     [[ " ${PROMPT_COMMAND[@]} " =~ [[:space:]]${_f//./\.}[[:space:]] ]] || PROMPT_COMMAND+=(${_f})
 }
-f.complete prompt.command.add
-prompt.command.add f.complete.init
+f.x prompt.command.add
+# prompt.command.add f.complete.init
 
 __f.complete.for.complete() {
     local _command=$1 _word=$2 _previous_word=$3
@@ -757,7 +757,7 @@ __f.complete.for.complete() {
     let __bashenv_completer_prompted[_position]=_position
     let __bashenv_completer_previous_position=_position
 }
-f.complete f.complete.for
+f.x __f.complete.for.complete
 
 bashenv.is.tracing() { grep --silent x <<< $-; }
 f.x bashenv.is.tracing
@@ -975,7 +975,7 @@ __u.map.tree.complete0() {
     # return list of possible directories https://stackoverflow.com/questions/12933362/getting-compgen-to-include-slashes-on-directories-when-looking-for-files/40227233#40227233a
     COMPREPLY=($(compgen -d -- $2))
 }
-f.complete u.map.tree
+f.x u.map.tree
 
 u.map.trees0() {
     local _kind=${1:?'expecting a file kind, e.g. lib, source or guard'}; shift
@@ -1063,17 +1063,17 @@ f.x _title
 dmesg() (
     sudo dmesg --human --time-format=iso --decode --color=always "$@" | less -R
 )
-f.complete dmesg
+f.x dmesg
 
 dmesg.error() (
     dmesg --level=emerg,alert,crit,err "$@"
 )
-f.complete dmesg.error
+f.x dmesg.error
 
 dmesg.user() (
     dmesg --user "$@"
 )
-f.complete dmesg.user
+f.x dmesg.user
 
 # dnf install -y net-tools
 # emacs /etc/ethers
@@ -1085,7 +1085,7 @@ __ether.wake.complete() {
     # return list of possible directories https://stackoverflow.com/questions/12933362/getting-compgen-to-include-slashes-on-directories-when-looking-for-files/40227233#40227233a
     COMPREPLY=($(compgen -A hostname))
 }
-f.complete ether.wake
+f.x ether.wake
 u.map.mkall either.wake
 
 u.folder() (
@@ -1196,7 +1196,7 @@ gnome.snapshot() {
     ln -srf ${_snapshot} ~/Pictures/snapshot/latest.png
     gimp ~/Pictures/snapshot/latest.png
 }
-f.complete gnome.snapshot
+f.x gnome.snapshot
 
 dispatch() {
     local _action=${1:-start}
