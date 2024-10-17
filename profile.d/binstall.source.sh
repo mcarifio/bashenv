@@ -601,20 +601,20 @@ binstall.missing() (
 f.x binstall.missing
 
 binstall.run() (
-    local _script=${1:?"${FUNCNAME} expecting a script pathname"}
+    local _script=$(bashenv.binstalld)/${1:?"${FUNCNAME} expecting a script pathname"}
     [[ -x "${_script}" ]] || return $(u.error "${FUNCNAME} ${_script} is not executable.")
 )
 f.x binstall.run
             
 # TODO mike@carif.io: doesn't work
 __complete.binstall.run() {
-    COMPREPLY=( $(compgen -W $(find $(bashenv.binstalld) -name $2\* -not -name \*.tbs.binstall.sh -type f -executable) ) )
+    COMPREPLY=( $(compgen -W "$(cd $(bashenv.binstalld); find .  -name $2\*.\*.binstall.sh -not -name \*.tbs.binstall.sh -type f -executable)" -- ./$2) )
     # declare -p COMPREPLY >&2
 }
 f.x __complete.binstall.run
 
 # f.complete binstall.run
-complete -I -F __complete.binstall.run binstall.run
+complete -F __complete.binstall.run -I binstall.run
 
 # TODO mike@carif.io: make completer for binstall.run
 
