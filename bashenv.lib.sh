@@ -171,7 +171,7 @@ f.complete() {
     # printf '%s: ' ${FUNCNAME} >&2; caller 1 >&2
     f.x "${1:?"${FUNCNAME} expecting a function name"}"
     f.x "${2:-__complete.${_f}}"
-    complete -F ${_fc} -I ${_f}
+    complete -F ${_fc} ${_f}
 }
 f.x f.complete
 
