@@ -169,14 +169,13 @@ __f.exists.complete() {
 f.complete() {
     : '${f} [${completer}] # export ${f} for subshells and connect to a completion function ${completer}. Both must exist.'
     # printf '%s: ' ${FUNCNAME} >&2; caller 1 >&2
-    f.x "${1:?"${FUNCNAME} expecting a function name"}"
-    f.x "${2:-__complete.${_f}}"
-    complete -F ${_fc} ${_f}
+    local _f="${1:?"${FUNCNAME} expecting a function name"}"
+    f.x "${_f}"
+    local _completer="${2:-__complete.${_f}}"
+    f.exists "${_completer}" || return $(u.error "${FUNCNAME} no completer '${_completer}' for function '${_f}'")
+    complete -F ${_completer} ${_f}
 }
-f.x f.complete
-
-
-__f.complete.complete() {
+__complete.f.complete() {
     local _command=$1 _word=$2 _previous_word=$3
     local -i _position=${COMP_CWORD} _arg_length=${#COMP_WORDS[@]}
     declare -ig __previous_position
