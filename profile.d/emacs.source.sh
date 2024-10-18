@@ -1,26 +1,28 @@
 ${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
 
+# TODO mike@carif.io: use completer for emacsclient (if one exists)?
 ec() (
     : '[${_pathname}] ## run emacsclient after starting emacs.service'
-    set -Eeuo pipefail
+    set -Eeuo pipefail; shopt -s nullglob
     emacs.server || return $(u.error "emacs daemon not started")
     [[ -n "${DISPLAY}" ]] && emacsclient --reuse-frame --no-wait --timeout=20 --quiet "$@" || emacsclient --tty --timeout=20 --quiet "$@"
 )
-f.complete ec
+f.x ec
 
-ec.bf() (
+ec.fx() (
     : '${function-name} # ec +${lineno} ${pathname} # suitable for emacs'
+    set -Eeuo pipefail; shopt -s nullglob
     shopt -s extdebug
     local -a _where=( $(declare -F ${1:?'expecting a function'}) )
     # ${name} ${lineno} ${pathname}    
     [[ main != "${_where[2]}" ]] && ec +${_where[1]} ${_where[2]} || return $(u.error "$1 has no associated file")  ## emacs format
 )
-f.x ec.bf
+f.x ec.fx
 
 
 _emacs.server() (
     : ' ${service} ## starts emacs systemd service ${service}'
-   set -Eeuo pipefail
+    set -Eeuo pipefail; shopt -s nullglob
    local _service=${1:-emacs-modified-$(os-release.id).service}
 
    # Is the service enabled?
@@ -51,7 +53,7 @@ f.x _emacs.server
 
 
 emacs.server.log() (
-    set -Eeuo pipefail
+    set -Eeuo pipefail; shopt -s nullglob
     local _service=${1:-emacs-modified-$(os-release.id).service}
     journalctl --user --boot 0 --unit ${_service} # grep something
 )
@@ -64,13 +66,13 @@ f.x emacs.server
 
 emc() (
     : '${_name} [${config_pathname}] # start emacs "by name" e.g. "maxemacs"'
-    set -Eeuo pipefail
+    set -Eeuo pipefail; shopt -s nullglob
     local _name=${1:?'expecting a name, e.g. maxemacs'} && shift
     local _init_directory="${1:-~/.config/${_name}}" && shift
     
     emacs --name=${_name} --debug-init --no-splash --init-directory="${_init_directory}" --eval='(switch-to-buffer "*Messages*")' "$@"
 )
-__emc.complete() {
+__complete.emc() {
     local _command=$1 _word=$2 _previous_word=$3
     local -i _position=${COMP_CWORD} _arg_length=${#COMP_WORDS[@]}
     declare -ig __previous_position
@@ -97,30 +99,29 @@ maxemacs() (
     local _config="${1:-${_env:-~/.config/${FUNCNAME}}}" && shift
     emc ${FUNCNAME} "${_config}" "$@"
 )
-f.complete maxemacs
+f.x maxemacs
 
 # install: git clone https://github.com/syl20bnr/spacemacs $HOME/.config/spacemacs
 spacemacs() (
     local -n _env=${FUNCNAME^^}_CONFIG # export SPACEMACS_CONFIG=~/.config/spacemacs
     emc ${FUNCNAME} ${1:-${_env:-~/.config/${FUNCNAME}}} "$@"
 )
-f.complete spacemacs    
+f.x spacemacs    
 
 # install: git clone --depth 1 https://github.com/doomemacs/doomemacs ~/.config/doom; ~/.config/doom/bin/doom install
 doom() (
     local -n _env=${FUNCNAME^^}_CONFIG # export DOOM_CONFIG=~/.config/spacemacs
     emc ${FUNCNAME} ${1:-${_env:-~/.config/${FUNCNAME}}} "$@"
 )
-f.complete doom
+f.x doom
 
-
-export EDITOR="ec"
-export VISUAL="${EDITOR}"
 
 emacs.env() (
     : '[${_pathname}] ## run emacsclient after starting emacs.service'
     set -Eeuo pipefail
-    [[ -z "${DISPLAY}" ]] && return $(u.error "${FUNCNAME} needs windowing to run the emacs systemd service") 1
+    [[ -n "${DISPLAY}" ]] || return $(u.error "${FUNCNAME} needs windowing to run the emacs systemd service")
+    export EDITOR="ec"
+    export VISUAL="${EDITOR}"
     emacs.server || return $(u.error "cannot start emacs service in login shell $$")
     loginctl enable-linger ${USER}
 )

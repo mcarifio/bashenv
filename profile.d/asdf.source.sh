@@ -120,7 +120,6 @@ asdf.session() {
     [[ -r "${_asdf_bash}" ]] && source "${_asdf_bash}" || return $(u.error "${FUNCNAME} failed")
 }
 f.x asdf.session
-asdf.session
 
 asdf.platform-update() {
     asdf update
@@ -129,7 +128,7 @@ asdf.platform-update() {
         asdf.install ${_pkg} || true 
     done
 }
-f.complete asdf.platform-update
+f.x asdf.platform-update
 
 asdf.plugin.urls() (
     set -Eeuo pipefail
@@ -149,5 +148,6 @@ asdf.install.all() (
 )
 f.x asdf.install.all
 
-sourced
+sourced || true
+
 

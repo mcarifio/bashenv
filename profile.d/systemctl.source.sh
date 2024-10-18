@@ -1,18 +1,21 @@
 ${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
 
 systemctl.start() (
+    set -Eeuo pipefaile; shopt -s nullglob
     local _service=${1:?'expecting a service'}; shift
     systemctl --quiet is-active ${_service} || systemctl start ${_service} || { journalctl --user-unit ${_service}; return $(u.error "can't start ${_service}"); }
 )
 f.complete systemctl.start _systemctl
 
 systemctl.status() (
+    set -Eeuo pipefaile; shopt -s nullglob
     local _service=${1:?'expecting a service'}; shift
     systemctl status --no-pager ${_service}
 )
 f.complete systemctl.status _systemctl
 
 systemctl.enable() (
+    set -Eeuo pipefaile; shopt -s nullglob
     local _service=${1:?'expecting a service'}; shift
     sudo systemctl enable --now ${_service} && systemctl.status ${_service} ||
             { journalctl --user-unit ${_service}; return $(u.error "cannot start ${_service}"); }
