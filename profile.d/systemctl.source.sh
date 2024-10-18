@@ -5,14 +5,14 @@ systemctl.start() (
     local _service=${1:?'expecting a service'}; shift
     systemctl --quiet is-active ${_service} || systemctl start ${_service} || { journalctl --user-unit ${_service}; return $(u.error "can't start ${_service}"); }
 )
-f.complete systemctl.start _systemctl
+f.x systemctl.start # systemctl
 
 systemctl.status() (
     set -Eeuo pipefaile; shopt -s nullglob
     local _service=${1:?'expecting a service'}; shift
     systemctl status --no-pager ${_service}
 )
-f.complete systemctl.status _systemctl
+f.x systemctl.status # systemctl
 
 systemctl.enable() (
     set -Eeuo pipefaile; shopt -s nullglob
@@ -20,7 +20,7 @@ systemctl.enable() (
     sudo systemctl enable --now ${_service} && systemctl.status ${_service} ||
             { journalctl --user-unit ${_service}; return $(u.error "cannot start ${_service}"); }
 )
-f.complete systemctl.enable _systemctl 
+f.x systemctl.enable # systemctl 
 
 systemctl.env() {
     true || return $(u.error "${FUNCNAME} failed")

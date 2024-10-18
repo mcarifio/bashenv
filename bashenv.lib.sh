@@ -166,7 +166,7 @@ __f.exists.complete() {
 }
 
 complete.exists() (
-    complete -p | grep --silent "${1:?"${FUNCNAME} expecting a completer"}" 
+    complete -p "${1:?"${FUNCNAME} expecting a completer"}" &> /dev/null
 )
 f.x complete.exists
 
@@ -177,9 +177,14 @@ f.complete() {
     local _f="${1:?"${FUNCNAME} expecting a function name"}"
     f.x "${_f}"
     local _completer="${2:-__complete.${_f}}"
-    f.exists "${_completer}" || complete.exists "${_completer}" || return $(u.error "${FUNCNAME} no completer '${_completer}' for function '${_f}'")
-    # TODO mike@carif.io: need to handle case where pre-existing completer isn't -F
-    complete -F ${_completer} ${_f}
+    if f.exists "${_completer}"; then
+        complete -F ${_completer} ${_f}
+    elif complete.exists ${_completer}; then
+        local -a _complete=( $(complete -p ${_completer}) )
+        eval "${_complete[@]:-3:-2} ${_f}"
+    else
+        return $(u.error "${FUNCNAME} no global function or completer ${_completer}") 1
+    fi
 }
 __complete.f.complete() {
     local _command=$1 _word=$2 _previous_word=$3
