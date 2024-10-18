@@ -588,6 +588,7 @@ binstall.installers() (
 f.x binstall.installers
 
 binstall.missing() (
+    set -Eeuo pipefail; shopt -s nullglob
     for _m in $(sourced.missing); do
         local _guard=$(path.basename.part ${_m} 0)
         local -a _installers=( $(binstall.installer ${_guard}) )
@@ -601,31 +602,29 @@ binstall.missing() (
 f.x binstall.missing
 
 binstall.run() (
+    set -Eeuo pipefail; shopt -s nullglob
     local _script=${1:?"${FUNCNAME} expecting a script pathname"}; shift
     [[ -x "${_script}" ]] || return $(u.error "${FUNCNAME} ${_script} is not executable.")
     ${_script} "$@"
 )
-f.x binstall.run
-            
 __complete.binstall.run() {
-    local _cur="${COMP_WORDS[COMP_CWORD]}"
+    local _command=$1 _word=$2 _cur=$2 _previous_word=$3
+    local -i _position=${COMP_CWORD} _arg_length=${#COMP_WORDS[@]}
+    # local _cur="${COMP_WORDS[COMP_CWORD]}"
     COMPREPLY=( $(compgen -f "$(bashenv.binstalld)/${_cur##*/}") )
     # declare -p COMPREPLY >&2
 }
-f.x __complete.binstall.run
-
-# f.complete binstall.run
-complete -F __complete.binstall.run binstall.run
-
-# TODO mike@carif.io: make completer for binstall.run
+f.complete binstall.run
 
 binstall.preference() (
     : 'the preference order for multiple binstallers'
+    set -Eeuo pipefail; shopt -s nullglob
     echo dnf asdf cargo AppImage go pip npm sh curl git script
 )
 f.x binstall.preference
 
 binstall.installers.preferred() (
+    set -Eeuo pipefail; shopt -s nullglob
     binstall.preference >&2
     return $(error "${FUNCNAME} tbs")
 )
