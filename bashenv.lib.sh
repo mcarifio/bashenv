@@ -165,6 +165,11 @@ __f.exists.complete() {
     let __previous_position=_position
 }
 
+complete.exists() (
+    complete -p | grep --silent "${1:?"${FUNCNAME} expecting a completer"}" 
+)
+f.x complete.exists
+
 # f.complete
 f.complete() {
     : '${f} [${completer}] # export ${f} for subshells and connect to a completion function ${completer}. Both must exist.'
@@ -172,7 +177,8 @@ f.complete() {
     local _f="${1:?"${FUNCNAME} expecting a function name"}"
     f.x "${_f}"
     local _completer="${2:-__complete.${_f}}"
-    f.exists "${_completer}" || return $(u.error "${FUNCNAME} no completer '${_completer}' for function '${_f}'")
+    f.exists "${_completer}" || complete.exists "${_completer}" || return $(u.error "${FUNCNAME} no completer '${_completer}' for function '${_f}'")
+    # TODO mike@carif.io: need to handle case where pre-existing completer isn't -F
     complete -F ${_completer} ${_f}
 }
 __complete.f.complete() {
