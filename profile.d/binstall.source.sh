@@ -616,6 +616,34 @@ __complete.binstall.run() {
 }
 f.complete binstall.run
 
+
+binstall.source() {
+    local _source=${1:?"${FUNCNAME} expecting a pathname"}
+    [[ -r "${_source}" ]] && source "${_source}" "$@"
+}
+__complete.binstall.source() {
+    local _command=$1 _word=$2 _previous_word=$3
+    local -i _position=${COMP_CWORD} _arg_length=${#COMP_WORDS[@]}
+    COMPREPLY=( $(compgen -f "$(bashenv.profiled)/${_word##*/}") )
+    # declare -p COMPREPLY >&2
+}
+f.complete binstall.source
+
+
+binstall.source.missing() {
+    local _source=${1:?"${FUNCNAME} expecting a pathname"}
+    [[ -r "${_source}" ]] && source "${_source}" "$@"
+}
+__complete.binstall.source.missing() {
+    local _command=$1 _word=$2 _previous_word=$3
+    local -i _position=${COMP_CWORD} _arg_length=${#COMP_WORDS[@]}
+    COMPREPLY=( $(sourced.missing | grep -E "\.d/${_word##*/}.*\.source\.sh$") )
+    # declare -p COMPREPLY >&2
+}
+f.complete binstall.source.missing
+
+
+
 binstall.preference() (
     : 'the preference order for multiple binstallers'
     set -Eeuo pipefail; shopt -s nullglob
