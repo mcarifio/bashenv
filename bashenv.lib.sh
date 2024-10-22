@@ -178,7 +178,7 @@ f.complete() {
     f.x "${_f}"
     local _completer="${2:-__complete.${_f}}"
     if f.exists "${_completer}"; then
-        complete -F ${_completer} ${_f}
+        complete -o nospace -F ${_completer} ${_f}
     elif complete.exists ${_completer}; then
         local -a _complete=( $(complete -p ${_completer}) )
         eval "${_complete[@]:-3:-2} ${_f}"

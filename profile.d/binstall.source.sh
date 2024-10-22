@@ -601,18 +601,26 @@ binstall.missing() (
 )
 f.x binstall.missing
 
+# binstall.run launches or runs an installer script in $(bashenv.binstalld).
+# It's real value is in bash completing candidate scripts in $(bashenv.binstalld).
 binstall.run() (
+    : '${_script} ## run installer script ${_script}'
     set -Eeuo pipefail; shopt -s nullglob
     local _script=${1:?"${FUNCNAME} expecting a script pathname"}; shift
     [[ -x "${_script}" ]] || return $(u.error "${FUNCNAME} ${_script} is not executable.")
     ${_script} "$@"
 )
 __complete.binstall.run() {
-    local _command=$1 _word=$2 _cur=$2 _previous_word=$3
+    local _command=$1 _word=$2 _previous_word=$3
     local -i _position=${COMP_CWORD} _arg_length=${#COMP_WORDS[@]}
-    # local _cur="${COMP_WORDS[COMP_CWORD]}"
-    COMPREPLY=( $(compgen -f "$(bashenv.binstalld)/${_cur##*/}") )
-    # declare -p COMPREPLY >&2
+
+    # Completion so far is a pathname in $(bashenv.binstalld) with the beginning of a filename.
+    # To winnow selections, take the basename of _word and find candidate completions.
+    local _prefix=${_word##*/}
+    # The candidate completions are all executable files in directory $(bashenv.binstalld) with the prefix ${_word}
+    # that follow the naming convention *.binstall.sh and are not *.tbs.binstall.sh. The tbs files ("to be supplied") are
+    # placeholders for figuring out how best to install something.
+    COMPREPLY=( $(find "$(bashenv.binstalld)" -name "${_prefix}*.binstall.sh" -not -name \*.tbs.binstall.sh -type f -executable ) )
 }
 f.complete binstall.run
 
