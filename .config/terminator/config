@@ -1,0 +1,167 @@
+[global_config]
+  enabled_plugins = ActivityWatch, InactivityWatch, CustomCommandsMenu, Logger, TerminalShot, TestPlugin, LaunchpadBugURLHandler, LaunchpadCodeURLHandler, APTURLHandler
+  ask_before_closing = never
+  always_split_with_profile = True
+[keybindings]
+  split_horiz = <Primary><Alt>2
+  split_vert = <Primary><Alt>3
+  close_window = <Primary><Alt>0
+  hide_window = <Primary><Shift>h
+[profiles]
+  [[default]]
+    font = FreeMono 20
+    scrollback_infinite = True
+    login_shell = True
+    use_system_font = False
+    title_use_system_font = False
+    title_font = Sans 16
+  [[mcarifio]]
+    font = FreeMono 20
+    scrollback_infinite = True
+    login_shell = True
+    custom_command = bash -himBHs
+    use_system_font = False
+    title_use_system_font = False
+    title_font = Sans 16
+  [[xonsh]]
+    background_color = "#fdf6e3"
+    font = FreeMono 20
+    foreground_color = "#657b83"
+    scrollback_infinite = True
+    palette = "#073642:#dc322f:#859900:#b58900:#268bd2:#d33682:#2aa198:#eee8d5:#002b36:#cb4b16:#586e75:#657b83:#839496:#6c71c4:#93a1a1:#fdf6e3"
+    login_shell = True
+    use_custom_command = True
+    custom_command = xonsh
+    use_system_font = False
+    title_use_system_font = False
+    title_font = Sans 16
+  [[root]]
+    background_color = "#282828"
+    font = FreeMono 20
+    foreground_color = "#ce5c00"
+    scrollback_infinite = True
+    login_shell = True
+    use_custom_command = True
+    custom_command = sudo bash  -himBHs
+    use_system_font = False
+    title_use_system_font = False
+    title_font = Sans 16
+  [[experiment]]
+    cursor_blink = False
+    cursor_shape = underline
+    font = Sans 20
+    scrollback_infinite = True
+    palette = "#073642:#dc322f:#859900:#b58900:#268bd2:#d33682:#2aa198:#eee8d5:#002b36:#cb4b16:#586e75:#657b83:#839496:#6c71c4:#93a1a1:#fdf6e3"
+    login_shell = True
+    use_custom_command = True
+    custom_command = bash -himBHs
+    use_system_font = False
+    title_use_system_font = False
+    title_font = Sans 16
+  [[nu]]
+    background_color = "#002b36"
+    font = Source Code Pro 20
+    foreground_color = "#839496"
+    login_shell = True
+    use_custom_command = True
+    custom_command = nu
+    title_use_system_font = False
+    title_font = Sans 16
+[layouts]
+  [[default]]
+    [[[child0]]]
+      type = Window
+      parent = ""
+      order = 0
+      position = 26:23
+      maximised = False
+      fullscreen = False
+      size = 2943, 1602
+      title = spider.mg8702
+      last_active_window = True
+    [[[child1]]]
+      type = Notebook
+      parent = child0
+      order = 0
+      labels = None, None, None, None, None, None, None, None, None, None, None, None, None
+      last_active_term = 9e702b2f-4d25-465a-bc1f-9614c4b85a0c, 95593040-8139-4ac2-89dd-fa4a8bd63961, 4f1beace-dacb-4d98-af09-782fbb3d4c21, e27fe165-a6ee-4f29-9a1c-e3cf3822ad0b, 03f4447d-e527-4de2-bb61-2b7eb30d4986, 9cec13f8-ca17-4b8d-93fb-14d16117e18d, 4fb63042-7e70-4e06-8f3d-29d86a736385, 557853cf-4939-4ccf-8458-61c7c6605aa4, 4f1beace-dacb-4d98-af09-782fbb3d4c21, 8594d302-760e-4a32-bca7-9f24c409bfec, 03f4447d-e527-4de2-bb61-2b7eb30d4986, 8594d302-760e-4a32-bca7-9f24c409bfec, e33f624b-836e-421f-95ad-6ba793ec6516
+      active_page = 1
+    [[[terminal2]]]
+      type = Terminal
+      parent = child1
+      order = 0
+      profile = root
+      uuid = 9e702b2f-4d25-465a-bc1f-9614c4b85a0c
+    [[[terminal3]]]
+      type = Terminal
+      parent = child1
+      order = 1
+      profile = nu
+      uuid = 95593040-8139-4ac2-89dd-fa4a8bd63961
+    [[[terminal4]]]
+      type = Terminal
+      parent = child1
+      order = 2
+      profile = mcarifio
+      uuid = 2bbbc084-fe52-4d6b-bcbb-0417e10c489a
+    [[[terminal5]]]
+      type = Terminal
+      parent = child1
+      order = 3
+      profile = mcarifio
+      uuid = e27fe165-a6ee-4f29-9a1c-e3cf3822ad0b
+    [[[terminal6]]]
+      type = Terminal
+      parent = child1
+      order = 4
+      profile = mcarifio
+      uuid = e33f624b-836e-421f-95ad-6ba793ec6516
+    [[[terminal7]]]
+      type = Terminal
+      parent = child1
+      order = 5
+      profile = mcarifio
+      uuid = e73e8671-4265-4edf-a161-8e4f31657b6e
+    [[[terminal8]]]
+      type = Terminal
+      parent = child1
+      order = 6
+      profile = mcarifio
+      uuid = 4fb63042-7e70-4e06-8f3d-29d86a736385
+    [[[terminal9]]]
+      type = Terminal
+      parent = child1
+      order = 7
+      profile = mcarifio
+      uuid = 557853cf-4939-4ccf-8458-61c7c6605aa4
+    [[[terminal10]]]
+      type = Terminal
+      parent = child1
+      order = 8
+      profile = mcarifio
+      uuid = 9cec13f8-ca17-4b8d-93fb-14d16117e18d
+    [[[terminal11]]]
+      type = Terminal
+      parent = child1
+      order = 9
+      profile = mcarifio
+      uuid = 8594d302-760e-4a32-bca7-9f24c409bfec
+    [[[terminal12]]]
+      type = Terminal
+      parent = child1
+      order = 10
+      profile = mcarifio
+      uuid = 03f4447d-e527-4de2-bb61-2b7eb30d4986
+    [[[terminal13]]]
+      type = Terminal
+      parent = child1
+      order = 11
+      profile = mcarifio
+      uuid = 4f1beace-dacb-4d98-af09-782fbb3d4c21
+    [[[terminal14]]]
+      type = Terminal
+      parent = child1
+      order = 12
+      profile = mcarifio
+      uuid = 65e8eb73-0dad-43fe-a8dd-d25d3c0427b7
+[plugins]
