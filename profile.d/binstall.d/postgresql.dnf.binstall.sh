@@ -18,7 +18,7 @@ post.install() (
     # TODO mike@carif.io: ssh configuration
     sudo systemctl restart postgresql
 )
-
-binstalld.dispatch --kind=$(path.basename.part "$0" 1) --pkg=$(path.basename "$(realpath -Lm "$0")") --postinstall=post.install "$@"
+binstall.dnf --url="https://download.postgresql.org/pub/repos/yum/reporpms/F-$(os-release.major)-$(arch)/pgdg-$(os-release.id)-repo-latest.noarch.rpm"
+binstalld.dispatch --kind=$(path.basename.part "$0" 1) --pkg=$(path.basename "$(realpath -Lm "$0")") --postinstall=post.install postgresql-server "$@"
 
 

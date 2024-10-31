@@ -8,9 +8,10 @@ _bashenv=$(bashenv.root 2>/dev/null || echo ${HOME}/bashenv/.bash_profile.d)
 
 sudo.alacritty() (
     local _title=$1; shift || true
-    sudo -E alacritty --title "${_title}" --option window.dimensions.{lines=50,columns=300} --command "$@" &
+    sudo -E alacritty --title "${_title}" --option window.dimensions.{lines=50,columns=400} --command "$@" &
 )
 
+# bashenv/profile.d/binstall.d/showmethekey.dnf.binstall.sh
 watch.input() (
     sudo.alacritty ${FUNCNAME} ${HOME}/opt/showmethekey/current/bin/showmethekey-cli &
 )
@@ -20,9 +21,13 @@ watch.dmesg() (
     sudo.alacritty ${FUNCNAME} dmesg -HT --color=always --follow &
 )
 
+watch.nvtop() (
+    alacritty --title "${FUNCNAME}" --option window.dimensions.{lines=100,columns=300} --command nvtop &
+)
+
 watch.input
 watch.dmesg
-
+watch.nvtop
 
 d.run() (
     for _host in "$@"; do
