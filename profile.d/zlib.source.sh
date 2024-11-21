@@ -119,6 +119,18 @@ zlib.mv.all() (
 
 f.x zlib.mv
 
+zlib.rename.catpat() (
+    for _ext in pdf epub; do
+        rename .${_ext} .${1:?'expecting a category'}.${_ext} ${2:?'expecting a glob'}*.${_ext}
+    done
+)
+f.x zlib.rename.catpat
+
+zlib.rename() (
+    ${FUNCNAME}.catpat ${1:?'expecting a category'} *$1-
+)
+f.x zlib.rename
+
 zlib.env() {
     # source <(mksearchable.sh --regenerate --fname=e.locate "$(zlib.root)")
     local _regenerate=''
