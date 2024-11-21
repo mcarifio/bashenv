@@ -17,13 +17,13 @@ mksearchable() (
 
     # parse flags
     local -i _regenerate=0
-    local _fname=''
+    local _fname='' _db=''
     
     for _a in "${@}"; do
         case "${_a}" in
             --fname=*) _fname=${_a##*=};;
+            --output=*) _db=${_a##*=};;
             --regenerate) _regenerate=1;;
-            # --db=*) _db=${_a##*=};;
             --) shift; break;;
             --*) return $(u.error "${FUNCNAME} received unknown switch '${_a}', stopping.") 1;;
             *) break;;
@@ -31,13 +31,14 @@ mksearchable() (
         shift
     done
 
-    local -r _root="${1:-$(realpath -Lm ${0%/*}/..)}"; shift || true
-    [[ -z "${_fname}" ]] && _fname=${_root##*/}.locate
-    local -r _db=$(realpath -Lm "${1:-${_root}/../${_fname}.db}"); shift || true
+    local -r _root="${1:-$(realpath -Lm ${0%/*}/..)}"
+    [[ -n "${_fname}" ]] || _fname=${_root##*/}.locate
+    [[ -n "${_db}" ]] || _db="$(realpath -Lm "${_root}/../${_fname}.db")"
 
+    [[ (( _regenerate )) && -r "${_db}" ]] && xz --force "${_db}"
     # index ${_root}
-    if [[ ! -r "${_db}" || (( _regenerate )) ]]; then
-        sudo updatedb --require-visibility yes --output "${_db}" --database-root "${_root}"
+    if [[ ! -r "${_db}" ]]; then
+        sudo updatedb --require-visibility yes --add-prunenames '2sort 2sort-manually .attic' --output "${_db}" --database-root "$@"
         sudo chown ${USER}:${USER} "${_db}"
     fi
 

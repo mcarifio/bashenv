@@ -1,0 +1,1 @@
+brave-browser.dnf.binstall.sh

@@ -1,28 +1,48 @@
 #!/usr/bin/env bash
 # invoked by ~/.config/autostart.desktop
 
-set -Eeuo pipefail
+set -uo pipefail
 
 # Does gnome autostart login first?
 _bashenv=$(bashenv.root 2>/dev/null || echo ${HOME}/bashenv/.bash_profile.d)
 
 sudo.alacritty() (
-    local _title=$1; shift || true
-    sudo -E alacritty --title "${_title}" --option window.dimensions.{lines=50,columns=300} --command "$@" &
+    set -Eeuo pipefail; shopt -s nullglob
+    local _title=${FUNCNAME}
+    local -i _lines=40 _columns=300
+
+    for _a in "${@}"; do
+        case "${_a}" in
+            --title=*) _title="${_a##*=}";;
+            --lines=*) _title="${_a##*=}";;
+            --columns=*) _title="${_a##*=}";;
+            --) shift; break;;
+            --*) break;; ## break on unknown switch, pass it along
+            *) break;;
+        esac
+        shift
+    done
+    # sudo -E alacritty --title "${_title}" --option window.dimensions.{lines=50,columns=400} --command "$@" &
+    sudo $(type -P alacritty) --title "${_title}" --option window.dimensions.{lines=${_lines},columns=${_columns}} --command "$@" &
 )
 
+# bashenv/profile.d/binstall.d/showmethekey.dnf.binstall.sh
 watch.input() (
-    sudo.alacritty ${FUNCNAME} ${HOME}/opt/showmethekey/current/bin/showmethekey-cli &
+    sudo.alacritty --title=${FUNCNAME} showmethekey-cli &
 )
 
 
 watch.dmesg() (
-    sudo.alacritty ${FUNCNAME} dmesg -HT --color=always --follow &
+    sudo.alacritty --title=${FUNCNAME} dmesg -HT --color=always --follow &
+)
+
+watch.nvtop() (
+    alacritty --title "${FUNCNAME}" --option window.dimensions.{lines=100,columns=300} --command nvtop &
 )
 
 watch.input
 watch.dmesg
-
+watch.nvtop
 
 d.run() (
     for _host in "$@"; do
@@ -32,20 +52,13 @@ d.run() (
 
 
 # thunderbird email client
-# desktop.run thunderbird
 thunderbird &
 
 # gnome-terminal
 desktop.run Terminal
 
 # slack
-# desktop.run Slack
 slack &
-
-# desktop.run Tabby
-
-# zoom video conf
-# desktop.run Zoom
 
 
 # local terminator
@@ -59,20 +72,12 @@ d.run ${HOSTNAME} slipjack algernon
 desktop.run google-chrome
 # edge browser, flatpak
 desktop.run microsoft-edge
-# opera
-# opera &
 # chromium
-# desktop.run chromium-browser
+desktop.run chromium-browser
 # vivaldi
 desktop.run vivaldi
-
-# @install/bash: { sudo flatpak install https://github.com/atlas-engineer/nyxt/releases/download/3.3.0/nyxt-3.3.0.flatpak; }
-# @doc: { https://nyxt.atlas.engineer/documentation }
-# flatpak run engineer.atlas.Nyxt &
-
-# viber desktop client for rak
-# desktop.run viber
-
+# opera
+# opera &
 
 # desktop client for protonmail
 # electron-mail &
@@ -89,5 +94,5 @@ desktop.run vivaldi
 # rdp client
 # desktop.run Remmina
 
-xournalpp /home/mcarifio/work/mcarifio/notes/journal/think.xopp &
+# xournalpp /home/mcarifio/work/mcarifio/notes/journal/think.xopp &
 

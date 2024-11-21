@@ -1169,6 +1169,26 @@ pdf.author() {
 }
 f.x pdf.author
 
+pdf.title() (
+    local _title="$(pdfinfo "$1" | grep '^Title:' - | cut -d: -f2 - 2>/dev/null)"
+    _title="${_title#"${_title%%[![:space:]]*}"}" 
+    echo ${_title// /-}
+)
+f.x pdf.title
+
+pdf.title.rename() (
+    for _pathname in $*; do
+        local _title="$(pdf.title "${_pathname}")"
+        [[ -n "${_title}" ]] || return $(u.error "No title for ${_pathname}")
+        local _suffix="${_pathname#*.}"
+        local _folder="$(dirname "${_pathname%/*}")"
+        mv -v "${_pathname}" "${_folder}/${_title}.${_suffix}"
+    done    
+)
+f.x pdf.title.rename
+    
+
+
 pdf.add-date() {
     local _date=$(pdf.creationdate $1)
     if [[ -z "${_date}" ]]; then

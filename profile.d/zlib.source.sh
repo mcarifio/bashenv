@@ -20,7 +20,7 @@ zlib.category.pathname() (
     set -Eeuo pipefail
     local _cat=${1:?'expecting a category'}
     local _root=${2:-$(zlib.root)}
-    find ${_root} -type d -name ${_cat}    
+    find ${_root} \( -type d -o -type l -xtype d \) -name ${_cat}
 )
 f.x zlib.category.pathname
 
