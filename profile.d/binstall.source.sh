@@ -311,14 +311,14 @@ binstall.dnf() (
 
     for _a in "${@}"; do
         case "${_a}" in
-            --add-repo=*) sudo $(type -P dnf) --assumeyes config-manager --add-repo "${_a##*=}";;
+            --add-repo=*) sudo $(type -P dnf) --assumeyes config-manager addrepo --from-repofile="${_a##*=}";;
             # TODO mike@carif.io: --assumeyes doesn't work?
             --copr=*) sudo $(type -P dnf) --assumeyes copr enable "${_a##*=}";;
             --import=*) sudo $(type -P rpm) --import "${_a##*=}";;
             --pkg=*) _pkg="${_a##*=}";;
             --cmd=*) _cmds+="${_a##*=}";;
 
-            --*) >&2 echo "${FUNCNAME}: unknown switch ${_a}, stop processing switches"; break;;
+            --*) break;;
             --) shift; break;;
             *) break ;;
         esac
@@ -334,7 +334,7 @@ binstall.dnf() (
     # ... and then install the primary package.
     # sudo $(type -P dnf) install --assumeyes ${_pkgs[0]}
     (( $# )) && sudo $(type -P dnf) install --assumeyes $@
-    sudo $(type -P dnf) install --assumeyes ${_pkg}
+    sudo $(type -P dnf) install --assumeyes $@ ${_pkg}
     
 )
 f.x binstall.dnf
