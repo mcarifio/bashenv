@@ -15,3 +15,5 @@
 
 # ignore local db
 *.db
+
+*.AppImage
