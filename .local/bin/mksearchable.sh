@@ -35,7 +35,7 @@ mksearchable() (
     [[ -n "${_fname}" ]] || _fname=${_root##*/}.locate
     [[ -n "${_db}" ]] || _db="$(realpath -Lm "${_root}/../${_fname}.db")"
 
-    [[ (( _regenerate )) && -r "${_db}" ]] && xz --force "${_db}"
+    [[ (( _regenerate )) && -r "${_db}" ]] && { xz --force "${_db}" || true; }
     # index ${_root}
     if [[ ! -r "${_db}" ]]; then
         sudo updatedb --require-visibility yes --add-prunenames '2sort 2sort-manually .attic' --output "${_db}" --database-root "$@"
