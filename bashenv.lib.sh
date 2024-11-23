@@ -1163,16 +1163,26 @@ fi
 pdf.creationdate() { pdfinfo "${1:?"${FUNCNAME} expecting a pathname"}" | grep '^CreationDate:' | awk '{print $6}'; }
 f.x pdf.creationdate # dnf install pdfinfo
 
-pdf.author() {
-    local _author=$(pdfinfo "${1:?"${FUNCNAME} expecting a pathname"}" | grep '^Author:' - | awk '{print $3}' - &>/dev/null)
-    echo ${_author,,}
-}
+pdf.author() (
+    local _author="$(pdfinfo "${1:?"${FUNCNAME} expecting a pathname"}" | grep '^Author:' - | cut -d: -f2 - 2>/dev/null)"
+    _author="${_author#"${_author%%[![:space:]]*}"}" 
+    _author="${_author// /-}"
+    echo "${_author,,}"
+)
 f.x pdf.author
+
+pdf.author.lastname() (
+    local -a _author=( $(pdfinfo "${1:?"${FUNCNAME} expecting a pathname"}" | grep '^Author:' - | cut -d: -f2 - 2>/dev/null) )
+    local _lastname="${_author[-1]}"
+    echo ${_lastname,,}
+)
+f.x pdf.author.lastname
 
 pdf.title() (
     local _title="$(pdfinfo "${1:?"${FUNCNAME} expecting a pathname"}" | grep '^Title:' - | cut -d: -f2 - 2>/dev/null)"
     _title="${_title#"${_title%%[![:space:]]*}"}" 
-    echo ${_title// /-}
+    _title="${_title// /-}"
+    echo ${_title,,}
 )
 f.x pdf.title
 
