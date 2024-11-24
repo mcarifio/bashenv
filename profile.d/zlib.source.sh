@@ -100,7 +100,7 @@ zlib.rename.pdf() (
         [[ -n "${_year}" ]] || return $(u.error "No year for ${_pathname}")
             
         local _suffix="${_pathname#*.}"
-        local _folder="$(dirname "${_pathname%/*}")"
+        local _folder="$(dirname "${_pathname}")"
         mv -v "${_pathname}" "${_folder}/${_title}-${_lastname}-${_year}.${_category}.${_suffix}"
     done
 )

@@ -1172,9 +1172,11 @@ pdf.author() (
 f.x pdf.author
 
 pdf.author.lastname() (
-    local -a _author=( $(pdfinfo "${1:?"${FUNCNAME} expecting a pathname"}" | grep '^Author:' - | cut -d: -f2 - 2>/dev/null) )
+    : '${_pathname}.pdf |> last name of first author'
+    local -a _author=( $(pdfinfo "${1:?"${FUNCNAME} expecting a pathname"}" | grep '^Author:' - | cut -d: -f2 - | tr -s ' ' | cut -d' ' -f1-4 - 2>/dev/null) )
     local _lastname="${_author[-1]}"
-    echo ${_lastname,,}
+    [[ and = "${_lastname}" ]] && _lastname="${_author[-2]}"
+    echo ${_lastname,,}        
 )
 f.x pdf.author.lastname
 
@@ -1191,7 +1193,7 @@ pdf.title.rename() (
         local _title="$(pdf.title "${_pathname}")"
         [[ -n "${_title}" ]] || return $(u.error "No title for ${_pathname}")
         local _suffix="${_pathname#*.}"
-        local _folder="$(dirname "${_pathname%/*}")"
+        local _folder="$(dirname "${_pathname}")"
         mv -v "${_pathname}" "${_folder}/${_title}.${_suffix}"
     done    
 )
