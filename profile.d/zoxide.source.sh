@@ -8,7 +8,7 @@ f.x zoxide.doc.urls
 
 zoxide.doc() (
     set -Eeuo pipefail; shopt -s nullglob
-    for _u in $(${FUNCNAME}.urls); do xdg-open ${_u}; done
+    for _u in $(${FUNCNAME}.urls); do xdg-open ${_u} https://github.com/ajeetdsouza/zoxide; done
 )
 f.x zoxide.doc
 
@@ -18,6 +18,7 @@ zoxide.env() {
 }
 f.x zoxide.env
 
+# defines the `z` command
 zoxide.session() {
     : '# called by .bashrc'
     source <(${FUNCNAME%.*} init $(u.shell))

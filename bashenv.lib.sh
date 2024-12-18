@@ -1160,19 +1160,31 @@ if u.have asdf; then
 fi
 
 # pdf renaming
-pdf.creationdate() { pdfinfo "$1" | grep '^CreationDate:' | awk '{print $6}'; }
+pdf.creationdate() { pdfinfo "${1:?"${FUNCNAME} expecting a pathname"}" | grep '^CreationDate:' | awk '{print $6}'; }
 f.x pdf.creationdate # dnf install pdfinfo
 
-pdf.author() {
-    local _author=$(pdfinfo "$1" | grep '^Author:' - | awk '{print $3}' - &>/dev/null)
-    echo ${_author,,}
-}
+pdf.author() (
+    local _author="$(pdfinfo "${1:?"${FUNCNAME} expecting a pathname"}" | grep '^Author:' - | cut -d: -f2 - 2>/dev/null)"
+    _author="${_author#"${_author%%[![:space:]]*}"}" 
+    _author="${_author// /-}"
+    echo "${_author,,}"
+)
 f.x pdf.author
 
+pdf.author.lastname() (
+    : '${_pathname}.pdf |> last name of first author'
+    local -a _author=( $(pdfinfo "${1:?"${FUNCNAME} expecting a pathname"}" | grep '^Author:' - | cut -d: -f2 - | tr -s ' ' | cut -d' ' -f1-4 - 2>/dev/null) )
+    local _lastname="${_author[-1]}"
+    [[ and = "${_lastname}" ]] && _lastname="${_author[-2]}"
+    echo ${_lastname,,}        
+)
+f.x pdf.author.lastname
+
 pdf.title() (
-    local _title="$(pdfinfo "$1" | grep '^Title:' - | cut -d: -f2 - 2>/dev/null)"
+    local _title="$(pdfinfo "${1:?"${FUNCNAME} expecting a pathname"}" | grep '^Title:' - | cut -d: -f2 - 2>/dev/null)"
     _title="${_title#"${_title%%[![:space:]]*}"}" 
-    echo ${_title// /-}
+    _title="${_title// /-}"
+    echo ${_title,,}
 )
 f.x pdf.title
 
@@ -1181,7 +1193,7 @@ pdf.title.rename() (
         local _title="$(pdf.title "${_pathname}")"
         [[ -n "${_title}" ]] || return $(u.error "No title for ${_pathname}")
         local _suffix="${_pathname#*.}"
-        local _folder="$(dirname "${_pathname%/*}")"
+        local _folder="$(dirname "${_pathname}")"
         mv -v "${_pathname}" "${_folder}/${_title}.${_suffix}"
     done    
 )
@@ -1189,16 +1201,15 @@ f.x pdf.title.rename
     
 
 
-pdf.add-date() {
-    local _date=$(pdf.creationdate $1)
-    if [[ -z "${_date}" ]]; then
-        printf >&2 "no creation date found for %s\n" $1
-        return 1
-    fi
-    local _target=${1%%.pdf}-${_date}.pdf
-    mv $1 ${_target}
-    echo ${_target}
-}
+pdf.add-date() (
+    : '${pathname} # adds a date to pathname, e.g. foo.kind.pdf => foo-${date}.kind.pdf'
+    local _date="$(pdf.creationdate "${1:?"${FUNCNAME} expecting a date"}")"
+    [[ -n "${_date}" ]] || return $(u.error "no creation date found for $1")
+    local _suffix="${1#*.}"
+    local _prefix="${1%%.*}"
+    local _target="${_prefix}-${_date}.${_suffix}"
+    mv -v $1 ${_target}
+)
 f.x pdf.add-date
 
 pn.deparen() {

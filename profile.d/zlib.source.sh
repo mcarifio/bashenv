@@ -88,6 +88,24 @@ zlib.target() (
 )
 f.x zlib.target
 
+zlib.rename.pdf() (
+    : '${_category} *.pdf'
+    local _category=${1:?"${FUNCNAME} expecting a category"}; shift
+    for _pathname in "$*"; do
+        local _title="$(pdf.title "${_pathname}")"
+        [[ -n "${_title}" ]] || return $(u.error "No title for ${_pathname}")
+        local _lastname="$(pdf.author.lastname "${_pathname}")"
+        [[ -n "${_lastname}" && unknown != "${_lastname}" ]] || return $(u.error "No author lastname for ${_pathname}")
+        local _year="$(pdf.creationdate "${_pathname}")"
+        [[ -n "${_year}" ]] || return $(u.error "No year for ${_pathname}")
+            
+        local _suffix="${_pathname#*.}"
+        local _folder="$(dirname "${_pathname}")"
+        mv -v "${_pathname}" "${_folder}/${_title}-${_lastname}-${_year}.${_category}.${_suffix}"
+    done
+)
+
+
 
 zlib.mv() (
     : 'zlib.mv ${_src} [${_target}] # mv src to target. default target is ~/Documents/e/2sort'
