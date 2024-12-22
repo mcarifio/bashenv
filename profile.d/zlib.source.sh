@@ -119,7 +119,7 @@ zlib.mv() (
     # skip uncompleted downloads
     local _part="$(echo ${_pathname}.*.part)"
     [[ -f "${_part}" ]] && return $(u.error "${_part} indicates ${_pathname} download not complete, skipping...")
-    mv -v "${_src}" $(zlib.target "${2:-''}" "${1:?'expecting a pathname'}")
+    mv "${_src}" $(zlib.target "${2:-''}" "${1:?'expecting a pathname'}")
 )
 f.x zlib.mv
 
@@ -134,8 +134,12 @@ zlib.mv.all() (
         zlib.mv "${_src}" $(zlib.target '' "${_src}") || true
     done
 )
-
 f.x zlib.mv
+
+zlib.mv.tor() (
+    zlib.mv.all "~/.local/share/torbrowser/tbb/x86_64/tor-browser/Browser/Downloads/*.{epub,pdf}"
+)
+f.x zlib.mv.tor
 
 zlib.rename.catpat() (
     for _ext in pdf epub; do
