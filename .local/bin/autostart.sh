@@ -9,7 +9,7 @@ _bashenv=$(bashenv.root 2>/dev/null || echo ${HOME}/bashenv/.bash_profile.d)
 sudo.alacritty() (
     set -Eeuo pipefail; shopt -s nullglob
     local _title=${FUNCNAME}
-    local -i _lines=40 _columns=300
+    local -i _lines=40 _columns=200
 
     for _a in "${@}"; do
         case "${_a}" in
@@ -37,7 +37,7 @@ watch.dmesg() (
 )
 
 watch.nvtop() (
-    alacritty --title "${FUNCNAME}" --option window.dimensions.{lines=100,columns=300} --command nvtop &
+    alacritty --title "${FUNCNAME}" --command nvtop &
 )
 
 watch.input
@@ -52,20 +52,20 @@ d.run() (
 
 
 # thunderbird email client
-thunderbird &
+# thunderbird &
 
 # gnome-terminal
 desktop.run Terminal
 
 # slack
-slack &
+# slack &
 
 
 # local terminator
 # desktop.run terminator-spider
 # remote terminators
 # d.run ${HOSTNAME} milhous clubber
-d.run ${HOSTNAME} slipjack algernon
+# d.run ${HOSTNAME} slipjack algernon
 
 # can't have too many browsers
 # chrome browser
@@ -95,4 +95,3 @@ desktop.run vivaldi
 # desktop.run Remmina
 
 # xournalpp /home/mcarifio/work/mcarifio/notes/journal/think.xopp &
-
