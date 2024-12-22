@@ -1340,4 +1340,26 @@ sourced.missing() {
 }
 f.x sourced.missing
 
+# Probe for a particular value. Return it's "map" iff the key is known.
+# Otherwise announce an error.
+u.mkprobe() {
+    local _name=${1:?"${FUNCNAME} expecting a function name"}; shift
+    local _key=${1?"${FUNCNAME} expecting a key value operator"}; shift
+    source /dev/stdin <<EOF
+${_name}() (
+    local -A _known=($@)
+    local _key="\${1:-\$(${_key})}"
+    [[ -v _known[\${_key}] ]] && echo \${_known[\${_key}]} || return \$(u.error "\${FUNCNAME} key '\${_key}' unknown.")
+)
+EOF
+}
+# probe the arch
+u.mkprobe u.probe.arch 'uname -m' [x86_64]=x86_64 [aarch64]=arm64 [arm64]=arm64
+# probe the os
+u.mkprobe u.probe.os 'uname -s'  [Linux]=Linux [Darwin]=Darwin
+# probe the target
+u.mkprobe u.probe.target 'uname -s' [Darwin]=apple-darwin [Linux]=unknown-linux-gnu
+
+
+
 sourced || true
