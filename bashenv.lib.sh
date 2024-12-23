@@ -71,8 +71,8 @@ f.status() {
     if [[ -n "$2" ]]; then
         __bashenv_f_status["${_key}"]=$2
     else
-        local _status=${__bashenv_f_status["${_key}"]}
-        [[ -n "${_status}" ]] && return ${_status} || return $(u.error "${FUNCNAME} no status for function '${_key}'")
+        [[ -v ${__bashenv_f_status["${_key}"]} ]] && return ${__bashenv_f_status["${_key}"]} || \
+                return $(u.error "${FUNCNAME} no status for function '${_key}'")
     fi
 }
 f.x f.status
@@ -934,7 +934,13 @@ bashenv.env.functions() (
 f.x bashenv.env.functions
 
 bashenv.env.start() {
-    for f in $(bashenv.env.functions); do $f || u.error "$f failed"; done
+    for f in $(bashenv.env.functions); do
+        f.status $f &> /dev/null && continue
+        $f
+        local -i _status=$?
+        f.status $f ${_status}
+        (( ! _status )) || u.error "${_f} returned ${_status}"
+    done
 }
 f.x bashenv.env.start
 
@@ -945,7 +951,13 @@ bashenv.session.functions() (
 f.x bashenv.session.functions
 
 bashenv.session.start() {
-    for f in $(bashenv.session.functions); do $f || u.error "$f failed"; done
+    for f in $(bashenv.session.functions); do
+        f.status $f &> /dev/null && continue
+        $f
+        local -i _status=$?
+        f.status $f ${_status}
+        (( ! _status )) || u.error "${_f} returned ${_status}"
+    done
 }
 f.x bashenv.session.start
 

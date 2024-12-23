@@ -252,7 +252,7 @@ binstall.cargo() (
 
     [[ -z "${_pkg}" ]] && return $(u.error "${FUNCNAME} expecting --pkg=\${something}")
     u.have cargo || path.add ~/.cargo/bin
-    cargo install ${_options} ${_pkg} $@
+    cargo install --locked ${_options} ${_pkg} $@
 )
 f.x binstall.cargo
 
