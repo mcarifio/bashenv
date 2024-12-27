@@ -31,6 +31,11 @@ os-release.id() (
 )
 f.x os-release.id
 
+os-release.version_codename() (
+    os-release $(name2env ${FUNCNAME##*.})
+)
+f.x os-release.version_codename
+
 os-release.major() {
     local _major=$(os-release.version_id)
     echo -n ${_major%.*}

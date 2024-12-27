@@ -366,16 +366,19 @@ binstall.dnf.installers-by-cmd() (
 
 
 binstall.apt() (
-    : '[--import=${url}]+ [--add-repo=${url}]+ pkg+'
+    : '[--uri=${url}]+ [--suite=${suite}]+ [--component=${component}] [--signed-by=${url}] pkg+'
     set -Eeuo pipefail; shopt -s nullglob
     u.have ${FUNCNAME##*.} || return $(u.error "${FUNCNAME}: ${FUNCNAME##*.} not on path, stopping.")
 
+    local _key='' _prefix=/usr/share/keyrings _source='' _pkg=''
+    local -a _uris=() _suites=() _components=()
     for _a in "${@}"; do
         case "${_a}" in
-            --add-repo=*) sudo $(type -P apt) add "${_a##*=}";;
-            # --import=*) sudo $(type -P apt) config-manager --import "${_a##*=}";;
-            --import=*) sudo $(type -P apt) apt import "${_a##*=}";;
-
+            --uri*) uris+="${_a##*=}"; [[ -z "${_source}" ]] && _source=/etc/apt/sources.list.d/$(path.basename "${_a##*=}" 0).sources;;
+            --suite=*) _suites+="${_a##*=}";;
+            --component=*) _components+="${_a##*=}";;
+            --signed-by=*) sudo wget --directory-prefix /usr/share/keyrings "${_a##*=}"; _key=${_prefix}/$(basename "${_a##*=}");;
+            --pkg=*) _pkg="${_a##*=}";;
             --*) >&2 echo "${FUNCNAME}: unknown switch ${_a}, stop processing switches"; break;;
             --) shift; break;;
             *) break ;;
@@ -383,16 +386,51 @@ binstall.apt() (
         shift
     done
 
-
-    # $@ is a list of packages to binstall. For convenience, the first package is considered
-    # the "primary" package and rest of the packages are considered prerequisites to be installed *first*.
-    local -a _pkgs=( "$@" )
-    # If there are prerequisites, install them first...
-    ((${#_pkgs[*]} - 1)) && sudo $(type -P apt) install -y "${_pkgs[*]:1}"
-    # ... and then install the primary package.
-    sudo $(type -P apt) install -y "${_pkgs[0]}"
+    if [[ -n "${_source}" ]] ; then
+        if [[ -r "${_source}" ]]; then
+            >&2 echo "${_source} exists, skipping creation."
+        else
+            (( ${#_suites} )) || _suites=( $(os-release.version_codename){-updates,-backports} ) 
+            (( ${#_components} )) || _components=(main universe restricted multiverse) 
+            cat <<EOF  | sudo tee "${_source}"
+Types: deb
+URIs: $(echo ${_uris[@]})
+Suites: $(echo ${_suites[@]})
+Components: $(echo ${_suites[@]})
+EOF
+            [[ -n "${_key}" ]] && echo "Signed-By: ${_key}" | sudo tee -a "${_source}"
+        fi        
+    fi
+    
+    (( $# )) && sudo $(type -P apt) install -y $@
+    sudo $(type -P apt) install -y ${_pkg}
 )
 f.x binstall.apt
+
+binstall.apt.pkg.cmd-pathnames() (
+    : '${pkg}... ## |> pathnames, e.g. /usr/bin/ysh'
+    set -Eeuo pipefail; shopt -s nullglob
+    dpkg -L "$@" | grep --extended-regexp '^/usr/s?bin/' | sort | uniq
+)
+f.x binstall.apt.pkg.cmd-pathnames
+
+binstall.apt.pkg.cmds() (
+    : '${pkg}... ## |> cmds'
+    set -Eeuo pipefail; shopt -s nullglob
+    basename -a $(binstall.apt.pkg.cmd-pathnames "$@") | sort | uniq
+)
+f.x binstall.apt.pkg.cmds
+
+binstall.apt.installers-by-cmd() (
+    : '# relative symlink all dnf installers by their cmds. pkg must be installed'
+    set -Eeuo pipefail; shopt -s nullglob
+    for _installer in $(binstall.installers apt); do
+        for _cmd in $(binstall.apt.pkg.cmds $(path.basename.part ${_installer} 0)); do
+            ln -srv ${_installer} $(dirname ${_installer})/${_cmd}.apt.binstall.sh || true
+        done
+    done                  
+)
+
 
 binstall.distro() (
     set -Eeuo pipefail; shopt -s nullglob
