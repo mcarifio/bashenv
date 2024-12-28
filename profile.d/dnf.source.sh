@@ -5,8 +5,25 @@ ${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
 
 dnf() (
     : 'sudo dnf ...'
-    sudo $(type -P dnf) --assumeyes "$@" # --allowerasing
-)
+    sudo $(type -P dnf) --assumeyes "$@" || # --allowerasing
+
+    local _verb=''
+    for _a in "${@}"; do
+        case "${_a}" in
+            --) shift; break;;
+            -*) ;;
+            *) _verb="${_a}"; shift; break;;
+        esac
+        shift
+    done
+
+    [[ install = "${_verb}" ]] || return 0
+    for _p in $@; do
+        local _binstalld="$(bashenv.profiled)/binstall.d"
+        local _installer="${_binstalld}/${_p}.${FUNCNAME}.binstall.sh"
+        [[ -r "${_installer}" ]] || cp -v ${_binstalld}/{_template.tbs,${_p}.${FUNCNAME}}.binstall.sh
+    done
+p)
 f.x dnf
 
 dnf.src.rpm() (

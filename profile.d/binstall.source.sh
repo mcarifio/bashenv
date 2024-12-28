@@ -370,15 +370,15 @@ binstall.apt() (
     set -Eeuo pipefail; shopt -s nullglob
     u.have ${FUNCNAME##*.} || return $(u.error "${FUNCNAME}: ${FUNCNAME##*.} not on path, stopping.")
 
-    local _key='' _prefix=/usr/share/keyrings _source='' _pkg=''
-    local -a _uris=() _suites=() _components=()
+    local _key='' _prefix=/etc/apt/trusted.gpg.d _source='' _pkg=''
+    local -a _uris=() _suites=() _components=() _pkgs=()
     for _a in "${@}"; do
         case "${_a}" in
-            --uri*) uris+="${_a##*=}"; [[ -z "${_source}" ]] && _source=/etc/apt/sources.list.d/$(path.basename "${_a##*=}" 0).sources;;
+            --uri*) _uris+="${_a##*=}"; [[ -z "${_source}" ]] && _source=/etc/apt/sources.list.d/$(path.basename "${_a##*=}" 0).list;;
             --suite=*) _suites+="${_a##*=}";;
             --component=*) _components+="${_a##*=}";;
-            --signed-by=*) sudo wget --directory-prefix /usr/share/keyrings "${_a##*=}"; _key=${_prefix}/$(basename "${_a##*=}");;
-            --pkg=*) _pkg="${_a##*=}";;
+            --signed-by=*) _key=${_prefix}/$(path.basename "${_a##*=}" 0).gpg; curl "${_a##*=}" | gpg --dearmor | sudo tee ${_key};; 
+            --pkg=*) _pkgs+="${_a##*=}";;
             --*) >&2 echo "${FUNCNAME}: unknown switch ${_a}, stop processing switches"; break;;
             --) shift; break;;
             *) break ;;
@@ -390,20 +390,16 @@ binstall.apt() (
         if [[ -r "${_source}" ]]; then
             >&2 echo "${_source} exists, skipping creation."
         else
-            (( ${#_suites} )) || _suites=( $(os-release.version_codename){-updates,-backports} ) 
-            (( ${#_components} )) || _components=(main universe restricted multiverse) 
-            cat <<EOF  | sudo tee "${_source}"
-Types: deb
-URIs: $(echo ${_uris[@]})
-Suites: $(echo ${_suites[@]})
-Components: $(echo ${_suites[@]})
-EOF
-            [[ -n "${_key}" ]] && echo "Signed-By: ${_key}" | sudo tee -a "${_source}"
+            (( ${#_components[@]} )) || _components=(main universe restricted multiverse) 
+            { printf 'deb [arch=%s] %s/ %s ' $(dpkg --print-architecture) ${_uris[0]} ${_components[@]}; echo; }  | sudo tee -p "${_source}"
+            # [[ -n "${_key}" ]] && echo "Signed-By: ${_key}" | sudo tee -p -a "${_source}"
+            # (( ${#_suites[@]} )) && echo "Suites: $(printf '%s ' ${_suites[@]})" | sudo tee -p -a "${_source}"
         fi        
     fi
-    
+
+    sudo apt update
     (( $# )) && sudo $(type -P apt) install -y $@
-    sudo $(type -P apt) install -y ${_pkg}
+    sudo $(type -P apt) install -y ${_pkgs[@]}
 )
 f.x binstall.apt
 

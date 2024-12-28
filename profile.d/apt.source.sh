@@ -1,8 +1,25 @@
 ${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
 
 apt() (
-    : 'sudo dnf ...'
-    sudo $(type -P ${FUNCNAME}) "$@"
+    : 'sudo apt ...'
+    sudo $(type -P ${FUNCNAME}) "$@" || return $(error "${FUNCNAME} $@ failed.")
+
+    local _verb=''
+    for _a in "${@}"; do
+        case "${_a}" in
+            --) shift; break;;
+            -*) ;;
+            *) _verb="${_a}"; shift; break;;
+        esac
+        shift
+    done
+
+    [[ install = "${_verb}" ]] || return 0
+    for _p in $@; do
+        local _binstalld="$(bashenv.profiled)/binstall.d"
+        local _installer="${_binstalld}/${_p}.${FUNCNAME}.binstall.sh"
+        [[ -r "${_installer}" ]] || cp -v ${_binstalld}/{_template.tbs,${_p}.${FUNCNAME}}.binstall.sh
+    done
 )
 f.x apt
 
@@ -35,7 +52,7 @@ f.x apt.src.deb
 
 apt.files() (
     : ' ${_pkg} # lists all files for a package; see also rpm -ql ${_pkg}'
-    command dnf repoquery --installed -l ${1:?'expecting a package'}
+    command dpkg --listfiles ${1:?'expecting a package'}
 )
 f.x dnf.files
 

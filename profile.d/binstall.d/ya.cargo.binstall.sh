@@ -1,0 +1,1 @@
+yazi.cargo.binstall.sh
