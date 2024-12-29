@@ -5,7 +5,7 @@ ${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
 
 dnf() (
     : 'sudo dnf ...'
-    sudo $(type -P dnf) --assumeyes "$@" || return $(error "${FUNCNAME} $@ => $?") # --allowerasing
+    sudo $(type -P ${FUNCNAME}) --assumeyes "$@" || return $(u.error "${FUNCNAME} $(printf '%q ' $@) failed.")
 
     local _verb=''
     for _a in "${@}"; do

@@ -149,7 +149,7 @@ asdf.install.all() (
     for _url in "$@"; do
         local _pkg=$(path.basename ${_url##*/asdf-})
         asdf plugin-add ${_pkg} ${_url}
-        asdf install ${_pkg} latest && asdf global ${_pkg} latest
+        asdf.install ${_pkg}
     done    
 )
 f.x asdf.install.all
