@@ -1,4 +1,4 @@
-# https://www.gnu.org/software/bash/manual/html_node/Programmable-Completion.html
+g# https://www.gnu.org/software/bash/manual/html_node/Programmable-Completion.html
 
 # bashenv traffics (mostly) in bash functions that follow these conventions:
 #   - they're named ${something}.{something} e.g f.complete. bash completes on .
@@ -260,6 +260,7 @@ source.if() {
     for _f in "$@"; do
         [[ -r "${_f}" ]] && source ${_f}
     done
+    true
 }
 f.x source.if
 
@@ -1065,6 +1066,9 @@ u.shell() {
     basename $(realpath /proc/$$/exe)
 }
 f.x u.shell
+
+u.shell.login() { shopt -q login_shell; }
+f.x u.shell.login
 
 # Set window or tab title in shell, useful for organization.
 # Note, a different way to set the running title is 'export TITLE="${somethings}".
