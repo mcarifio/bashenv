@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 source $(u.here)/binstalld.lib.sh
-binstalld.dispatch --kind=$(path.basename.part "$0" 1) --pkg=$(path.basename "$(realpath -Lm "$0")") "$@"
+
+_kind=$(path.basename.part "$0" 1)
+_pkg=$(path.basename "$(realpath -Lm "$0")")
+binstalld.dispatch --kind=${_kind} \
+                   --pkg=${_pkg} \
+                   "$@"
 
 

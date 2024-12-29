@@ -2,30 +2,29 @@ set -Eeuo pipefail; shopt -s nullglob
 source $(u.here)/../binstall.source.sh
 
 binstalld.dispatch() (
+    >&2 echo ${FUNCNAME} $@
     set -Eeuo pipefail; shopt -s nullglob
-    local _kind=tbs _pkg='' _postinstall=''
+    local _kind=tbs _postinstall=''
     local -a _cmds=()
     u.have ${FUNCNAME##*.} || return $(u.error "${$FUNCNAME}: ${FUNCNAME##*.} not on path, stopping.")
     
-    for _a in "${@}"; do
+    for _a in "$@"; do
+        local _v="${_a##*=}"
         case "${_a}" in
-	    --kind=*) _kind="${_a##*=}";;
-            --pkg=*) _pkg="${_a##*=}";;
-            --cmd=*) _cmds+="${_a##*=}";;
-            --postinstall=*) _postinstall="${_a##*=}";;
+	    --kind=*) _kind="${_v}";;
+            --cmd=*) _cmds+="${_v}";;
+            --postinstall=*) _postinstall="${_v}";;
             --) shift; break;;
             *) break;;
         esac
         shift
     done
 
-    [[ -z "${_pkg}" ]] && return $(u.error "${FUNCNAME} needs --pkg=\${something}")
-
     local _installer=binstall.${_kind}
-    ${_installer} --pkg="${_pkg}" "$@" >&2 || return $(u.error "${FUNCNAME} ${_installer} failed")
-    if ! (( ${#_cmds[*]} )) ; then
-        [[ dnf = ${_kind} ]] && _cmds=( $(rpm -ql ${_pkg} | grep --extended-regexp '^/usr/s?bin/') ) || _cmds+=${_pkg}
+    ${_installer} $@ || return $(u.error "${FUNCNAME} ${_installer} failed")
+    if ! (( ${#_cmds[@]} )) ; then
+        [[ dnf = ${_kind} ]] && _cmds=( $(rpm -ql ${_pkg[@]} | grep --extended-regexp '^/usr/s?bin/') )
     fi
-    [[ -n "${_postinstall}" ]] && ${_postinstall} --pkg=${_pkg}
-    binstall.check ${_cmds[*]} >&2
+    [[ -n "${_postinstall}" ]] && ${_postinstall}
+    binstall.check ${_cmds[@]} >&2
 )

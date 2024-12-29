@@ -31,6 +31,7 @@ binstall.brew() (
 f.x binstall.brew
 
 binstall.snap() (
+    # >&2 echo "$@"
     set -Eeuo pipefail; shopt -s nullglob
     local _cmd=${FUNCNAME##*.}
     u.have ${_cmd}  || return $(u.error "${FUNCNAME}: ${FUNCNAME##*.} not on path, stopping.")
@@ -75,6 +76,7 @@ binstall.asdf() (
     >&2 asdf plugin add ${_pkg} ${_url:-} || true
     asdf install ${_pkg} ${_version} >&2
     asdf global ${_pkg} ${_version} >&2
+    asdf reshim ${_pkg}
     asdf which ${_pkg}
 )
 f.x binstall.asdf
@@ -144,9 +146,8 @@ binstall.sh() (
         case "${_a}" in
             --pkg=*) _pkg="${_a##*=}";;
             --url=*) _url="${_a##*=}";;
-
-            --*) >&2 echo "${FUNCNAME}: unknown switch ${_a}, stop processing switches"; break;;
             --) shift; break;;
+            --*) >&2 echo "${FUNCNAME}: unknown switch ${_a}, stop processing switches"; break;;
             *) break;;
         esac
         shift
@@ -155,9 +156,8 @@ binstall.sh() (
     [[ -z "${_pkg}" ]] && return $(u.error "${FUNCNAME} expecting --pkg=\${something}")    
     [[ -z "${_url}" ]] && return $(u.error "${FUNCNAME} expecting --url=\${something}")    
 
-    >&2 printf "\n\nugh, hate this\n\n"
     # curl --proto '=https' --tlsv1.2 -sSf 
-    (set -x; curl --proto '=https' --tlsv1.2 -sSLJ --show-error "${_url}" | bash -s -- "$@")
+    curl --proto '=https' --tlsv1.2 -sSLJ --show-error "${_url}" | bash -s -- "$@"
 )    
 f.x binstall.sh
 
@@ -302,39 +302,36 @@ f.x binstall.go
 # Note that web browser can often report the url they downloaded from. This can useful
 # for ${_guard}.{dnf,apt}.binstall.sh.
 binstall.dnf() (
-    : '[--import=${url}]+ [--add-repo=${url}]+ {$pkg||$url} $pkg*'
+    # >&2 echo ${FUNCNAME} "$@"
+    : '[--import=${url}]+ [--add-repo=${url}]+ --pkg={$pkg||$url}+'
     set -Eeuo pipefail; shopt -s nullglob
     u.have ${FUNCNAME##*.} || return $(u.error "${FUNCNAME}: ${FUNCNAME##*.} not on path, stopping.")
 
-    local _pkg=''
+    local -a _pkgs=()
     local -a _cmds=()
 
     for _a in "${@}"; do
+        local _v="${_a##*=}"
         case "${_a}" in
-            --add-repo=*) sudo $(type -P dnf) --assumeyes config-manager addrepo --from-repofile="${_a##*=}";;
+            --add-repo=*) sudo $(type -P dnf) config-manager addrepo --from-repofile="${_a##*=}" || \
+                          return $(u.error "${FUNCNAME} cannot addrepo '${_a##*=}'");;
             # TODO mike@carif.io: --assumeyes doesn't work?
-            --copr=*) sudo $(type -P dnf) --assumeyes copr enable "${_a##*=}";;
-            --import=*) sudo $(type -P rpm) --import "${_a##*=}";;
-            --pkg=*) _pkg="${_a##*=}";;
+            --copr=*) sudo $(type -P dnf) copr enable "${_a##*=}" || \
+                            return $(u.error "${FUNCNAME} cannot copr enable '${_a##*=}'");;
+            --import=*) sudo $(type -P rpm) --import "${_a##*=}" || \
+                              return $(u.error "${FUNCNAME} cannot import '${_a##*=}'");;
+            --pkg=*) _pkgs+="${_a##*=}";;
             --cmd=*) _cmds+="${_a##*=}";;
-
             --*) break;;
             --) shift; break;;
             *) break ;;
         esac
         shift
     done
+    
+    (( ${#_pkgs[@]} )) || return $(u.error "${FUNCNAME} expecting --pkg=something")
 
-    # $@ is a list of packages to binstall. For convenience, the first package is considered
-    # the "primary" package and rest of the packages are considered prerequisites to be installed *first*.
-    # set -x
-    # local -a _pkgs=( "$@" )
-    # If there are prerequisites, install them first...
-    # ((${#_pkgs[*]} - 1)) && sudo $(type -P dnf) install --assumeyes ${_pkgs[*]:1}
-    # ... and then install the primary package.
-    # sudo $(type -P dnf) install --assumeyes ${_pkgs[0]}
-    (( $# )) && sudo $(type -P dnf) install --assumeyes $@
-    sudo $(type -P dnf) install --assumeyes $@ ${_pkg}
+    sudo $(type -P dnf) install --assumeyes $@ ${_pkgs[@]}
     
 )
 f.x binstall.dnf
@@ -377,7 +374,8 @@ binstall.apt() (
             --uri*) _uris+="${_a##*=}"; [[ -z "${_source}" ]] && _source=/etc/apt/sources.list.d/$(path.basename "${_a##*=}" 0).list;;
             --suite=*) _suites+="${_a##*=}";;
             --component=*) _components+="${_a##*=}";;
-            --signed-by=*) _key=${_prefix}/$(path.basename "${_a##*=}" 0).gpg; curl "${_a##*=}" | gpg --dearmor | sudo tee ${_key};; 
+            --signed-by=*) _key=${_prefix}/$(path.basename "${_a##*=}" 0).gpg; curl "${_a##*=}" | gpg --dearmor | sudo tee ${_key} || \
+                           return $(u.error "${FUNCNAME} cannot add key '${_a##*=}'");; 
             --pkg=*) _pkgs+="${_a##*=}";;
             --*) >&2 echo "${FUNCNAME}: unknown switch ${_a}, stop processing switches"; break;;
             --) shift; break;;

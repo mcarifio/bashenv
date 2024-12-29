@@ -14,7 +14,7 @@ snap() (
     done
 
     [[ install = "${_verb}" ]] || return 0
-    local _p=${1:-$(return 0)}
+    local _p=${1:?"${FUNCNAME} install expecting a package name"}
     local _binstalld="$(bashenv.profiled)/binstall.d"
     local _installer="${_binstalld}/${_p}.${FUNCNAME}.binstall.sh"
     [[ -r "${_installer}" ]] || cp -v ${_binstalld}/{_template.tbs,${_p}.${FUNCNAME}}.binstall.sh

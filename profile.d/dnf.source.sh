@@ -5,7 +5,7 @@ ${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
 
 dnf() (
     : 'sudo dnf ...'
-    sudo $(type -P dnf) --assumeyes "$@" || # --allowerasing
+    sudo $(type -P dnf) --assumeyes "$@" || return $(error "${FUNCNAME} $@ => $?") # --allowerasing
 
     local _verb=''
     for _a in "${@}"; do
@@ -23,7 +23,7 @@ dnf() (
         local _installer="${_binstalld}/${_p}.${FUNCNAME}.binstall.sh"
         [[ -r "${_installer}" ]] || cp -v ${_binstalld}/{_template.tbs,${_p}.${FUNCNAME}}.binstall.sh
     done
-p)
+)
 f.x dnf
 
 dnf.src.rpm() (
