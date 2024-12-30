@@ -536,6 +536,17 @@ u.map.mkall path.add # path.add.all
 
 f.x path.login
 
+path.alias() (
+    local _cmd=${1:?"${FUNCNAME} expecting a command"}
+    local _alias=${1:?"${FUNCNAME} expecting an alias"}
+    u.have ${_cmd} || return 0
+    _cmd_pn=$(type -P ${_cmd}) || return $(u.error "${FUNCNAME} '${_cmd}' has no path")
+    _dirname="$(dirname "${_cmd_pn}")"
+    ln -sr ${_dirname}{${_cmd},${_alias}} || ln -s ${_cmd_pn} ~/.local/bin/${_alias} || return $(u.error "${FUNCNAME} cannot alias '${_cmd}' with '${_alias}'")
+    type -P ${_alias}
+)
+
+
 # path.walk
 path.walk() (
     : '${folder} [${min} [${max}]] #> all directories under ${folder}'

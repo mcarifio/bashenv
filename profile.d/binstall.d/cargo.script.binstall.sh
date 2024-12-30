@@ -6,3 +6,4 @@ cargo install dum
 cargo install bat
 cargo install aichat
 cargo install create-tauri-app
+cargo install --help
