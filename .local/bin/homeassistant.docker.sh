@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# https://www.home-assistant.io/installation/linux
 
 set -Eeuo pipefail
 
@@ -13,7 +14,7 @@ name() (
 
 # Generate the config pathname for this script based on naming conventions
 config() (
-    echo "${XDG_CONFIG_HOME:-${HOME}/.config}/$(name).${FUNCNAME}"
+    echo "${XDG_CONFIG_HOME:-${HOME}/.config}/$(name)/$(basename ${BASH_SOURCE%.*})"
 )
 
 # status 0 iff docker $(name) is running
