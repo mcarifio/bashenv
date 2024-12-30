@@ -3,7 +3,7 @@ ${1:-false} || u.haveP $(path.basename.part ${BASH_SOURCE} 0) || return 0
 eget() ( command ${FUNCNAME} "$@"; )
 f.x eget
 
-eget.doc.urls() ( echo ; ) # urls here
+eget.doc.urls() ( echo https://github.com/zyedidia/eget; ) # urls here
 f.x eget.doc.urls
 
 eget.doc() (
@@ -14,7 +14,8 @@ f.x eget.doc
 
 eget.env() {
     : '# called (once) by .bash_profile'
-    true || return $(u.error "${FUNCNAME} failed")
+    local _name=${FUNCNAME%%.*}
+    export EGET_CONFIG=~/.config/${_name}/${_name}.toml  # || return $(u.error "${FUNCNAME} failed")
 }
 f.x eget.env
 

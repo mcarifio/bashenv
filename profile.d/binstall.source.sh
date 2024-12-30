@@ -52,6 +52,29 @@ binstall.snap() (
 )
 f.x binstall.snap
 
+
+binstall.eget() (
+    # >&2 echo "$@"
+    set -Eeuo pipefail; shopt -s nullglob
+    local _cmd=${FUNCNAME##*.}
+    u.have ${_cmd}  || return $(u.error "${FUNCNAME}: ${FUNCNAME##*.} not on path, stopping.")
+    local _version=latest _pkg=''
+    for _a in "${@}"; do
+        local _v="${_a##*=}"
+        case "${_a}" in
+            --pkg=*) _pkg="${_v}";;
+            --) shift; break;;
+            *) break;;
+        esac
+        shift
+    done
+    
+    [[ -z "${_pkg}" ]] && return $(u.error "${FUNCNAME} expecting --pkg=\${something}")    
+    ${_cmd} "$@" ${_pkg}
+)
+f.x binstall.eget
+
+
 binstall.asdf() (
     : 'binstall.asdf [--version=latest] ${_plugin} [${_url}]'
     set -Eeuo pipefail; shopt -s nullglob
