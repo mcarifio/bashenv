@@ -2,7 +2,8 @@
 
 zlib.root() (
     : '[${_folder}...] # return the first folder that actually exists or '
-    path.folder ${@:-/run/media/${USER}/home/${USER}/Documents/e ${HOME}/Documents/e}; )
+    path.folder {/run,}/media/${USER}/home/${USER}/Documents/e ${HOME}/Documents/e
+)
 f.x zlib.root
 
 zlib.category() (
