@@ -24,6 +24,18 @@ zlib.category.pathname() (
 )
 f.x zlib.category.pathname
 
+zlib.category.missing() (
+    local -a _args=( "$@" ); [[ -z "${_args}" ]] && _args=( $(zlib.files .) )
+    for _src in ${_args[@]}; do
+        local _cat=$(zlib.category ${_src})
+        [[ -z "${_cat}" ]] && { continue; }
+        local _pn=$(zlib.category.pathname ${_cat})
+        [[ -z "${_pn}" ]] && { echo "${_cat}"; }
+    done | sort | uniq
+)
+f.x zlib.category.missing
+
+
 zlib.categorize.folder() (
     set -Eeuo pipefail
     local _folder="${1:-${PWD}}"
@@ -123,10 +135,16 @@ zlib.mv() (
 )
 f.x zlib.mv
 
+zlib.files() (
+    # recursive at root
+    find ${1:-.} -type f -name \*.\*.epub -o -name \*.\*.pdf ! -path '* *'
+)
+f.x zlib.files
+
 zlib.mv.all() (
     : 'zlib.mv.all *.*.{pdf,epub} # mv all matching pathnames to a target based on the pathname "category"'
     # _args, the command line arguments. Defaults to *.pdf *.epub
-    local -a _args=( "$@" ); [[ -z "${_args}" ]] && _args=( $(find . -type f -name \*.\*.epub -o -name \*.\*.pdf ! -path '* *') )
+    local -a _args=( "$@" ); [[ -z "${_args}" ]] && _args=( $(zlib.files .) )
     for _src in ${_args[@]}; do
         # skip partial downloads
         local _part=$(echo $(dirname "${_src}")/$(path.basename "${_src}").*.${_ext}.part)
