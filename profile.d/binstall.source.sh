@@ -355,7 +355,7 @@ binstall.dnf() (
     (( ${#_pkgs[@]} )) || return $(u.error "${FUNCNAME} expecting --pkg=something")
 
     sudo $(type -P dnf) install --assumeyes $@ ${_pkgs[@]}
-    
+
 )
 f.x binstall.dnf
 

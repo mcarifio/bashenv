@@ -2,7 +2,7 @@ set -Eeuo pipefail; shopt -s nullglob
 source $(u.here)/../binstall.source.sh
 
 binstalld.dispatch() (
-    >&2 echo ${FUNCNAME} $@
+    # >&2 echo ${FUNCNAME} $@
     set -Eeuo pipefail; shopt -s nullglob
     local _kind=tbs _postinstall=''
     local -a _cmds=()
