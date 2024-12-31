@@ -57,12 +57,14 @@ binstall.eget() (
     # >&2 echo "$@"
     set -Eeuo pipefail; shopt -s nullglob
     local _cmd=${FUNCNAME##*.}
+    local -a _cmds=()
     u.have ${_cmd}  || return $(u.error "${FUNCNAME}: ${FUNCNAME##*.} not on path, stopping.")
     local _version=latest _pkg=''
     for _a in "${@}"; do
         local _v="${_a##*=}"
         case "${_a}" in
             --pkg=*) _pkg="${_v}";;
+            --cmd=*) _cmds+="${_v}";;
             --) shift; break;;
             *) break;;
         esac
@@ -71,6 +73,7 @@ binstall.eget() (
     
     [[ -z "${_pkg}" ]] && return $(u.error "${FUNCNAME} expecting --pkg=\${something}")    
     ${_cmd} "$@" ${_pkg}
+    for _c in ${_cmds[@]}; do ${_c} --version; done
 )
 f.x binstall.eget
 
