@@ -26,6 +26,13 @@ dnf() (
 )
 f.x dnf
 
+dnf.gh-rpm() (
+    local _owner_project=${1:?"${FUNCNAME} expecting a github owner/project"}
+    curl -s https://api.github.com/repos/${_owner_project}/releases/latest | jq -r '.assets[] | select(.name | endswith("x86_64.rpm")) | .browser_download_url'    
+)
+f.x dnf.gh-rpm
+
+
 dnf.src.rpm() (
   : '${src_rpm} [${destination_dir:-$PWD/src.rpm}] # extract source rpm to an (optional) destination directory'
   local _src_rpm=${1:?'expecting a package or .src.rpm file'}
@@ -47,8 +54,6 @@ dnf.src.rpm() (
   >&2 echo "${_src_rpm} extracted to ${_destdir}"
 )
 f.x dnf.src.rpm
-
-
 
 dnf.files() (
     : ' ${_pkg} # lists all files for a package; see also rpm -ql ${_pkg}'
@@ -113,13 +118,10 @@ dnf.install() (
 )
 f.x dnf.install
 
-function dnf.is-installed (
+dnf.is-installed() (
     : '${_pkg} ## returns 0 iff ${_pkg} is installed (works with versions)'
     dnf list installed ${1:?"${FUNCNAME} expecting a package"} &> /dev/null
 )
 f.x dnf.is-installed
 
 sourced || true
-
-
-

@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
+set -Eeuo pipefail
 source $(u.here)/binstalld.lib.sh
 
 main() (
     local _kind=$(path.basename.part "$0" 1)
-    local -a _pkgs=( $(dnf.gh-rpm trapexit/mergerfs) )
+    local -a _pkgs=( $(dnf.gh-rpm balena-io/etcher) )
     (( ${#_pkgs[@]} )) || return $(u.error "${BASH_SOURCE}:${FUNCNAME} no packages?")
     local -a _cmds=()
 
