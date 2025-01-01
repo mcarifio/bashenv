@@ -15,10 +15,9 @@ main() (
     #     *) >&2 echo "${_os_release} prerequisites for ${_pkg} needed? Continuing..." ;;
     # esac
 
-    # insert pkgs: $(printf -- '--pkg=%s ' ${_pkgs[@]})
-    # insert commands: $(printf -- '--cmd=%s ' ${_cmds[@]})
     binstalld.dispatch --kind=${_kind} \
-                       $(printf -- '--pkg=%s ' ${_pkgs[@]}) \
+                       $(u.switches pkg ${_pkgs[@]}) \
+                       $(u.switches cmd ${_cmds[@]}) \
                        "$@"
     # postinstall here    
 )

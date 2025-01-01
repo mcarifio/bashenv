@@ -95,6 +95,14 @@ u.field() (
 )
 f.x u.field
 
+u.switches() (
+    local _name=${1:?"${FUNCNAME} expecting a name"}; shift
+    local -a _values=( "$@" )
+    (( ${#_values[@]} )) && printf -- "--${_name}=%s " "${_values[@]}"
+    
+)
+f.x u.switches
+
 u.error() (
     local -i _status=${2:-$?}; (( _status )) || _status=1
     : '${command} || return $(u.error this is a message)'
@@ -118,6 +126,8 @@ u.bad() {
     return ${_status}
 }
 f.x u.bad
+
+
 
 test.u.err() (
     test.u.err1
@@ -668,15 +678,15 @@ path.mpt() (
 f.x path.mpt
 
 # usage (in function): local _first_readable_pathname="$(path.first x y z ~/.bash_profile)" || echo "no readable path found" >&2
-path.first() (
+pn.first() (
     : '${_pathname}* # return the first pathname that is readable with status 0. otherwise return status 1'
     set -Eeuo pipefail; shopt -s nullglob
     for _a in "$@"; do
         [[ -r "${_a}" ]] && { echo "$(realpath -Lm ${_a})"; return 0; }
     done
-    return 1
+    return $(u.error "${FUNCNAME} found none of $@" 1)
 )
-f.x path.first
+f.x pn.first
 
 path.contents.clean() (
     : 'remove blank lines and comments from a set of files or stdin'
@@ -1098,7 +1108,7 @@ f.x _title
 
 # dmesg --follow # will follow messages
 dmesg() (
-    sudo dmesg --human --time-format=iso --decode --color=always "$@" | less -R
+    sudo $(type -P dmesg) --human --time-format=iso --decode --color=always "$@" | less -R
 )
 f.x dmesg
 
@@ -1111,19 +1121,6 @@ dmesg.user() (
     dmesg --user "$@"
 )
 f.x dmesg.user
-
-# dnf install -y net-tools
-# emacs /etc/ethers
-ether.wake() (
-    sudo /usr/sbin/ether-wake "$@"
-)
-__ether.wake.complete() {
-    local _command=$1 _word=$2 _previous_word=$3
-    # return list of possible directories https://stackoverflow.com/questions/12933362/getting-compgen-to-include-slashes-on-directories-when-looking-for-files/40227233#40227233a
-    COMPREPLY=($(compgen -A hostname))
-}
-f.x ether.wake
-u.map.mkall either.wake
 
 u.folder() (
     : '[${_folder}] #> return the folder name'
@@ -1252,7 +1249,6 @@ pn.is.url() ( echo "${1:?"${FUNCNAME} expecting a name"}" | grep --silent --perl
 f.x pn.is.url
 
 
-
 # for c in kind kubectl glab lab; do u.have ${c} && source <(${c} completion bash); done
 # for c in /usr/share/bash-completion/completions/{docker,dhclient,nmcli,nmap,ip}; do u.have ${c} && source ${c}; done
 
@@ -1329,38 +1325,46 @@ f.x sa.shutdown
 sa.shutdown.all() (dnf.off milhouse clubber)
 f.x sa.shutdown.all
 
+bashenv.mkinstaller() (
+    local _kind="${1:?"${FUNCNAME} expecting a kind, like 'dnf'"}"
+    local _pkg="${2:?"${FUNCNAME} expecting a pkg name, like 'emacs'"}"
+
+    local -r _installd="$(bashenv.binstalld)"
+    local -r _install="${_installd}/${_pkg}.${_kind}.binstall.sh"
+    local -r _template="$(pn.first ${_installd}/_template.{${_kind},tbs}.binstall.sh)"
+    [[ -r "${_install}" ]] || install "${_template}" "${_install}"
+    realpath ${_install}
+)
+f.x bashenv.mkinstaller
+
 source.mkguard() (
     : '${_name} # create ${_name}.source.sh in the right folder'
     set -Eeuo pipefail; shopt -s nullglob
 
-    local -A _installer=()
+    local -A _kinds=() _pkgs=()
     for _a in "${@}"; do
+        local _v="${_a##*=}"
         case "${_a}" in
-            --kind=*) _installer[kind]="${_a##*=}";;
-            --pkg=*) _installer[pkg]="${_a##*=}";;
+            --kind=*) _kinds["${_v}"]=1;;
+            --pkg=*) _pkgs["${_v}"]=1;;
             --) shift; break;;
             --* | *) break;;
         esac
         shift
     done
-
     
     local -r _name=${1:?'expecting a name'}
     local -r _where="$(bashenv.root)/profile.d"
     local -r _guard="${_where}/${_name}.source.sh"
-    [[ -f "${_guard}" ]] && return $(u.error "${_guard} already exists?")
+    [[ ! -r "${_guard}" ]] || return $(u.error "${_guard} already exists?")
     xzcat "${_where}/_template.source.sh.xz" | sed "s/\${g}/${_name}/g" > "${_guard}"
-    >&2 git -C "$(bashenv.root)" status ${_guard}
+    git -C "$(bashenv.root)" add ${_guard}
 
-    (( ${#_installer[@]} )) || return 0
-    local -r _kind=${_installer[kind]:-dnf}
-    local -r _pkg=${_installer[pkg]:-${_name}}
-
-    local -r _installd="$(bashenv.binstalld)"
-    local -r _install="${_installd}/${_pkg}.${_kind}.binstall.sh"
-    [[ -r "${_install}" ]] || cp --no-clobber "${_installd}/_template.tbs.binstall.sh" "${_install}"
-    [[ "${_pkg}" = "${_name}" ]] || ln -srf ${_install} "${_installd}/${_name}.${_kind}.binstall.sh"
-    >&2 git -C "$(bashenv.root)" status ${_installd}
+    for _kind in ${!_kinds[@]}; do
+        for _pkg in ${!_pkgs[@]}; do
+            git -C "$(bashenv.root)" add $(bashenv.mkinstaller ${_kind} ${_pkg})
+        done
+    done
 )
 f.x source.mkguard
 

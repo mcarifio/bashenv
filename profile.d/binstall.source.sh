@@ -2,7 +2,7 @@
 
 binstall.tbs() (
     set -Eeuo pipefail; shopt -s nullglob
-    return $(u.error "${FUNCNAME} no installation supplied")
+    return $(u.error "${FUNCNAME} no installation supplied" 1)
 )
 f.x binstall.tbs
 
@@ -13,20 +13,23 @@ binstall.brew() (
     local _cmd=${FUNCNAME##*.}
     u.have ${_cmd}  || return $(u.error "${FUNCNAME}: ${FUNCNAME##*.} not on path, stopping.")
 
-    local _version=latest _toolchain='' _pkg='' _url=''    
+    local _version=latest _toolchain='' _pkg='' _url=''
+    local -a _cmds=()
+    
     for _a in "${@}"; do
+        local _v="${_a##*=}"
         case "${_a}" in
-	    --version=*) _version="${_a##*=}";;
-            --pkg=*) _pkg="${_a##*=}";;
-            --url=*) _url="${_a##*=}";;
+	    --version=*) _version="${_v}";;
+            --pkg=*) _pkg="${_v}";;
+            --url=*) _url="${_v}";;
+            --cmd=*) _cmds+="${_v}";;
             --) shift; break;;
             *) break;;
         esac
         shift
     done    
-    [[ -z "${_pkg}" ]] && return $(u.error "${FUNCNAME} expecting --pkg=\${something}")    
-
-    command ${_cmd} install "$@"
+    [[ -z "${_pkg}" ]] && return $(u.error "${FUNCNAME} expecting --pkg=\${something}")
+    command ${_cmd} install "$@" ${_pkg}
 )
 f.x binstall.brew
 
@@ -73,7 +76,7 @@ binstall.eget() (
     
     [[ -z "${_pkg}" ]] && return $(u.error "${FUNCNAME} expecting --pkg=\${something}")    
     ${_cmd} "$@" ${_pkg}
-    for _c in ${_cmds[@]}; do ${_c} --version; done
+    binstall.check ${_cmds[@]}
 )
 f.x binstall.eget
 
@@ -83,15 +86,15 @@ binstall.asdf() (
     set -Eeuo pipefail; shopt -s nullglob
     u.have ${FUNCNAME##*.} || return $(u.error "${FUNCNAME}: ${FUNCNAME##*.} not on path, stopping.")
 
-    local _version=latest _toolchain='' _pkg='' _url=''
+    local _version=latest _pkg='' _url='' _cmd=''
     for _a in "${@}"; do
+        local _v="${_a##*=}"
         case "${_a}" in
-	    --version=*) _version="${_a##*=}";;
-	    --toolchain=*) _toolchain="${_a##*=}";;
-            --pkg=*) _pkg="${_a##*=}";;
-            --url=*) _url="${_a##*=}";;
-
-            --*) >&2 echo "${FUNCNAME}: unknown switch ${_a}, stop processing switches"; break;;
+	    --version=*) _version="${_v}";;
+	    # --toolchain=*) _toolchain="${_a##*=}";;
+            --pkg=*) _pkg="${_v}";;
+            --url=*) _url="${_v}";;
+            --cmd=*) _cmd="${_v}";;
             --) shift; break;;
             *) break;;
         esac
@@ -99,11 +102,13 @@ binstall.asdf() (
     done
     
     [[ -z "${_pkg}" ]] && return $(u.error "${FUNCNAME} expecting --pkg=\${something}")
-    >&2 asdf plugin add ${_pkg} ${_url:-} || true
+    [[ -z "${_cmd}" ]] && _cmd="${_pkg}"
+    >&2 asdf plugin add ${_pkg} ${_url:-}
     asdf install ${_pkg} ${_version} >&2
     asdf global ${_pkg} ${_version} >&2
     asdf reshim ${_pkg}
     asdf which ${_pkg}
+    >&2 binstall.check ${_cmd}
 )
 f.x binstall.asdf
 
@@ -112,13 +117,14 @@ binstall.curl() (
     u.have ${FUNCNAME##*.} || return $(u.error "${FUNCNAME}: ${FUNCNAME##*.} not on path, stopping.")
 
     local _pkg='' _url='' _dir="${HOME}/.local/bin"
+    local -a _cmds=()    
     for _a in "${@}"; do
-        case "${_a}" in
-            --pkg=*) _pkg="${_a##*=}";;
-            --url=*) _url="${_a##*=}";;
-            --dir=*) _dir="${_a##*=}";;
-
-            --*) >&2 echo "${FUNCNAME}: unknown switch ${_a}, stop processing switches"; break;;
+        local _v="${_a##*=}"
+        case "${_a}" in            
+            --pkg=*) _pkg="${_v}";;
+            --url=*) _url="${_v}";;
+            --dir=*) _dir="${_v}";;
+            --cmd=*) _cmds+="${_v}";;
             --) shift; break;;
             *) break;;
         esac
@@ -140,6 +146,7 @@ binstall.curl() (
     # curl -Ssf ${_url} | tar xz -C /tmp
     >&2 command install ${_tmp%%.${_suffix}} "${_target}"
     >&2 echo "installed '${_target}' from '${_url}'"
+    binstall.check ${_cmds[@]}
     echo ${_target}
 )    
 f.x binstall.curl
@@ -168,12 +175,14 @@ binstall.sh() (
     set -Eeuo pipefail; shopt -s nullglob
 
     local _pkg='' _url=''
+    local -a _cmds=()    
     for _a in "${@}"; do
+        local _v="${_a##*=}"
         case "${_a}" in
-            --pkg=*) _pkg="${_a##*=}";;
-            --url=*) _url="${_a##*=}";;
+            --pkg=*) _pkg="${_v}";;
+            --url=*) _url="${_v}";;
+            --cmd=*) cmds+="${_v}";;
             --) shift; break;;
-            --*) >&2 echo "${FUNCNAME}: unknown switch ${_a}, stop processing switches"; break;;
             *) break;;
         esac
         shift
@@ -184,6 +193,7 @@ binstall.sh() (
 
     # curl --proto '=https' --tlsv1.2 -sSf 
     curl --proto '=https' --tlsv1.2 -sSLJ --show-error "${_url}" | bash -s -- "$@"
+    binstall.check ${_cmds[@]}
 )    
 f.x binstall.sh
 
@@ -198,12 +208,13 @@ binstall.curl-tar() (
     done
 
     local _pkg='' _url=''
+    local -a _cmds=()
     for _a in "${@}"; do
+        local _v="${_a##*=}"
         case "${_a}" in
-            --pkg=*) _pkg="${_a##*=}";;
-            --url=*) _url="${_a##*=}";;
-
-            --*) >&2 echo "${FUNCNAME}: unknown switch ${_a}, stop processing switches"; break;;
+            --pkg=*) _pkg="${_v}";;
+            --url=*) _url="${_v}";;
+            --cmd=*) cmds+="${_v}";;
             --) shift; break;;
             *) break;;
         esac
@@ -222,6 +233,7 @@ binstall.curl-tar() (
     command install  "${_cmd}" "${_target}"
     rm -rf /tmp/$(basename ${_url} .tar.${_suffix})
     >&2 echo "installed '${_target}' from '${_url}'"
+    binstall.check ${_cmds[@]}
     echo ${_target}
 )
 f.x binstall.curl-tar
@@ -230,12 +242,13 @@ binstall.rustup() (
     : '[--home=somewhere] ${_pkg}...'
     set -Eeuo pipefail; shopt -s nullglob
 
+    local -a _pkgs=()
     # parse calling arguments
     for _a in "${@}"; do
+        local _v="${_a##*=}"
         case "${_a}" in
-            --home=*) _home="${_a##*=}" ;;
-
-            --*) >&2 echo "${FUNCNAME}: unknown switch ${_a}, stop processing switches"; break;;
+            --home=*) _home="${_v}";;
+            --pkg=*) _pkgs+="${_v}";;
             --) shift; break;;
             *) break ;;
         esac
@@ -247,11 +260,11 @@ binstall.rustup() (
     # TODO mike@carif.io: install to ${_target}?
     [[ -n "${_home}" ]] && export CARGO_HOME="${_home}"
     # curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -- --verbose --no-modify-path --default-toolchain stable --profile complete
-    binstall.sh https://sh.rustup.rs --verbose --no-modify-path --default-toolchain stable --profile complete
+    binstall.sh https://sh.rustup.rs -- -y --verbose --no-modify-path --default-toolchain stable --profile complete
     # hardcoded installation directory ugh
-    path.add "${_target}"
+    source ${CARGO_HOME:-~/.cargo/}env
     binstall.check rustup cargo
-    (( $# )) && cargo install "$@"
+    for _crate in ${_pkgs[@]} "$@"; do binstall.cargo ${_crate}; done
 )
 
 
@@ -264,12 +277,12 @@ binstall.cargo() (
     declare -a _cmds=()
 
     for _a in "${@}"; do
+        local _v="${_a##*=}"
         case "${_a}" in
-            --pkg=*) _pkg="${_a##*=}";;
-            --cmd=*) _cmds+="${_a##*=}";;            
-            --git=*) _options+=" ${_a}";;
+            --pkg=*) _pkg="${_v}";;
+            --cmd=*) _cmds+="${_v}";;            
+            --git=*) _options+=" ${_v}";;
             --git) return $(u.error "${FUNCNAME} expecting --git=url, got just --git");;
-            --*) >&2 echo "${FUNCNAME}: unknown switch ${_a}, stop processing switches"; break;;
             --) shift; break;;
             *) break;;
         esac
@@ -277,8 +290,9 @@ binstall.cargo() (
     done
 
     [[ -z "${_pkg}" ]] && return $(u.error "${FUNCNAME} expecting --pkg=\${something}")
-    u.have cargo || path.add ~/.cargo/bin
-    cargo install --locked ${_options} ${_pkg} $@
+    u.have cargo || path.add ${CARGO_HOME:-~/.cargo}/bin
+    cargo install --locked $@ ${_pkg}
+    >&2 binstall.check $(type -P ${_pkg}) ${_cmds[@]}
 )
 f.x binstall.cargo
 
@@ -303,21 +317,22 @@ binstall.go() (
     u.have ${FUNCNAME##*.} || return $(u.error "${FUNCNAME}: ${FUNCNAME##*.} not on path, stopping.")
 
     local _url='' pkg=''
+    local -a _cmds=()
     for _a in "${@}"; do
+        local _v="${_a##*=}"
         case "${_a}" in
-            --url=*) _url="${_a##*=}";;
-            # --pkg ignored
-            --pkg=*) _pkg="${_a##*=}";;
-
-            --*) >&2 echo "${FUNCNAME}: unknown switch ${_a}, stop processing switches"; break;;
+            --url=*) _url="${_v}";;
+            --pkg=*) _pkg="${_v}";;
+            --cmd=*) _cmds+="${_v}";;
             --) shift; break;;
             *) break;;
         esac
         shift
     done
 
-    [[ -z "${_url}" ]] && return $(u.error "${FUNCNAME} expecting --url=\${something}")    
+    [[ -z "${_url}" ]] && return $(u.error "${FUNCNAME} expecting --url=\${something}")
     GOBIN=${GOBIN:-$(go env GOBIN)} go install "${_url}"
+    >&2 binstall.check $(type -P ${_pkg}) ${_cmds[@]}
 )
 f.x binstall.go
 
@@ -329,36 +344,39 @@ f.x binstall.go
 # for ${_guard}.{dnf,apt}.binstall.sh.
 binstall.dnf() (
     # >&2 echo ${FUNCNAME} "$@"
-    : '[--import=${url}]+ [--add-repo=${url}]+ --pkg={$pkg||$url}+'
     set -Eeuo pipefail; shopt -s nullglob
-    u.have ${FUNCNAME##*.} || return $(u.error "${FUNCNAME}: ${FUNCNAME##*.} not on path, stopping.")
-
+    local _installer=$(type -P ${FUNCNAME##*.})
+    [[ -n "${_installer}" ]] || return $(u.error "${FUNCNAME}: ${FUNCNAME##*.} not on path, stopping.")
+    
+    local -a _imports=()
+    local -a _repos=()
+    local -a _coprs=()
     local -a _pkgs=()
     local -a _cmds=()
 
     for _a in "${@}"; do
         local _v="${_a##*=}"
         case "${_a}" in
-            --add-repo=*) sudo $(type -P dnf) config-manager addrepo --from-repofile="${_a##*=}" || \
-                          return $(u.error "${FUNCNAME} cannot addrepo '${_a##*=}'");;
-            # TODO mike@carif.io: --assumeyes doesn't work?
-            --copr=*) sudo $(type -P dnf) copr enable "${_a##*=}" || \
-                            return $(u.error "${FUNCNAME} cannot copr enable '${_a##*=}'");;
-            --import=*) sudo $(type -P rpm) --import "${_a##*=}" || \
-                              return $(u.error "${FUNCNAME} cannot import '${_a##*=}'");;
-            --pkg=*) _pkgs+="${_a##*=}";;
-            --cmd=*) _cmds+="${_a##*=}";;
+            --import=*) _imports+="${_v}";;
+            --add-repo=*) _repos+="${_v}";; 
+            --copr=*) _coprs+="${_v}";;
+            --pkg=*) _pkgs+="${_v}";;
+            --cmd=*) _cmds+="${_v}";;
             --*) break;;
             --) shift; break;;
             *) break ;;
         esac
         shift
     done
-    
+
     (( ${#_pkgs[@]} )) || return $(u.error "${FUNCNAME} expecting --pkg=something")
 
-    sudo $(type -P dnf) install --assumeyes $@ ${_pkgs[@]}
-
+    for _import in "${_imports[@]}"; do sudo $(type -P rpm) --import "${_import}" || return $(u.error "${FUNCNAME} cannot import '${_import}'"); done
+    for _repo in "${_repos[@]}"; do sudo ${_installer} config-manager addrepo --from-repofile="${_repo}" || return $(u.error "${FUNCNAME} cannot addrepo '${_repo}'"); done
+    # TODO mike@carif.io: --assumeyes doesn't work?
+    for _copr in "${_coprs[@]}"; do sudo ${_installer} copr enable "${_copr}" || return $(u.error "${FUNCNAME} cannot enable copr '${_copr}'"); done
+    sudo ${_installer} install --assumeyes $@ ${_pkgs[@]}
+    >&2 binstall.check ${_cmds[@]} $(binstall.dnf.pkg.cmd-pathnames ${_pkg[@]})
 )
 f.x binstall.dnf
 
@@ -393,37 +411,46 @@ binstall.apt() (
     set -Eeuo pipefail; shopt -s nullglob
     u.have ${FUNCNAME##*.} || return $(u.error "${FUNCNAME}: ${FUNCNAME##*.} not on path, stopping.")
 
-    local _key='' _prefix=/etc/apt/trusted.gpg.d _source='' _pkg=''
-    local -a _uris=() _suites=() _components=() _pkgs=()
+    local -a _uris=() _suites=() _components=() _keys=() _cmds=() _pkgs=() 
     for _a in "${@}"; do
+        local _v="${_a##*=}"
         case "${_a}" in
-            --uri*) _uris+="${_a##*=}"; [[ -z "${_source}" ]] && _source=/etc/apt/sources.list.d/$(path.basename "${_a##*=}" 0).list;;
-            --suite=*) _suites+="${_a##*=}";;
-            --component=*) _components+="${_a##*=}";;
-            --signed-by=*) _key=${_prefix}/$(path.basename "${_a##*=}" 0).gpg; curl "${_a##*=}" | gpg --dearmor | sudo tee ${_key} || \
-                           return $(u.error "${FUNCNAME} cannot add key '${_a##*=}'");; 
-            --pkg=*) _pkgs+="${_a##*=}";;
-            --*) >&2 echo "${FUNCNAME}: unknown switch ${_a}, stop processing switches"; break;;
+            --uri=*) _uris+="${_v}";;
+            --suite=*) _suites+="${_v}";;
+            --component=*) _components+="${_v}";;
+            --signed-by=*) _keys+="${_v}";;
+            --pkg=*) _pkgs+="${_v}";;
+            --cmd=*) _cmds+="${_v}";;
             --) shift; break;;
             *) break ;;
         esac
         shift
     done
 
-    if [[ -n "${_source}" ]] ; then
-        if [[ -r "${_source}" ]]; then
-            >&2 echo "${_source} exists, skipping creation."
-        else
-            (( ${#_components[@]} )) || _components=(main universe restricted multiverse) 
-            { printf 'deb [arch=%s] %s/ %s ' $(dpkg --print-architecture) ${_uris[0]} ${_components[@]}; echo; }  | sudo tee -p "${_source}"
-            # [[ -n "${_key}" ]] && echo "Signed-By: ${_key}" | sudo tee -p -a "${_source}"
-            # (( ${#_suites[@]} )) && echo "Suites: $(printf '%s ' ${_suites[@]})" | sudo tee -p -a "${_source}"
-        fi        
+    (( ${#_pkgs[@]} )) || return $(u.error "${FUNCNAME} expecting --pkg=something")
+
+    # keys
+    local _prefix=/etc/apt/trusted.gpg.d
+    for _key in "${_keys[@]}"; do
+        local _gpg="${_prefix}/$(path.basename "${_key}" 0).gpg"
+        [[ -r "${_gpg}" ]] && continue
+        curl "${_key}" | gpg --dearmor | sudo tee "${_gpg}"
+        >&2 echo "Added '${_gpg}' from '${_key}'"
+    done
+    
+    
+    local _source="/etc/apt/sources.list.d/$(path.basename "${_uri[0]}" 0).list"
+    (( ${#_components[@]} )) || _components=(main universe restricted multiverse) 
+    if [[ ! -r "${_source}" ]] ; then
+        for _uri in "@{_uris[@]}"; do
+            printf 'deb [arch=%s] %s/ %s\n' $(dpkg --print-architecture) ${_uri} "$(printf '%s ' ${_components[@]})"  | sudo tee -ap "${_source}"
+        done
+        >&2 echo "Created ${_source}"
     fi
 
-    sudo apt update
-    (( $# )) && sudo $(type -P apt) install -y $@
-    sudo $(type -P apt) install -y ${_pkgs[@]}
+    sudo $(type -P apt) update
+    sudo $(type -P apt) install -y ${_pkgs[@]} "$@"
+    binstall.check $(binstall.apt.pkg.cmds ${_pkgs[@]}) ${_cmds[@]}
 )
 f.x binstall.apt
 

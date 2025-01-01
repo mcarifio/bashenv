@@ -6,6 +6,7 @@ post.install() (
     set -Eeuo pipefail; shopt -s nullglob
     
     for _a in "${@}"; do
+        local _v="${_a##*=}"
         case "${_a}" in
             --pkg=*) _pkg="${_a##*=}";;
             --) shift; break;;
@@ -26,7 +27,7 @@ post.install() (
 )
 
 # see also nodejs.asdf.binstall.sh
-_default_npm_packages=$(path.first "${ASDF_NPM_DEFAULT_PACKAGES_FILE}" \
+_default_npm_packages=$(pn.first "${ASDF_NPM_DEFAULT_PACKAGES_FILE}" \
                                    "${ASDF_DIR:-/nowhere}}/.default-npm-packages" \
                                    "$(home)/opt/asdf/current/.default-npm-packages)") || true
 binstalld.dispatch --kind=$(path.basename.part "$0" 1) --pkg=$(path.basename "$(realpath -Lm "$0")") --postinstall=post.install ${_default_npm_packages} "$@"
