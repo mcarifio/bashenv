@@ -1248,6 +1248,8 @@ pn.deparen() {
 }
 f.x pn.deparen
 
+pn.is.url() ( echo "${1:?"${FUNCNAME} expecting a name"}" | grep --silent --perl '[a-zA-Z]+://'; )
+f.x pn.is.url
 
 
 
