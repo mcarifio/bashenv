@@ -373,7 +373,7 @@ binstall.dnf() (
     # TODO mike@carif.io: --assumeyes doesn't work?
     for _copr in "${_coprs[@]}"; do sudo ${_installer} copr enable "${_copr}" || return $(u.error "${FUNCNAME} cannot enable copr '${_copr}'"); done
     sudo ${_installer} install --assumeyes $@ ${_pkgs[@]}
-    >&2 binstall.check ${_cmds[@]} $(binstall.dnf.pkg.cmd-pathnames ${_pkg[@]})
+    >&2 binstall.check ${_cmds[@]} $(binstall.dnf.pkg.cmds ${_pkg[@]})
 )
 f.x binstall.dnf
 
