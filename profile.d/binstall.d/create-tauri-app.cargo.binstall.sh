@@ -4,8 +4,8 @@ source $(u.here)/binstalld.lib.sh
 
 main() (
     local _kind=$(path.basename.part "$0" 1)
-    local -a _pkgs=( $(path.basename "$(realpath -Lm "$0")") )
-    local -a _cmds=( ${_kind}-$(path.basename "$(realpath -Lm "$0")") )
+    local -a _pkgs=( $(path.basename "$0") )
+    local -a _cmds=( ${_kind}-$(path.basename "$0") )
 
     _os_release=$(os-release.id)
     case ${_os_release} in
