@@ -555,7 +555,7 @@ path.alias() (
     ln -sr ${_dirname}{${_cmd},${_alias}} || ln -s ${_cmd_pn} ~/.local/bin/${_alias} || return $(u.error "${FUNCNAME} cannot alias '${_cmd}' with '${_alias}'")
     type -P ${_alias}
 )
-
+f.x path.alias
 
 # path.walk
 path.walk() (
