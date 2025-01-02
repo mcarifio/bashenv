@@ -360,7 +360,7 @@ binstall.dnf() (
             --) shift; break;;
             *) break ;;
         esac
-        shift
+g        shift
     done
 
     (( ${#_pkgs[@]} )) || return $(u.error "${FUNCNAME} expecting --pkg=something")
@@ -370,7 +370,7 @@ binstall.dnf() (
     # TODO mike@carif.io: --assumeyes doesn't work?
     for _copr in "${_coprs[@]}"; do sudo ${_installer} copr enable "${_copr}" || return $(u.error "${FUNCNAME} cannot enable copr '${_copr}'"); done
     sudo ${_installer} install --assumeyes $@ ${_pkgs[@]}
-    >&2 binstall.check ${_cmds[@]} $(binstall.dnf.pkg.cmds ${_pkg[@]})
+    binstall.check ${_cmds[@]} $(binstall.dnf.pkg.cmds ${_pkgs[@]}) 
 )
 f.x binstall.dnf
 
@@ -384,7 +384,7 @@ f.x binstall.dnf.pkg.cmd-pathnames
 binstall.dnf.pkg.cmds() (
     : '${pkg}... ## |> cmds'
     set -Eeuo pipefail; shopt -s nullglob
-    basename -a $(binstall.dnf.pkg.cmd-pathnames "$@") | sort | uniq
+    binstall.dnf.pkg.cmd-pathnames "$@" | sort | uniq
 )
 f.x binstall.dnf.pkg.cmds
 
