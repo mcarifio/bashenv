@@ -14,7 +14,7 @@ main() (
         *) >&2 echo "${_os_release} prerequisites for ${_pkg} needed? Continuing..." ;;
     esac
     
-    binstalld.${_kind} \
+    binstall.${_kind} \
                        $(u.switches pkg ${_pkgs[@]}) \
                        $(u.switches cmd ${_cmds[@]}) \
                        "$@"
