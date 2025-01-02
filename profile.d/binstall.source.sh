@@ -296,16 +296,13 @@ f.x binstall.cargo
 
 binstall.check() (
     set -Eeuo pipefail; shopt -s nullglob
-    echo >&2
     for _command in "$@"; do
-        local _exec="$(u.or $(type -p ${_command}) ${_command})"
-        printf '%s (%s): ' "${_command}" "${_exec}" >&2
         # For each possible ${_command} switch
         for _switch in --version version -V --help; do
             # ... attempt the command with the switch silently. If it succeeds issue it again and break.
-            ${_command} ${_switch} &> /dev/null && (set -x; ${_command} ${_switch}) >&2 && break
+            command ${_command} ${_switch} &> /dev/null && printf '%s %s\n%s\n\n' "${_command}" "${_switch}" "$(command ${_command} ${_switch})" >&2 && break
         done
-        echo >&2
+        (( $? )) && >&2 printf "${_command} failed?\n\n"
     done
 )
 f.x binstall.check
