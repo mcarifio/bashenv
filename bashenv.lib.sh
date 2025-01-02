@@ -1333,38 +1333,38 @@ bashenv.mkinstaller() (
     local -r _install="${_installd}/${_pkg}.${_kind}.binstall.sh"
     local -r _template="$(pn.first ${_installd}/_template.{${_kind},tbs}.binstall.sh)"
     [[ -r "${_install}" ]] || install "${_template}" "${_install}"
-    realpath ${_install}
+    local _pn=$(realpath ${_install})
+    >&2 git -C "${_installd}" ${_pn}
+    echo ${_pn} 
 )
 f.x bashenv.mkinstaller
+
+
+# local -A _kinds=() _pkgs=()
+# for _a in "${@}"; do
+#     local _v="${_a##*=}"
+#     case "${_a}" in
+#         --kind=*) _kinds["${_v}"]=1;;
+#         --pkg=*) _pkgs["${_v}"]=1;;
+#         --) shift; break;;
+#         --* | *) break;;
+#     esac
+#     shift
+# done
+
 
 source.mkguard() (
     : '${_name} # create ${_name}.source.sh in the right folder'
     set -Eeuo pipefail; shopt -s nullglob
-
-    local -A _kinds=() _pkgs=()
-    for _a in "${@}"; do
-        local _v="${_a##*=}"
-        case "${_a}" in
-            --kind=*) _kinds["${_v}"]=1;;
-            --pkg=*) _pkgs["${_v}"]=1;;
-            --) shift; break;;
-            --* | *) break;;
-        esac
-        shift
-    done
     
     local -r _name=${1:?'expecting a name'}
+    type -P ${_name} || $(u.error "${FUNCNAME} cannot find '${_name}' on PATH. Is it installed?")
     local -r _where="$(bashenv.root)/profile.d"
     local -r _guard="${_where}/${_name}.source.sh"
     [[ ! -r "${_guard}" ]] || return $(u.error "${_guard} already exists?")
     xzcat "${_where}/_template.source.sh.xz" | sed "s/\${g}/${_name}/g" > "${_guard}"
-    git -C "$(bashenv.root)" add ${_guard}
-
-    for _kind in ${!_kinds[@]}; do
-        for _pkg in ${!_pkgs[@]}; do
-            git -C "$(bashenv.root)" add $(bashenv.mkinstaller ${_kind} ${_pkg})
-        done
-    done
+    >&2 git -C "$(bashenv.root)" add ${_guard}
+    echo "${_guard}"
 )
 f.x source.mkguard
 
