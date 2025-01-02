@@ -22,7 +22,7 @@ binstall.brew() (
 	    --version=*) _version="${_v}";;
             --pkg=*) _pkg="${_v}";;
             --url=*) _url="${_v}";;
-            --cmd=*) _cmds+="${_v}";;
+            --cmd=*) _cmds+=("${_v}");;
             --) shift; break;;
             *) break;;
         esac
@@ -67,7 +67,7 @@ binstall.eget() (
         local _v="${_a##*=}"
         case "${_a}" in
             --pkg=*) _pkg="${_v}";;
-            --cmd=*) _cmds+="${_v}";;
+            --cmd=*) _cmds+=("${_v}");;
             --) shift; break;;
             *) break;;
         esac
@@ -86,7 +86,8 @@ binstall.asdf() (
     set -Eeuo pipefail; shopt -s nullglob
     u.have ${FUNCNAME##*.} || return $(u.error "${FUNCNAME}: ${FUNCNAME##*.} not on path, stopping.")
 
-    local _version=latest _pkg='' _url='' _cmd=''
+    local _version=latest _pkg='' _url=''
+    local -a _cmds=()
     for _a in "${@}"; do
         local _v="${_a##*=}"
         case "${_a}" in
@@ -94,7 +95,7 @@ binstall.asdf() (
 	    # --toolchain=*) _toolchain="${_a##*=}";;
             --pkg=*) _pkg="${_v}";;
             --url=*) _url="${_v}";;
-            --cmd=*) _cmd="${_v}";;
+            --cmd=*) _cmds+=("${_v}");;
             --) shift; break;;
             *) break;;
         esac
@@ -108,7 +109,7 @@ binstall.asdf() (
     asdf global ${_pkg} ${_version} >&2
     asdf reshim ${_pkg}
     asdf which ${_pkg}
-    >&2 binstall.check ${_cmd}
+    >&2 binstall.check ${_pkg} ${_cmds[@]}
 )
 f.x binstall.asdf
 
@@ -124,7 +125,7 @@ binstall.curl() (
             --pkg=*) _pkg="${_v}";;
             --url=*) _url="${_v}";;
             --dir=*) _dir="${_v}";;
-            --cmd=*) _cmds+="${_v}";;
+            --cmd=*) _cmds+=("${_v}");;
             --) shift; break;;
             *) break;;
         esac
@@ -181,7 +182,7 @@ binstall.sh() (
         case "${_a}" in
             --pkg=*) _pkg="${_v}";;
             --url=*) _url="${_v}";;
-            --cmd=*) cmds+="${_v}";;
+            --cmd=*) cmds+=("${_v}");;
             --) shift; break;;
             *) break;;
         esac
@@ -191,7 +192,6 @@ binstall.sh() (
     [[ -z "${_pkg}" ]] && return $(u.error "${FUNCNAME} expecting --pkg=\${something}")    
     [[ -z "${_url}" ]] && return $(u.error "${FUNCNAME} expecting --url=\${something}")    
 
-    # curl --proto '=https' --tlsv1.2 -sSf 
     curl --proto '=https' --tlsv1.2 -sSLJ --show-error "${_url}" | bash -s -- "$@"
     binstall.check ${_cmds[@]}
 )    
@@ -203,9 +203,7 @@ binstall.curl-tar() (
     set -Eeuo pipefail; shopt -s nullglob
 
     local -r _suffix=${FUNCNAME##*.}
-    for _c in ${_suffix//-/ }; do
-        u.have ${_c} || return $(u.error "${FUNCNAME}: ${_c} not found on path")
-    done
+    u.have.all ${_suffix//-/ } || return $(u.error "${FUNCNAME} missing some of '${_suffix//-/ }'")
 
     local _pkg='' _url=''
     local -a _cmds=()
@@ -214,7 +212,7 @@ binstall.curl-tar() (
         case "${_a}" in
             --pkg=*) _pkg="${_v}";;
             --url=*) _url="${_v}";;
-            --cmd=*) cmds+="${_v}";;
+            --cmd=*) cmds+=("${_v}");;
             --) shift; break;;
             *) break;;
         esac
@@ -248,7 +246,7 @@ binstall.rustup() (
         local _v="${_a##*=}"
         case "${_a}" in
             --home=*) _home="${_v}";;
-            --pkg=*) _pkgs+="${_v}";;
+            --pkg=*) _pkgs+=("${_v}");;
             --) shift; break;;
             *) break ;;
         esac
@@ -280,7 +278,7 @@ binstall.cargo() (
         local _v="${_a##*=}"
         case "${_a}" in
             --pkg=*) _pkg="${_v}";;
-            --cmd=*) _cmds+="${_v}";;            
+            --cmd=*) _cmds+=("${_v}");;            
             --git=*) _options+=" ${_v}";;
             --git) return $(u.error "${FUNCNAME} expecting --git=url, got just --git");;
             --) shift; break;;
@@ -289,7 +287,7 @@ binstall.cargo() (
         shift
     done
 
-    [[ -z "${_pkg}" ]] && return $(u.error "${FUNCNAME} expecting --pkg=\${something}")
+    [[ -z "${_pkg}" ]] && return $(u.error "${FUNCNAME} expecting --pkg=something")
     u.have cargo || path.add ${CARGO_HOME:-~/.cargo}/bin
     cargo install --locked $@ ${_pkg}
     >&2 binstall.check $(type -P ${_pkg}) ${_cmds[@]}
@@ -323,7 +321,7 @@ binstall.go() (
         case "${_a}" in
             --url=*) _url="${_v}";;
             --pkg=*) _pkg="${_v}";;
-            --cmd=*) _cmds+="${_v}";;
+            --cmd=*) _cmds+=("${_v}");;
             --) shift; break;;
             *) break;;
         esac
@@ -357,12 +355,11 @@ binstall.dnf() (
     for _a in "${@}"; do
         local _v="${_a##*=}"
         case "${_a}" in
-            --import=*) _imports+="${_v}";;
-            --add-repo=*) _repos+="${_v}";; 
-            --copr=*) _coprs+="${_v}";;
-            --pkg=*) _pkgs+="${_v}";;
-            --cmd=*) _cmds+="${_v}";;
-            --*) break;;
+            --import=*) _imports+=("${_v}");;
+            --add-repo=*) _repos+=("${_v}");; 
+            --copr=*) _coprs+=("${_v}");;
+            --pkg=*) _pkgs+=("${_v}");;
+            --cmd=*) _cmds+=("${_v}");;
             --) shift; break;;
             *) break ;;
         esac
@@ -415,12 +412,12 @@ binstall.apt() (
     for _a in "${@}"; do
         local _v="${_a##*=}"
         case "${_a}" in
-            --uri=*) _uris+="${_v}";;
-            --suite=*) _suites+="${_v}";;
-            --component=*) _components+="${_v}";;
-            --signed-by=*) _keys+="${_v}";;
-            --pkg=*) _pkgs+="${_v}";;
-            --cmd=*) _cmds+="${_v}";;
+            --uri=*) _uris+=("${_v}");;
+            --suite=*) _suites+=("${_v}");;
+            --component=*) _components+=("${_v}");;
+            --signed-by=*) _keys+=("${_v}");;
+            --pkg=*) _pkgs+=("${_v}");;
+            --cmd=*) _cmds+=("${_v}");;
             --) shift; break;;
             *) break ;;
         esac
@@ -498,32 +495,29 @@ binstall.pip() (
     u.have python -m pip list &> /dev/null || return $(u.error "python -m pip not working, stopping.")
 
 
-    local _pkg='' _url=''
-    declare -a _cmds=()
+    local _url=''
+    declare -a _pkgs=() _cmds=()
     for _a in "${@}"; do
+        local _v="${_a##*=}"
         case "${_a}" in
-            --pkg=*) _pkg="${_a##*=}";;
+            --pkg=*) _pkgs+=("${_v}");;
             --url=*) _url="${_a##*=}";;
-            --cmd=*) _cmds+="${_a##*=}";;
-
-            --*) >&2 echo "${FUNCNAME}: unknown switch ${_a}, stop processing switches"; break;;
+            --cmd=*) _cmds+=("${_v}");;
             --) shift; break;;
             *) break;;
         esac
         shift
     done
 
-    [[ -z "${_pkg}" ]] && return $(u.error "${FUNCNAME} expecting --pkg=\${something}")    
-    # [[ -z "${_url}" ]] && return $(u.error "${FUNCNAME} expecting --url=\${something}")    
+    (( ${#_pkg[@]} )) || return $(u.error "${FUNCNAME} expecting --pkg=\${something}")    
 
     python -m pip install --upgrade pip
     python -m pip install --upgrade wheel setuptools
     # Install dependencies first if unstated in the package itself.
     # You only get one go at it.
-    (( $# )) && python -m pip install --upgrade "$@"
-    python -m pip install --upgrade ${_pkg}
+    python -m pip install --upgrade ${_pkg[@]}
     # TODO mike@carif.io: deduce commands pip ${_pkg} provides?
-    binstall.check ${_cmds[*]}
+    binstall.check ${_cmds[@]}
 )
 f.x binstall.pip
 
@@ -534,12 +528,11 @@ binstall.AppImage() (
 
     local _pkg='' _url='' _dir="${HOME}/opt/appimage/current/bin"
     for _a in "${@}"; do
+        local _v="${_a##*=}"
         case "${_a}" in
-            --pkg=*) _pkg="${_a##*=}";;
-            --url=*) _url="${_a##*=}";;
-            --dir=*) _dir="${_a##*=}";;
-
-            --*) >&2 echo "${FUNCNAME}: unknown switch ${_a}, stop processing switches"; break;;
+            --pkg=*) _pkg="${_v}";;
+            --url=*) _url="${_v}";;
+            --dir=*) _dir="${_v}";;
             --) shift; break;;
             *) break;;
         esac
@@ -576,8 +569,6 @@ binstall.git() (
         case "${_a}" in
             --pkg=*) _pkg="${_a##*=}";;
             --url=*) _url="${_a##*=}";;
-
-            --*) >&2 echo "${FUNCNAME}: unknown switch ${_a}, stop processing switches"; break;;
             --) shift; break;;
             *) break;;
         esac
@@ -599,6 +590,7 @@ binstall.git() (
 f.x binstall.git
 
 binstall.npm() (
+    # TODO mike@carif.io: broken
     set -Eeuo pipefail; shopt -s nullglob
     # known flags with default values
     local -A _known=(
@@ -634,27 +626,21 @@ f.x binstall.installer
 binstall.mkbinstall() (
     set -Eeuo pipefail; shopt -s nullglob
 
-    local _pkg='' _kind=tbs
+    local _pkg='' _kind=''
     for _a in "${@}"; do
+        local _v="${_a##*=}"
         case "${_a}" in
-            --pkg=*) _pkg="${_a##*=}";;
-            --kind=*) _kind="${_a##*=}";;
-
-            --*) >&2 echo "${FUNCNAME}: unknown switch ${_a}, stop processing switches"; break;;
+            --kind=*) _kind="${_v}";;
+            --pkg=*) _pkg="${_v}";;
             --) shift; break;;
             *) break;;
         esac
         shift
     done
 
-    [[ -z "${_pkg}" ]] && _pkg=${1:?'expecting a pkg, either --pkg=${something} or first argument'}
-    [[ -n "$2" ]] && _kind=$2
-    local -r _regime=${FUNCNAME%.*}
-    local -r _binstalld="$(bashenv.root)/profile.d/${_regime}.d"
-    local -r _template="${_binstalld}/_template.tbs.${_regime}.sh"
-    local -r _installer="${_binstalld}/${_pkg}.${_kind}.${_regime}.sh"
-    cp --no-clobber "${_template}" "${_installer}"
-    echo "${_installer}"
+    [[ -n "${_kind}" ]] || return $(u.error "${FUNCNAME} expecting --kind=something")
+    [[ -n "${_pkg}" ]] || return $(u.error "${FUNCNAME} expecting --pkg=something")
+    bashenv.mkinstaller "${_kind}" "${_pkg}"
 )
 f.x binstall.mkbinstall
 
