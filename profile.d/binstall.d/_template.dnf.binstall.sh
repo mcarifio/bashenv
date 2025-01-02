@@ -1,24 +1,22 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
-source $(u.here)/binstalld.lib.sh
+source $(u.here)/../$(path.basename.part $0 2).source.sh
 
 main() (
-    # local -a _imports=()
+    # kind of installer to run
+    local _kind=$(path.basename.part "$0" 1)
+    # keys to import with rpm --import
     local -a _imports=()
-
-    # local -a _repos=()
+    # repos to addrepo (urls)
     local -a _repos=()
-
-    # local -a _coprs=()
+    # coprs to add in ${owner}/${pkg} format
     local -a _coprs=()
+    # packages to install
+    local -a _pkgs=( $(path.basename "$0") )
+    # commands to test after installation
+    local -a _cmds=()
 
-    # local -a _pkgs=( $(path.basename "$(realpath -Lm "$0")") )
-    local -a _pkgs=( $(path.basename "$(realpath -Lm "$0")") )
-
-    # local -a _cmds=() # dnf will usually get the commands from the .rpm itself
-    local -a _cmds=() # dnf will usually get the commands from the .rpm itself
-
-    binstall.dnf \
+    binstall.${_kind:-dnf} \
              $(u.switches import ${_imports[@]}) \
              $(u.switches add-repo ${_repos[@]}) \
              $(u.switches copr ${_coprs[@]}) \
@@ -26,7 +24,8 @@ main() (
              $(u.switches cmd ${_cmds[@]}) \
              "$@"
 
-    # postinstall here    
+    # postinstall here
+    true
 )
 
 main "$@"
