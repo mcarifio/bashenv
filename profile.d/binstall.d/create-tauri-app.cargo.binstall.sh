@@ -19,7 +19,7 @@ main() (
                        $(u.switches cmd ${_cmds[@]}) \
                        "$@"
     # postinstall here
-    path.alias ${_cmd[0]} tauri
+    path.alias ${_cmds[0]} tauri
 )
 
 main "$@"
