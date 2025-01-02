@@ -57,6 +57,9 @@ desktop.run() (
 )
 f.x desktop.run
 
+desktop.run.all() ( for _app in $@; do desktop.run ${_app}; done; )
+f.x desktop.run.all
+
 
 desktop.grep.exec() (
     : 'desktop.grep.exec ${re} # find all .desktop files whose Exec= matches ${re}'

@@ -71,8 +71,8 @@ f.status() {
     if [[ -n "$2" ]]; then
         __bashenv_f_status["${_key}"]=$2
     else
-        local _status=${__bashenv_f_status["${_key}"]}
-        [[ -n "${_status}" ]] && return ${_status} || return $(u.error "${FUNCNAME} no status for function '${_key}'")
+        [[ -v ${__bashenv_f_status["${_key}"]} ]] && return ${__bashenv_f_status["${_key}"]} || \
+                return $(u.error "${FUNCNAME} no status for function '${_key}'")
     fi
 }
 f.x f.status
@@ -94,6 +94,14 @@ u.field() (
     echo "${_result[${_field}]}"
 )
 f.x u.field
+
+u.switches() (
+    local _name=${1:?"${FUNCNAME} expecting a name"}; shift
+    local -a _values=( "$@" )
+    (( ${#_values[@]} )) && printf -- "--${_name}=%s " "${_values[@]}"
+    
+)
+f.x u.switches
 
 u.error() (
     local -i _status=${2:-$?}; (( _status )) || _status=1
@@ -118,6 +126,8 @@ u.bad() {
     return ${_status}
 }
 f.x u.bad
+
+
 
 test.u.err() (
     test.u.err1
@@ -260,6 +270,7 @@ source.if() {
     for _f in "$@"; do
         [[ -r "${_f}" ]] && source ${_f}
     done
+    true
 }
 f.x source.if
 
@@ -535,6 +546,17 @@ u.map.mkall path.add # path.add.all
 
 f.x path.login
 
+path.alias() (
+    local _cmd=${1:?"${FUNCNAME} expecting a command"}
+    local _alias=${2:?"${FUNCNAME} expecting an alias"}
+    u.have ${_cmd} || return 0
+    _cmd_pn=$(type -P ${_cmd}) || return $(u.error "${FUNCNAME} '${_cmd}' has no path")
+    _dirname="$(dirname "${_cmd_pn}")"
+    ln -sr ${_dirname}/{${_cmd},${_alias}} || ln -s ${_cmd_pn} ~/.local/bin/${_alias} || return $(u.error "${FUNCNAME} cannot alias '${_cmd}' with '${_alias}'")
+    type -P ${_alias}
+)
+f.x path.alias
+
 # path.walk
 path.walk() (
     : '${folder} [${min} [${max}]] #> all directories under ${folder}'
@@ -656,15 +678,15 @@ path.mpt() (
 f.x path.mpt
 
 # usage (in function): local _first_readable_pathname="$(path.first x y z ~/.bash_profile)" || echo "no readable path found" >&2
-path.first() (
+pn.first() (
     : '${_pathname}* # return the first pathname that is readable with status 0. otherwise return status 1'
     set -Eeuo pipefail; shopt -s nullglob
     for _a in "$@"; do
         [[ -r "${_a}" ]] && { echo "$(realpath -Lm ${_a})"; return 0; }
     done
-    return 1
+    return $(u.error "${FUNCNAME} found none of $@" 1)
 )
-f.x path.first
+f.x pn.first
 
 path.contents.clean() (
     : 'remove blank lines and comments from a set of files or stdin'
@@ -934,7 +956,13 @@ bashenv.env.functions() (
 f.x bashenv.env.functions
 
 bashenv.env.start() {
-    for f in $(bashenv.env.functions); do $f || u.error "$f failed"; done
+    for f in $(bashenv.env.functions); do
+        f.status $f &> /dev/null && continue
+        $f
+        local -i _status=$?
+        f.status $f ${_status}
+        (( ! _status )) || u.error "${_f} returned ${_status}"
+    done
 }
 f.x bashenv.env.start
 
@@ -945,7 +973,13 @@ bashenv.session.functions() (
 f.x bashenv.session.functions
 
 bashenv.session.start() {
-    for f in $(bashenv.session.functions); do $f || u.error "$f failed"; done
+    for f in $(bashenv.session.functions); do
+        f.status $f &> /dev/null && continue
+        $f
+        local -i _status=$?
+        f.status $f ${_status}
+        (( ! _status )) || u.error "${_f} returned ${_status}"
+    done
 }
 f.x bashenv.session.start
 
@@ -1054,6 +1088,9 @@ u.shell() {
 }
 f.x u.shell
 
+u.shell.login() { shopt -q login_shell; }
+f.x u.shell.login
+
 # Set window or tab title in shell, useful for organization.
 # Note, a different way to set the running title is 'export TITLE="${somethings}".
 _title() (
@@ -1071,7 +1108,7 @@ f.x _title
 
 # dmesg --follow # will follow messages
 dmesg() (
-    sudo dmesg --human --time-format=iso --decode --color=always "$@" | less -R
+    sudo $(type -P dmesg) --human --time-format=iso --decode --color=always "$@" | less -R
 )
 f.x dmesg
 
@@ -1084,19 +1121,6 @@ dmesg.user() (
     dmesg --user "$@"
 )
 f.x dmesg.user
-
-# dnf install -y net-tools
-# emacs /etc/ethers
-ether.wake() (
-    sudo /usr/sbin/ether-wake "$@"
-)
-__ether.wake.complete() {
-    local _command=$1 _word=$2 _previous_word=$3
-    # return list of possible directories https://stackoverflow.com/questions/12933362/getting-compgen-to-include-slashes-on-directories-when-looking-for-files/40227233#40227233a
-    COMPREPLY=($(compgen -A hostname))
-}
-f.x ether.wake
-u.map.mkall either.wake
 
 u.folder() (
     : '[${_folder}] #> return the folder name'
@@ -1221,7 +1245,8 @@ pn.deparen() {
 }
 f.x pn.deparen
 
-
+pn.is.url() ( echo "${1:?"${FUNCNAME} expecting a name"}" | grep --silent --perl '[a-zA-Z]+://'; )
+f.x pn.is.url
 
 
 # for c in kind kubectl glab lab; do u.have ${c} && source <(${c} completion bash); done
@@ -1300,38 +1325,46 @@ f.x sa.shutdown
 sa.shutdown.all() (dnf.off milhouse clubber)
 f.x sa.shutdown.all
 
-source.mkguard() (
-    : '${_name} # create ${_name}.source.sh in the right folder'
-    set -Eeuo pipefail; shopt -s nullglob
-
-    local -A _installer=()
-    for _a in "${@}"; do
-        case "${_a}" in
-            --kind=*) _installer[kind]="${_a##*=}";;
-            --pkg=*) _installer[pkg]="${_a##*=}";;
-            --) shift; break;;
-            --* | *) break;;
-        esac
-        shift
-    done
-
-    
-    local -r _name=${1:?'expecting a name'}
-    local -r _where="$(bashenv.root)/profile.d"
-    local -r _guard="${_where}/${_name}.source.sh"
-    [[ -f "${_guard}" ]] && return $(u.error "${_guard} already exists?")
-    xzcat "${_where}/_template.source.sh.xz" | sed "s/\${g}/${_name}/g" > "${_guard}"
-    >&2 git -C "$(bashenv.root)" status ${_guard}
-
-    (( ${#_installer[@]} )) || return 0
-    local -r _kind=${_installer[kind]:-dnf}
-    local -r _pkg=${_installer[pkg]:-${_name}}
+bashenv.mkinstaller() (
+    local _kind="${1:?"${FUNCNAME} expecting a kind, like 'dnf'"}"
+    local _pkg="${2:?"${FUNCNAME} expecting a pkg name, like 'emacs'"}"
 
     local -r _installd="$(bashenv.binstalld)"
     local -r _install="${_installd}/${_pkg}.${_kind}.binstall.sh"
-    [[ -r "${_install}" ]] || cp --no-clobber "${_installd}/_template.tbs.binstall.sh" "${_install}"
-    [[ "${_pkg}" = "${_name}" ]] || ln -srf ${_install} "${_installd}/${_name}.${_kind}.binstall.sh"
-    >&2 git -C "$(bashenv.root)" status ${_installd}
+    local -r _template="$(pn.first ${_installd}/_template.{${_kind},tbs}.binstall.sh)"
+    [[ -r "${_install}" ]] || install "${_template}" "${_install}"
+    local _pn=$(realpath ${_install})
+    >&2 git -C "${_installd}" ${_pn}
+    echo ${_pn} 
+)
+f.x bashenv.mkinstaller
+
+
+# local -A _kinds=() _pkgs=()
+# for _a in "${@}"; do
+#     local _v="${_a##*=}"
+#     case "${_a}" in
+#         --kind=*) _kinds["${_v}"]=1;;
+#         --pkg=*) _pkgs["${_v}"]=1;;
+#         --) shift; break;;
+#         --* | *) break;;
+#     esac
+#     shift
+# done
+
+
+source.mkguard() (
+    : '${_name} # create ${_name}.source.sh in the right folder'
+    set -Eeuo pipefail; shopt -s nullglob
+    
+    local -r _name=${1:?'expecting a name'}
+    type -P ${_name} || $(u.error "${FUNCNAME} cannot find '${_name}' on PATH. Is it installed?")
+    local -r _where="$(bashenv.root)/profile.d"
+    local -r _guard="${_where}/${_name}.source.sh"
+    [[ ! -r "${_guard}" ]] || return $(u.error "${_guard} already exists?")
+    xzcat "${_where}/_template.source.sh.xz" | sed "s/\${g}/${_name}/g" > "${_guard}"
+    >&2 git -C "$(bashenv.root)" add ${_guard}
+    echo "${_guard}"
 )
 f.x source.mkguard
 
@@ -1339,5 +1372,27 @@ sourced.missing() {
     for _s in $(bashenv.sources); do sourced.from.key ${_s} || echo ${_s}; done;
 }
 f.x sourced.missing
+
+# Probe for a particular value. Return it's "map" iff the key is known.
+# Otherwise announce an error.
+u.mkprobe() {
+    local _name=${1:?"${FUNCNAME} expecting a function name"}; shift
+    local _key=${1?"${FUNCNAME} expecting a key value operator"}; shift
+    source /dev/stdin <<EOF
+${_name}() (
+    local -A _known=($@)
+    local _key="\${1:-\$(${_key})}"
+    [[ -v _known[\${_key}] ]] && echo \${_known[\${_key}]} || return \$(u.error "\${FUNCNAME} key '\${_key}' unknown.")
+)
+EOF
+}
+# probe the arch
+u.mkprobe u.probe.arch 'uname -m' [x86_64]=x86_64 [aarch64]=arm64 [arm64]=arm64
+# probe the os
+u.mkprobe u.probe.os 'uname -s'  [Linux]=Linux [Darwin]=Darwin
+# probe the target
+u.mkprobe u.probe.target 'uname -s' [Darwin]=apple-darwin [Linux]=unknown-linux-gnu
+
+
 
 sourced || true

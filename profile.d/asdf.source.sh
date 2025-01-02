@@ -11,7 +11,8 @@ f.x asdf.plugin.have
 
 
 asdf.plugin.add() (
-    : ''
+    : '${_plugin} [${_from}] # add an asdf plugin from an optional url'
+    set -Eeuo pipefail
     set -Eeuo pipefail
     local _pkg=${1:?'expecting a plugin'}
     local _from=${2:-}
@@ -24,6 +25,7 @@ asdf.install() (
     set -Eeuo pipefail
 
     for _a in "${@}"; do
+        local _v="${_a##*=}"
         case "${_a}" in
 	    --url=*) local _url="${_a##*=}"
                      local _plugin=$(path.basename "${_url}")
@@ -45,9 +47,13 @@ asdf.install() (
 f.x asdf.install
 
 asdf.remove.past() (
+    : '${_plugin}* # remove older versions for each ${_plugin}, $(asdf plugin-list) for all installed plugins'
     set -Eeuo pipefail
-    local _pkg=${1:?'expecting a pkg'}
-    for v in $(asdf list ${_pkg}|head -n-1); do asdf uninstall ${_pkg} $v; done
+    for _plugin in "$@"; do
+        >&2 echo -n "${FUNCNAME} ${_plugin} ... "
+        for _v in $(asdf list ${_plugin}|head -n-1); do asdf uninstall ${_plugin} ${_v}; done
+        (( $? )) && >&2 echo "failed." || >&2 echo "succeeded."
+    done    
 )
 f.x asdf.remove.past
 
@@ -143,7 +149,7 @@ asdf.install.all() (
     for _url in "$@"; do
         local _pkg=$(path.basename ${_url##*/asdf-})
         asdf plugin-add ${_pkg} ${_url}
-        asdf install ${_pkg} latest && asdf global ${_pkg} latest
+        asdf.install ${_pkg}
     done    
 )
 f.x asdf.install.all

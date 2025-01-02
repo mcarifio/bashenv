@@ -2,7 +2,7 @@ ${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
 
 sudo.alacritty() (
     local _title=${1:?'expecting a title'}; shift
-    sudo -E alacritty --title "${_title}" --option window.dimensions.{lines=50,columns=300} --command "$@"
+    sudo -E alacritty --title "${_title}" --option window.dimensions.{lines=50,columns=200} --command "$@"
 )
 f.x sudo.alacritty
 
@@ -29,5 +29,11 @@ watch.dmesg() (
 )
 f.x watch.dmesg
 
-sourced
+watch.nvtop() (
+    alacritty --title "${FUNCNAME}" --command nvtop &
+)
+f.x watch.nvtop
+
+sourced || true
+
 

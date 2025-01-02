@@ -4,7 +4,6 @@ poetry.session() {
     source <(poetry completions $(u.shell))
 }
 f.x poetry.session
-poetry.session
 
 sourced || true
 
