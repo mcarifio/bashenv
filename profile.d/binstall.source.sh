@@ -360,7 +360,7 @@ binstall.dnf() (
             --) shift; break;;
             *) break ;;
         esac
-g        shift
+        shift
     done
 
     (( ${#_pkgs[@]} )) || return $(u.error "${FUNCNAME} expecting --pkg=something")
