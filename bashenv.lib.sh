@@ -548,7 +548,7 @@ f.x path.login
 
 path.alias() (
     local _cmd=${1:?"${FUNCNAME} expecting a command"}
-    local _alias=${1:?"${FUNCNAME} expecting an alias"}
+    local _alias=${2:?"${FUNCNAME} expecting an alias"}
     u.have ${_cmd} || return 0
     _cmd_pn=$(type -P ${_cmd}) || return $(u.error "${FUNCNAME} '${_cmd}' has no path")
     _dirname="$(dirname "${_cmd_pn}")"
