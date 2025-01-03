@@ -734,7 +734,30 @@ binstall.installers.preferred() (
 )
 f.x binstall.installers.preferred
 
+binstall.all() (
+    : '[--kind=${kind}]* # ex --kind=dnf --kind=cargo'
+    set -Eeuo pipefail; shopt -s nullglob
 
+    local -a _kinds=() _binstalld="$(bashenv.binstalld)"
+    for _a in "${@}"; do
+        local _v="${_a##*=}"
+        case "${_a}" in
+            --binstalld="${_v}";;
+            --kind=*) _kinds+=("${_v}");;
+            --) shift; break;;
+            *) break;;
+        esac
+        shift
+    done
+
+    (( ${#_kinds[@]} )) || _kinds=( $(binstall.kinds --binstalld="${_binstalld}") )
+    for _k in ${_kinds[@]}; do
+        for _b in $(find ${_binstalld} -maxdepth 1 -mindepth 1 -name \*.${_kind}.binstall.sh -type f -a ! type -exec); do
+            ${_b}
+        done
+    done    
+)
+f.x binstall.all
 
 sourced || true
 
