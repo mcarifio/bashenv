@@ -1,35 +1,11 @@
 #!/usr/bin/env bash
-source $(u.here)/binstalld.lib.sh
+set -Eeuo pipefail
+source $(u.here)/../$(path.basename.part $0 2).source.sh
+binstall.dnf --pkg=$(path.basename "$0")
+npm install --global --no-fund npm
+_pkgs="$(pn.first {~/opt/asdf/current,$(u.here)}/.default-npm-packages)"
+[[ -r "${_pkgs}" ]] && npm install --global --no-fund $(sed 's/#.*$//' "${_pkgs}")
 
-post.install() (
-    : '--pkg=${_pkg} # --pkg passed to binstalld.dispatch'
-    set -Eeuo pipefail; shopt -s nullglob
-    
-    for _a in "${@}"; do
-        local _v="${_a##*=}"
-        case "${_a}" in
-            --pkg=*) _pkg="${_a##*=}";;
-            --) shift; break;;
-            --*) return $(u.error "${FUNCNAME} unknown switch '${_a}', stopping" 1);; ## error on unknown switch
-            *) break;;
-        esac
-        shift
-    done
 
-    # no default package list was passed
-    (( #@ )) && return 0
-
-    local _npm=$(rpm -ql ${_pkg} | grep -c 1 -E '\/bin\/npm$') || return $(u.error "${FUNCNAME} expecting npm to be installed with ${_pkg}, not found, stopping.")
-
-    for _npm_pkg in $(path.contents.clean $@); do
-        ${_npm} i -g "${_npm_pkg}" || true
-    done
-)
-
-# see also nodejs.asdf.binstall.sh
-_default_npm_packages=$(pn.first "${ASDF_NPM_DEFAULT_PACKAGES_FILE}" \
-                                   "${ASDF_DIR:-/nowhere}}/.default-npm-packages" \
-                                   "$(home)/opt/asdf/current/.default-npm-packages)") || true
-binstalld.dispatch --kind=$(path.basename.part "$0" 1) --pkg=$(path.basename "$(realpath -Lm "$0")") --postinstall=post.install ${_default_npm_packages} "$@"
 
 
