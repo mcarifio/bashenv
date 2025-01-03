@@ -365,7 +365,7 @@ binstall.dnf() (
 
     (( ${#_pkgs[@]} )) || return $(u.error "${FUNCNAME} expecting --pkg=something")
 
-    for _import in "${_imports[@]}"; do sudo $(type -P rpm) --import "${_import}" || return $(u.error "${FUNCNAME} cannot import '${_import}'"); done
+    for _import in "${_imports[@]}"; do sudo $(type -P rpmkeys) --import "${_import}" || return $(u.error "${FUNCNAME} cannot import '${_import}'"); done
     for _repo in "${_repos[@]}"; do sudo ${_installer} config-manager addrepo --from-repofile="${_repo}" || return $(u.error "${FUNCNAME} cannot addrepo '${_repo}'"); done
     # TODO mike@carif.io: --assumeyes doesn't work?
     for _copr in "${_coprs[@]}"; do sudo ${_installer} copr enable "${_copr}" || return $(u.error "${FUNCNAME} cannot enable copr '${_copr}'"); done
