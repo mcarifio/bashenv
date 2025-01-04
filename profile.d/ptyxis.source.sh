@@ -1,5 +1,8 @@
 ${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
 
+ptyxis() ( command ${FUNCNAME} "$@"; )
+f.x ptyxis
+
 ptyxis.doc() (
     set -uEeo pipefail
     xdg-open "https://gitlab.gnome.org/chergert/ptyxis"

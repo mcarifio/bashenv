@@ -17,3 +17,5 @@
 *.db
 
 *.AppImage
+
+profile.d/binstall.d/by-cmd.d/

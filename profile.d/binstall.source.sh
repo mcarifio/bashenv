@@ -89,6 +89,7 @@ binstall.asdf() (
     local _version=latest _pkg='' _url=''
     local -a _cmds=()
     for _a in "${@}"; do
+        local _k="${_a%%=*}"
         local _v="${_a##*=}"
         case "${_a}" in
 	    --version=*) _version="${_v}";;
@@ -369,7 +370,7 @@ binstall.dnf() (
     for _repo in "${_repos[@]}"; do sudo ${_installer} config-manager addrepo --from-repofile="${_repo}" || return $(u.error "${FUNCNAME} cannot addrepo '${_repo}'"); done
     # TODO mike@carif.io: --assumeyes doesn't work?
     for _copr in "${_coprs[@]}"; do sudo ${_installer} copr enable "${_copr}" || return $(u.error "${FUNCNAME} cannot enable copr '${_copr}'"); done
-    sudo ${_installer} install --assumeyes $@ ${_pkgs[@]}
+    sudo ${_installer} install --assumeyes $@ ${_pkgs[@]} || sudo ${_installer} install --assumeyes --no-best --allowerasing $@ ${_pkgs[@]} 
     binstall.check ${_cmds[@]} $(binstall.dnf.pkg.cmds ${_pkgs[@]}) 
 )
 f.x binstall.dnf
@@ -393,7 +394,7 @@ binstall.dnf.installers-by-cmd() (
     set -Eeuo pipefail; shopt -s nullglob
     for _installer in $(binstall.installers dnf); do
         for _cmd in $(binstall.dnf.pkg.cmds $(path.basename.part ${_installer} 0)); do
-            ln -srv ${_installer} $(dirname ${_installer})/${_cmd}.dnf.binstall.sh || true
+            ln -srv ${_installer} $(dirname ${_installer})/by-cmd.d/${_cmd}.dnf.binstall.sh || true
         done
     done                  
 )
@@ -614,6 +615,106 @@ binstall.npm() (
 f.x binstall.npm
 
 
+# Docker installs images, not pkgs. We use the docker terminology if we can.
+binstall.docker.image() (
+    : '--registry=${dns} --namespace=${_namespace} --{pkg|image}=${_pkg} --tag=${_tag} --digest=${_digest}'
+    set -Eeuo pipefail
+    
+    # ${_registry}/[${_namespace}/]${_pkg}[:${_tag}][@${_digest}]
+    local _registry='' # dns hostname, docker default docker.io, optional
+    local _namespace='' # optional
+    local _pkg='' # image name, required
+    local _tag='' # human readable version, optional, docker default 'latest'
+    local _digest='' # machine specific version, precedes --tag
+    
+    for _a in "${@}"; do
+        local _k="${_a%%=*}"
+        local _v="${_a##*=}"
+        case "${_a}" in
+            # docker pull
+            --registry=*) _registry="${_v}";;
+            --namespace=*) _namespace="${_v}";;
+            # docker calls the "package" an image, which is the correct terminology
+            # but is called "pkg" throughout the rest of these functions. Don't fight it,
+            # just give the same concept two names.
+            --pkg=*|--image=*) _pkg="${_v}";;
+            # we call `tag` `version` elsewhere
+            --tag=*|--version=*) _tag="${_v}";;
+            --digest=*) _digest="${_v}";; 
+            --) shift; break;;
+            *) break;;
+        esac
+        shift
+    done
+
+    # _pkg required
+    [[ -n "${_pkg}" ]] || return $(u.error "${FUNCNAME} expecting --pkg=\${something} or --image=\${something}")
+
+    # ${_registry}/[${_namespace}/]${_pkg}[:${_tag} | @${_digest}]
+    # A lot of work to get here:
+    printf '%s%s%s%s%s' ${_registry:+"${_registry}/"} ${_namespace:+"${_namespace}/"} ${_pkg} ${_tag:+":${_tag}"} ${_digest:+"@${_digest}"}
+)
+f.x binstall.docker.image
+
+binstall.docker() (
+    : '--login= --registry= --user= --password= --namespace= --pkg= --image= --tag= --digest='
+    set -Eeuo pipefail; shopt -s nullglob
+    u.have ${FUNCNAME##*.} || return $(u.error "${FUNCNAME##*.} not on path, stopping.")
+
+    local -i _login=0
+    local _registry=''
+    local _user=${USER}
+    local _password=''
+    
+    # ${_registry}/[${_namespace}/]${_pkg}[:${_tag} | @${_digest}]
+    local _namespace='' # optional
+    local _pkg='' # image name, required
+    local _tag='' # human readable version, optional, docker default 'latest'
+    local _digest='' # machine specific version
+    
+    for _a in "${@}"; do
+        local _k="${_a%%=*}"
+        local _v="${_a##*=}"
+        case "${_a}" in
+            # docker login [--user=${_user}] [--password=${_password}] [${_registry}]
+            --login) _login=1;;
+            --registry=*) _registry="${_v}";;
+            --user=*) _user="${_v}";;
+            --password=*) _password="${_}";;
+
+            # docker pull 
+            --namespace=*) _namespace="_v";;
+            # docker calls the "package" an image, which is the correct terminology
+            # but is called "pkg" throughout the rest of these functions. Don't fight it,
+            # just give the same concept two names.
+            --pkg=*|--image=*) _pkg="${_v}";;
+            # we call `tag` `version` elsewhere
+            --tag=*|--version=*) _tag="${_v}";;
+            --digest=*) _digest="${_v}";; 
+
+            --) shift; break;;
+            *) break;;
+        esac
+        shift
+    done
+
+    # _pkg required
+    [[ -n "${_pkg}" ]] || return $(u.error "${FUNCNAME} expecting --pkg=\${something} or --image=${something}, none found")
+
+    (( ${_login} )) && docker login \
+                              --username ${_user:?"${FUNCNAME} expecting a username for login"} \
+                              --password ${_password:?"${FUNCNAME} expecting a password for login"} \
+                              ${_registry}
+
+    local _image="$(${FUNCNAME}.image --registry=${_registry} \
+                                      --namespace=${_namespace} \
+                                      --image=${_pkg} \
+                                      --tag=${_tag} \     
+                                      --digest=${_digest})"
+    docker pull "$@" "${_image}"
+)
+f.x binstall.docker
+
 binstall.installer() (
     set -Eeuo pipefail
     binstall.installers ${1:?"${FUNCNAME} expecting a _pkg"}
@@ -738,11 +839,13 @@ binstall.all() (
     : '[--kind=${kind}]* # ex --kind=dnf --kind=cargo'
     set -Eeuo pipefail; shopt -s nullglob
 
-    local -a _kinds=() _binstalld="$(bashenv.binstalld)"
+    local _binstalld="$(bashenv.binstalld)"
+    local -a _kinds=() 
     for _a in "${@}"; do
+        local _k="${_a%%=*}"
         local _v="${_a##*=}"
         case "${_a}" in
-            --binstalld="${_v}";;
+            --binstalld=*) _binstalld="${_v}";;
             --kind=*) _kinds+=("${_v}");;
             --) shift; break;;
             *) break;;
