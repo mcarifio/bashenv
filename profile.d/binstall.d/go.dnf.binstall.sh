@@ -1,1 +1,0 @@
-golang.dnf.binstall.sh

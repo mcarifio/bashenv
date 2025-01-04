@@ -1,1 +1,0 @@
-nushell.dnf.binstall.sh

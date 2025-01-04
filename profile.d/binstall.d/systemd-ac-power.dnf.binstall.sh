@@ -1,1 +1,0 @@
-systemd.dnf.binstall.sh

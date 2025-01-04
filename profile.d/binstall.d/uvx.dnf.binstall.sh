@@ -1,1 +1,0 @@
-uv.dnf.binstall.sh

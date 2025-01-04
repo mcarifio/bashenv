@@ -1,1 +1,0 @@
-smartcat.cargo.binstall.sh

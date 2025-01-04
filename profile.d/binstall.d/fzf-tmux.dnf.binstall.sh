@@ -1,1 +1,0 @@
-fzf.dnf.binstall.sh

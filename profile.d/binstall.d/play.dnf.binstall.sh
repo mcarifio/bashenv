@@ -1,1 +1,0 @@
-sox.dnf.binstall.sh

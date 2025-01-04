@@ -1,1 +1,0 @@
-guile30.dnf.binstall.sh

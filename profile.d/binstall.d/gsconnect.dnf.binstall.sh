@@ -1,1 +1,0 @@
-webextension-gsconnect.dnf.binstall.sh

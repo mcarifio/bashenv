@@ -1,1 +1,0 @@
-snapd.dnf.binstall.sh

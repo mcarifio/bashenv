@@ -1,1 +1,0 @@
-ripgrep.dnf.binstall.sh

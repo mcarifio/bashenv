@@ -1,1 +1,0 @@
-findutils.dnf.binstall.sh
