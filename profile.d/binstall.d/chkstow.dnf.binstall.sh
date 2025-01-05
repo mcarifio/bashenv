@@ -1,1 +1,0 @@
-stow.dnf.binstall.sh

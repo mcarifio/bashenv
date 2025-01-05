@@ -51,7 +51,7 @@ binstall.snap() (
     done
     
     [[ -z "${_pkg}" ]] && return $(u.error "${FUNCNAME} expecting --pkg=\${something}")    
-    sudo $(type -P ${_cmd}) install ${_pkg}  "$@"
+    sudo $(type -P ${_cmd}) install ${_pkg}  --classic "$@"
 )
 f.x binstall.snap
 
@@ -519,6 +519,13 @@ binstall.pip() (
 )
 f.x binstall.pip
 
+
+git.gh.release-AppImage() (
+    local _owner_project=${1:?"${FUNCNAME} expecting a github owner/project"}
+    local _release=${2:-latest}
+    curl -s https://api.github.com/repos/${_owner_project}/releases/${_releae} | jq -r '.assets[] | select(.name | endswith(".AppImage")) | .browser_download_url'    
+)
+f.x git.gh.release-AppImage
 
 binstall.AppImage() (
     : '${_name} ${_url} {_target:-~/opt/appimage/current/bin}'

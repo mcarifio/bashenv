@@ -1,5 +1,13 @@
 #!/usr/bin/env bash
-source $(u.here)/binstalld.lib.sh
-binstall.dnf --pkg=git autoconf automake texinfo texi2html make
-binstalld.dispatch --kind=$(path.basename.part "$0" 1) --pkg=$(path.basename "$(realpath -Lm "$0")") https://github.com/rocky/bashdb "$@" "$@"
+set -Eeuo pipefail
+source $(u.here)/../$(path.basename.part $0 2).source.sh
+
+_os_release=$(os-release.id)
+case ${_os_release} in
+    fedora) binstall.dnf --pkg=git --pkg=autoconf --pkg=automake --pkg=texinfo --pkg=texi2html --pkg=make;;
+    ubuntu) ;; # binstall.apt --pkg=... ;;
+    *) ;; # >&2 echo "${_os_release} prerequisites for ${_pkg} needed? Continuing..." ;;
+esac
+
+binstall.$(path.basename.part $0 1) --url=https://github.com/rocky/bashdb --pkg="$(path.basename "$0")" "$@"
 

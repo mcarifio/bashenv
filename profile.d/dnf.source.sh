@@ -26,11 +26,12 @@ dnf() (
 )
 f.x dnf
 
-dnf.gh-rpm() (
+dnf.gh.release-rpm() (
     local _owner_project=${1:?"${FUNCNAME} expecting a github owner/project"}
-    curl -s https://api.github.com/repos/${_owner_project}/releases/latest | jq -r '.assets[] | select(.name | endswith("x86_64.rpm")) | .browser_download_url'    
+    local _release=${2:-latest}
+    curl -s https://api.github.com/repos/${_owner_project}/releases/${_release} | jq -r '.assets[] | select(.name | endswith("x86_64.rpm")) | .browser_download_url'    
 )
-f.x dnf.gh-rpm
+f.x dnf.gh.release-rpm;
 
 
 dnf.src.rpm() (
