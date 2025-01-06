@@ -33,6 +33,11 @@ dnf.gh.release-rpm() (
 )
 f.x dnf.gh.release-rpm;
 
+dnf.find-pkg() (
+    local _re=${1:?"${FUNCNAME} expecting a regular expression"}
+    dnf list  2>/dev/null | awk "{if (match(\$1, /^(${_re}[^\\.]*)\\./, m)){ print m[1];}}"
+)
+f.x dnf.find-pkg
 
 dnf.src.rpm() (
   : '${src_rpm} [${destination_dir:-$PWD/src.rpm}] # extract source rpm to an (optional) destination directory'

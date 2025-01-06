@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
-source $(u.here)/binstalld.lib.sh
-binstalld.dispatch --kind=$(path.basename.part "$0" 1) --pkg=$(path.basename "$(realpath -Lm "$0")") --add-repo="https://rpm.releases.hashicorp.com/$(os.release ID)/hashicorp.repo" "$@"
-
-
+set -Eeuo pipefail
+source $(u.here)/../$(path.basename.part $0 2).source.sh
+# --import= --repo= --copr= --pkg= --cmd=
+binstall.$(path.basename.part $0 1) \
+         --add-repo="https://rpm.releases.hashicorp.com/$(os.release ID)/hashicorp.repo" \
+         --pkg=$(path.basename "$0") \
+         "$@"
+# post install

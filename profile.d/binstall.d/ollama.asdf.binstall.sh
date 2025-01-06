@@ -1,5 +1,9 @@
-#!/usr/bin/env bash
-source $(u.here)/binstalld.lib.sh
-binstalld.dispatch --kind=$(path.basename.part "$0" 1) --pkg=$(path.basename "$(realpath -Lm "$0")") --url="https://github.com/virtualstaticvoid/asdf-ollama.git" "$@"
-
-
+g#!/usr/bin/env bash
+set -Eeuo pipefail
+source $(u.here)/../$(path.basename.part $0 2).source.sh
+# --url= --version= [--pkg=]+ [--cmd=]*
+binstall.$(path.basename.part $0 1) \
+         --url="https://github.com/virtualstaticvoid/asdf-ollama.git"  \
+         --pkg=$(path.basename "$0") \
+         "$@"
+# post install

@@ -490,16 +490,14 @@ f.x binstall.distro
 
 binstall.pip() (
     set -Eeuo pipefail; shopt -s nullglob
-    u.have python -m pip list &> /dev/null || return $(u.error "python -m pip not working, stopping.")
+    python -m pip list &> /dev/null || return $(u.error "python -m pip not working, stopping.")
 
-
-    local _url=''
     declare -a _pkgs=() _cmds=()
     for _a in "${@}"; do
+        local _k="${_a%%=*}"
         local _v="${_a##*=}"
         case "${_a}" in
             --pkg=*) _pkgs+=("${_v}");;
-            --url=*) _url="${_a##*=}";;
             --cmd=*) _cmds+=("${_v}");;
             --) shift; break;;
             *) break;;
@@ -507,13 +505,13 @@ binstall.pip() (
         shift
     done
 
-    (( ${#_pkg[@]} )) || return $(u.error "${FUNCNAME} expecting --pkg=\${something}")    
+    (( ${#_pkgs[@]} )) || return $(u.error "${FUNCNAME} expecting --pkg=\${something}")    
 
     python -m pip install --upgrade pip
     python -m pip install --upgrade wheel setuptools
     # Install dependencies first if unstated in the package itself.
     # You only get one go at it.
-    python -m pip install --upgrade ${_pkg[@]}
+    python -m pip install --upgrade ${_pkgs[@]}
     # TODO mike@carif.io: deduce commands pip ${_pkg} provides?
     binstall.check ${_cmds[@]}
 )

@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
-source $(u.here)/binstalld.lib.sh
-
-ASDF_NPM_DEFAULT_PACKAGES_FILE="$(pn.first ${ASDF_NPM_DEFAULT_PACKAGES_FILE} ${ASDF_DIR}/.default-npm-packages "$(home)/opt/asdf/current/.default-npm-packages)"\
- binstalld.dispatch --kind=$(path.basename.part "$0" 1) --pkg=$(path.basename "$(realpath -Lm "$0")") "$@"
-
-
+set -Eeuo pipefail
+source $(u.here)/../$(path.basename.part $0 2).source.sh
+# --pkg= --cmd=
+binstall.$(path.basename.part $0 1) \
+         --pkg=$(path.basename "$0") \
+         "$@"
+# post install
+npm install --global --no-fund npm
+_pkgs="$(pn.first  ${ASDF_NPM_DEFAULT_PACKAGES_FILE} {${ASDF_DIR},$(u.here)}/.default-npm-packages)"
+[[ -r "${_pkgs}" ]] && npm install --global --no-fund $(sed 's/#.*$//' "${_pkgs}")
