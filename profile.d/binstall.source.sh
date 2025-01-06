@@ -351,6 +351,7 @@ binstall.dnf() (
     local -a _cmds=()
 
     for _a in "${@}"; do
+        local _k="${_a%%=*}"
         local _v="${_a##*=}"
         case "${_a}" in
             --import=*) _imports+=("${_v}");;
@@ -374,6 +375,33 @@ binstall.dnf() (
     binstall.check ${_cmds[@]} $(binstall.dnf.pkg.cmds ${_pkgs[@]}) 
 )
 f.x binstall.dnf
+
+binstall.dnf.find-pkg() (
+    # >&2 echo ${FUNCNAME} "$@"
+    set -Eeuo pipefail; shopt -s nullglob
+    # forward this function call to _delegate with the name switches and modified arguments
+    local _delegate=${FUNCNAME%.*}
+    # recast non-switch arguments using _arguments
+    local _arguments=${FUNCNAME#*.}
+
+    local _options=''
+    for _a in "${@}"; do
+        local _k="${_a%%=*}"
+        local _v="${_a##*=}"
+        case "${_a}" in
+            # gather options to forward them
+            --*) _options="${_options} ${_a}";;
+            --) shift; break;;
+            *) break ;;
+        esac
+        shift
+    done
+
+    # echo \
+    ${_delegate} "${_options}" $(u.switches pkg $(${_arguments} "$@"))
+)
+f.x binstall.dnf.find-pkg
+
 
 binstall.dnf.pkg.cmd-pathnames() (
     : '${pkg}... ## |> pathnames, e.g. /usr/bin/ysh'

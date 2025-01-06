@@ -5,23 +5,36 @@ ${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
 
 dnf() (
     : 'sudo dnf ...'
-    sudo $(type -P ${FUNCNAME}) --assumeyes "$@" || return $(u.error "${FUNCNAME} $(printf '%q ' $@) failed.")
-
+    local -a _args=( $@ )
     local _verb=''
-    for _a in "${@}"; do
+    local -i _help=0
+    
+    for _a in "$@"; do
         case "${_a}" in
+            --help) _help=1;;
             --) shift; break;;
             -*) ;;
             *) _verb="${_a}"; shift; break;;
         esac
         shift
     done
+    for _a in "$@"; do
+        case "${_a}" in
+            --help) _help=1;;
+            --) shift; break;;
+            -*) ;;
+            *) break;;
+        esac
+        shift
+    done
+    sudo $(type -P ${FUNCNAME}) --assumeyes "${_args[@]}" || return $(u.error "${FUNCNAME} $(printf '%q ' $@) failed.")
 
-    [[ install = "${_verb}" ]] || return 0
-    for _p in $@; do
+    [[ install = "${_verb}" || (( _help )) ]] || return 0
+
+    for _p in ${_args[@]}; do
         local _binstalld="$(bashenv.profiled)/binstall.d"
         local _installer="${_binstalld}/${_p}.${FUNCNAME}.binstall.sh"
-        [[ -r "${_installer}" ]] || cp -v ${_binstalld}/{_template.tbs,${_p}.${FUNCNAME}}.binstall.sh
+        [[ -r "${_installer}" ]] || ln -srv ${_binstalld}/{_template.dnf,${_p}.${FUNCNAME}}.binstall.sh
     done
 )
 f.x dnf
@@ -33,11 +46,14 @@ dnf.gh.release-rpm() (
 )
 f.x dnf.gh.release-rpm;
 
-dnf.find-pkg() (
-    local _re=${1:?"${FUNCNAME} expecting a regular expression"}
-    dnf list  2>/dev/null | awk "{if (match(\$1, /^(${_re}[^\\.]*)\\./, m)){ print m[1];}}"
+dnf.find-pkgs() (
+    : '${_name} |> return all pkgs names start with ${_name}'
+    # example usage: binstall.dnf $(u.switches pkg $(dnf.find-pkgs p7zip))
+    for _name in "$@"; do
+        dnf list 2>/dev/null | awk "{if (match(\$1, /^(${_name}[^\\.]*)\\./, m)){ print m[1];}}"
+    done
 )
-f.x dnf.find-pkg
+f.x dnf.find-pkgs
 
 dnf.src.rpm() (
   : '${src_rpm} [${destination_dir:-$PWD/src.rpm}] # extract source rpm to an (optional) destination directory'
