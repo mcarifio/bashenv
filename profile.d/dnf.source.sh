@@ -3,40 +3,7 @@
 
 ${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
 
-dnf() (
-    : 'sudo dnf ...'
-    local -a _args=( $@ )
-    local _verb=''
-    local -i _help=0
-    
-    for _a in "$@"; do
-        case "${_a}" in
-            --help) _help=1;;
-            --) shift; break;;
-            -*) ;;
-            *) _verb="${_a}"; shift; break;;
-        esac
-        shift
-    done
-    for _a in "$@"; do
-        case "${_a}" in
-            --help) _help=1;;
-            --) shift; break;;
-            -*) ;;
-            *) break;;
-        esac
-        shift
-    done
-    sudo $(type -P ${FUNCNAME}) --assumeyes "${_args[@]}" || return $(u.error "${FUNCNAME} $(printf '%q ' $@) failed.")
-
-    [[ install = "${_verb}" || (( _help )) ]] || return 0
-
-    for _p in ${_args[@]}; do
-        local _binstalld="$(bashenv.profiled)/binstall.d"
-        local _installer="${_binstalld}/${_p}.${FUNCNAME}.binstall.sh"
-        [[ -r "${_installer}" ]] || ln -srv ${_binstalld}/{_template.dnf,${_p}.${FUNCNAME}}.binstall.sh
-    done
-)
+dnf() ( sudo $(type -P ${FUNCNAME}) --assumeyes $@; )
 f.x dnf
 
 dnf.gh.release-rpm() (
@@ -145,5 +112,18 @@ dnf.is-installed() (
     dnf list installed ${1:?"${FUNCNAME} expecting a package"} &> /dev/null
 )
 f.x dnf.is-installed
+
+dnf.transaction2binstall() (
+    >&2 echo "${FUNCNAME} redo in python"
+    return 1
+    local _range=${1:-last} # range ${_max}..{_min} e.g last..last-3
+    dnf history list ${_range} | tail -n+2 | \
+        awk '{if ("install" == $3) { for (i=4; i<=NF-4; i++) if ($i == "-y" || $i == "--assumeyes") continue; printf "%s ", $i; print ""}}'
+    # local _binstalld="$(bashenv.profiled)/binstall.d"
+    # for _t in $(dnf history ${_range}); do
+    #     2>/dev/null ln -srv ${_binstalld}/{_template,${_p}}.${FUNCNAME}.binstall.sh
+    # done
+)
+f.x dnf.transaction2binstall
 
 sourced || true

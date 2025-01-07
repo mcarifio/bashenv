@@ -381,7 +381,7 @@ binstall.dnf() (
     # >&2 echo ${FUNCNAME} "$@"
     set -Eeuo pipefail; shopt -s nullglob
     local _installer=$(type -P ${FUNCNAME##*.})
-    [[ -n "${_installer}" ]] || return $(u.error "${FUNCNAME}: ${FUNCNAME##*.} not on path, stopping.")
+    [[ -n "${_installer}" ]] || return $(u.error "${FUNCNAME}: ${_installer} not on PATH")
     
     local -a _imports=()
     local -a _repos=()
