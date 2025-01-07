@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
-source $(u.here)/binstalld.lib.sh
-binstalld.dispatch --kind=$(path.basename.part "$0" 1) --pkg=$(path.basename "$(realpath -Lm "$0")") --url="github.com/openrdap/rdap/cmd/rdap@master" "$@"
-
-
+set -Eeuo pipefail
+source $(u.here)/../$(path.basename.part $0 2).source.sh
+# --pkg= --cmd=
+binstall.$(path.basename.part $0 1) \
+         --pkg="github.com/openrdap/rdap/cmd/rdap@master"
+         "$@"
+# post install

@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
-source $(u.here)/binstalld.lib.sh
-binstalld.dispatch --kind=$(path.basename.part "$0" 1) --pkg=$(path.basename "$(realpath -Lm "$0")") --url="https://wasmtime.dev/install.sh" "$@"
-
-
+set -Eeuo pipefail
+source $(u.here)/../$(path.basename.part $0 2).source.sh
+# --url= --pkg= --cmd=
+binstall.$(path.basename.part $0 1) \
+         --pkg=$(path.basename "$0") \
+         --url="https://wasmtime.dev/install.sh" \ # -- arguments for script here \
+         "$@"
+# post install

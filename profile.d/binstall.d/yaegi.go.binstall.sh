@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
-source $(u.here)/binstalld.lib.sh
-binstall.dispatch --kind=dnf --pkg=rlwrap
-binstalld.dispatch --kind=$(path.basename.part "$0" 1) --pkg=$(path.basename "$(realpath -Lm "$0")") --url="github.com/traefik/yaegi/cmd/yaegi@latest" "$@"
-
-
+source $(u.here)/../$(path.basename.part $0 2).source.sh
+# --pkg= [--cmd=]*
+binstall.$(path.basename.part $0 1) \
+         --pkg="github.com/traefik/yaegi/cmd/yaegi@latest" \ 
+         "$@"
+# post install

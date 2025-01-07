@@ -1,8 +1,19 @@
 #!/usr/bin/env bash
-source $(u.here)/binstalld.lib.sh
+set -Eeuo pipefail
+source $(u.here)/../$(path.basename.part $0 2).source.sh
 
-# trunk.install.sh will install the yew support cli trunk, see https://yew.rs/docs/getting-started/introduction
+_os_release=$(os-release.id)
+case ${_os_release} in
+    fedora) ;; # binstall.dnf --pkg=... ;;
+    ubuntu) ;; # binstall.apt --pkg=... ;;
+    *) ;; # >&2 echo "${_os_release} prerequisites for ${_pkg} needed? Continuing..." ;;
+esac
+
+# trunk installs yew-cli, see https://yew.rs/docs/getting-started/introduction
 rustup target add wasm32-unknown-unknown
-binstalld.dispatch --kind=$(path.basename.part "$0" 1) --pkg=$(path.basename "$(realpath -Lm "$0")") "$@"
-
+# --pkg= [--cmd=]*
+binstall.$(path.basename.part $0 1) \
+         --pkg=$(path.basename "$0") \
+         "$@"
+# post install
 

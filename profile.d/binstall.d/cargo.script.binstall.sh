@@ -8,3 +8,6 @@ cargo install aichat
 cargo install create-tauri-app
 cargo install --help
 cargo install broot
+cargo install --locked smartcat
+cargo install --list smartcat
+cargo install --help

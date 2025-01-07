@@ -9,7 +9,9 @@ case ${_os_release} in
     *) ;; # >&2 echo "${_os_release} prerequisites for ${_pkg} needed? Continuing..." ;;
 esac
 
-# --pkg= --cmd=
-binstall.$(path.basename.part $0 1) --pkg=$(path.basename "$0") "$@"
+# --git= --pkg= [--cmd=]*
+binstall.$(path.basename.part $0 1) \
+         --pkg=$(path.basename "$0") \
+         "$@"
 # post install
 

@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
-source $(u.here)/binstalld.lib.sh
-
-binstalld.dispatch --kind=$(path.basename.part "$0" 1) \
-                   --pkg=$(path.basename "$(realpath -Lm "$0")") \
-                   --url=https://get.please.build
+set -Eeuo pipefail
+source $(u.here)/../$(path.basename.part $0 2).source.sh
+# --url= --pkg= --cmd=
+binstall.$(path.basename.part $0 1) \
+         --url=https://get.please.build \
+         --pkg=$(path.basename "$0") \
+         "$@"

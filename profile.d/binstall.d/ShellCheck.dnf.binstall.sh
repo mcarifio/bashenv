@@ -1,3 +1,10 @@
 #!/usr/bin/env bash
-source $(u.here)/binstalld.lib.sh
-binstalld.dispatch --kind=$(path.basename.part "$0" 1) --pkg=$(path.basename $0) shunit2 log4sh "$@" 
+set -Eeuo pipefail
+source $(u.here)/../$(path.basename.part $0 2).source.sh
+# --import= --repo= --copr= --pkg= --cmd=
+binstall.$(path.basename.part $0 1) \
+         --pkg=$(path.basename "$0") \
+         --pkg=shunit2 \
+         --pkg=log4sh \
+         "$@"
+# post install

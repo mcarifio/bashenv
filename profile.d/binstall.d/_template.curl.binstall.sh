@@ -10,6 +10,9 @@ case ${_os_release} in
 esac
 
 # --url= --pkg= --cmd=
-binstall.$(path.basename.part $0 1) --url=$(u.error "$0 expecting a url") --pkg=$(path.basename "$0") "$@"
+binstall.$(path.basename.part $0 1) \
+         --url=$(u.error "$0 expecting a url") \
+         --pkg=$(path.basename "$0") \
+         "$@"
 # post install
 

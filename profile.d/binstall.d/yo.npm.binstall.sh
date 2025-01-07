@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
-source $(u.here)/binstalld.lib.sh
-binstalld.dispatch --kind=$(path.basename.part "$0" 1) --pkg=$(path.basename "$(realpath -Lm "$0")") "$@"
-binstall.npm --pkg=generator-office
-
-
-
+set -Eeuo pipefail
+source $(u.here)/../$(path.basename.part $0 2).source.sh
+# [--pkg=]* [--cmd=]*
+binstall.$(path.basename.part $0 1) \
+         --pkg=$(path.basename "$0") \
+         --pkg=generator-office \
+         "$@"
+# post install
