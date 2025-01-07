@@ -691,59 +691,18 @@ binstall.npm() (
 )
 f.x binstall.npm
 
-
-# Docker installs images, not pkgs. We use the docker terminology if we can.
-binstall.docker.image() (
-    : '--registry=${dns} --namespace=${_namespace} --{pkg|image}=${_pkg} --tag=${_tag} --digest=${_digest}'
-    set -Eeuo pipefail
-    
-    # ${_registry}/[${_namespace}/]${_pkg}[:${_tag}][@${_digest}]
-    local _registry='' # dns hostname, docker default docker.io, optional
-    local _namespace='' # optional
-    local _pkg='' # image name, required
-    local _tag='' # human readable version, optional, docker default 'latest'
-    local _digest='' # machine specific version, precedes --tag
-    
-    for _a in "${@}"; do
-        local _k="${_a%%=*}"
-        local _v="${_a##*=}"
-        case "${_a}" in
-            # docker pull
-            --registry=*) _registry="${_v}";;
-            --namespace=*) _namespace="${_v}";;
-            # docker calls the "package" an image, which is the correct terminology
-            # but is called "pkg" throughout the rest of these functions. Don't fight it,
-            # just give the same concept two names.
-            --pkg=*|--image=*) _pkg="${_v}";;
-            # we call `tag` `version` elsewhere
-            --tag=*|--version=*) _tag="${_v}";;
-            --digest=*) _digest="${_v}";; 
-            --) shift; break;;
-            *) break;;
-        esac
-        shift
-    done
-
-    # _pkg required
-    [[ -n "${_pkg}" ]] || return $(u.error "${FUNCNAME} expecting --pkg=\${something} or --image=\${something}")
-
-    # ${_registry}/[${_namespace}/]${_pkg}[:${_tag} | @${_digest}]
-    # A lot of work to get here:
-    printf '%s%s%s%s%s' ${_registry:+"${_registry}/"} ${_namespace:+"${_namespace}/"} ${_pkg} ${_tag:+":${_tag}"} ${_digest:+"@${_digest}"}
-)
-f.x binstall.docker.image
-
 binstall.docker() (
     : '--login= --registry= --user= --password= --namespace= --pkg= --image= --tag= --digest='
     set -Eeuo pipefail; shopt -s nullglob
-    u.have ${FUNCNAME##*.} || return $(u.error "${FUNCNAME##*.} not on path, stopping.")
+    local _cmd=${FUNCNAME##*.}
+    u.have ${_cmd} || return $(u.error "${FUNCNAME}: ${_cmd} not on PATH")
 
     local -i _login=0
     local _registry=''
     local _user=${USER}
     local _password=''
     
-    # ${_registry}/[${_namespace}/]${_pkg}[:${_tag} | @${_digest}]
+    # ${_registry}/[${_namespace}/]${_pkg}[:${_tag}][@${_digest}]
     local _namespace='' # optional
     local _pkg='' # image name, required
     local _tag='' # human readable version, optional, docker default 'latest'
@@ -757,17 +716,17 @@ binstall.docker() (
             --login) _login=1;;
             --registry=*) _registry="${_v}";;
             --user=*) _user="${_v}";;
-            --password=*) _password="${_}";;
+            --password=*) _password="${_v}";;
 
             # docker pull 
-            --namespace=*) _namespace="_v";;
+            # --namespace=*) _namespace="${_v}";;
             # docker calls the "package" an image, which is the correct terminology
             # but is called "pkg" throughout the rest of these functions. Don't fight it,
             # just give the same concept two names.
-            --pkg=*|--image=*) _pkg="${_v}";;
+            --pkg=*|--image=*) _pkg="${_v//+/\/}";;
             # we call `tag` `version` elsewhere
-            --tag=*|--version=*) _tag="${_v}";;
-            --digest=*) _digest="${_v}";; 
+            # --tag=*|--version=*) _tag="${_v}";;
+            # --digest=*) _digest="${_v}";; 
 
             --) shift; break;;
             *) break;;
@@ -783,14 +742,14 @@ binstall.docker() (
                               --password ${_password:?"${FUNCNAME} expecting a password for login"} \
                               ${_registry}
 
-    local _image="$(${FUNCNAME}.image --registry=${_registry} \
-                                      --namespace=${_namespace} \
-                                      --image=${_pkg} \
-                                      --tag=${_tag} \     
-                                      --digest=${_digest})"
-    docker pull "$@" "${_image}"
+    (set -x; docker pull "$@" "${_pkg}")
 )
 f.x binstall.docker
+
+binstall.nix() (
+    :
+)
+f.x binstall.nix
 
 binstall.installer() (
     set -Eeuo pipefail
