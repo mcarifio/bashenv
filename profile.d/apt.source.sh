@@ -1,7 +1,7 @@
 ${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
 
 apt() (
-    sudo $(type -P ${FUNCNAME}) "$@" || return $(error "${FUNCNAME} $@ failed.")
+    sudo $(type -P ${FUNCNAME}) -y "$@" || return $(error "${FUNCNAME} $@ failed.")
 )
 
 f.x apt
