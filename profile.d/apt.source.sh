@@ -1,26 +1,32 @@
 ${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
 
+# apt0() (
+#     : 'sudo apt ...'
+#     sudo $(type -P ${FUNCNAME}) "$@" || return $(error "${FUNCNAME} $@ failed.")
+
+#     local _verb=''
+#     for _a in "${@}"; do
+#         case "${_a}" in
+#             --) shift; break;;
+#             -*) ;;
+#             *) _verb="${_a}"; shift; break;;
+#         esac
+#         shift
+#     done
+
+#     [[ install = "${_verb}" ]] || return 0
+#     for _p in $@; do
+#         local _binstalld="$(bashenv.profiled)/binstall.d"
+#         local _installer="${_binstalld}/${_p}.${FUNCNAME}.binstall.sh"
+#         [[ -r "${_installer}" ]] || cp -v ${_binstalld}/{_template.tbs,${_p}.${FUNCNAME}}.binstall.sh
+#     done
+# )
+
+
 apt() (
-    : 'sudo apt ...'
     sudo $(type -P ${FUNCNAME}) "$@" || return $(error "${FUNCNAME} $@ failed.")
-
-    local _verb=''
-    for _a in "${@}"; do
-        case "${_a}" in
-            --) shift; break;;
-            -*) ;;
-            *) _verb="${_a}"; shift; break;;
-        esac
-        shift
-    done
-
-    [[ install = "${_verb}" ]] || return 0
-    for _p in $@; do
-        local _binstalld="$(bashenv.profiled)/binstall.d"
-        local _installer="${_binstalld}/${_p}.${FUNCNAME}.binstall.sh"
-        [[ -r "${_installer}" ]] || cp -v ${_binstalld}/{_template.tbs,${_p}.${FUNCNAME}}.binstall.sh
-    done
 )
+
 f.x apt
 
 # do the rest below later
