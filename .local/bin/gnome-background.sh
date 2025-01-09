@@ -20,4 +20,4 @@ gnome.background() {
     gsettings set org.gnome.desktop.background secondary-color "${_secondary}"
 }
 
-gnome.background ${2:-snow4} ${1:-black} 
+gnome.background ${2:-snow4} ${1:-black}
