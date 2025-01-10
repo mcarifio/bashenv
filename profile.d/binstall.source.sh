@@ -496,24 +496,27 @@ binstall.apt() (
     (( ${#_pkgs[@]} )) || return $(u.error "${FUNCNAME} expecting --pkg=something")
 
     # keys
-    local _keyrings="/usr/share/keyrings"
-    for _key in "${_keys[@]}"; do
-        local _keyring="${_keyrings}/$(path.basename ${_key}).gpg"
-        # TODO mike@carif.io: is this the preferred method and local target?
-        curl -sSL "${_key}" | sudo gpg --dearmor -o "${_keyring}"
-        >&2 echo "Added '${_keyring}' from '${_key}'"
-    done
-    
-    
-    local _source="/etc/apt/sources.list.d/$(path.basename "${_uris[0]}" 0).list"
-    (( ${#_components[@]} )) || _components=(main universe restricted multiverse) 
-    if [[ ! -r "${_source}" ]] ; then
-        for _uri in "${_uris[@]}"; do
-            # TODO mike@carif.io: add signed-by=/usr/share/keyrings/${_key}.gpg. what's the default?
-            # printf 'deb [arch=%s signed-by=%s] %s/ %s\n' $(dpkg --print-architecture) "${_keyring}" "${_uri}" "$(printf '%s ' ${_components[@]})"  | sudo tee -ap "${_source}"
-            printf 'deb [arch=%s] %s/ %s\n' $(dpkg --print-architecture) "${_uri}" "$(printf '%s ' ${_components[@]})"  | sudo tee -ap "${_source}"
+    if (( ${#_keys[@]} )) ; then
+        local _keyrings="/usr/share/keyrings"
+        for _key in "${_keys[@]}"; do
+            local _keyring="${_keyrings}/$(path.basename ${_key}).gpg"
+            # TODO mike@carif.io: is this the preferred method and local target?
+            curl -sSL "${_key}" | sudo gpg --dearmor -o "${_keyring}"
+            >&2 echo "Added '${_keyring}' from '${_key}'"
         done
-        >&2 echo "Created ${_source}"
+    fi
+    
+    if (( ${#_uris[@]} )) ; then
+        local _source="/etc/apt/sources.list.d/$(path.basename "${_uris[0]}" 0).list"
+        (( ${#_components[@]} )) || _components=(main universe restricted multiverse) 
+        if [[ ! -r "${_source}" ]] ; then
+            for _uri in "${_uris[@]}"; do
+                # TODO mike@carif.io: add signed-by=/usr/share/keyrings/${_key}.gpg. what's the default?
+                # printf 'deb [arch=%s signed-by=%s] %s/ %s\n' $(dpkg --print-architecture) "${_keyring}" "${_uri}" "$(printf '%s ' ${_components[@]})"  | sudo tee -ap "${_source}"
+                printf 'deb [arch=%s] %s/ %s\n' $(dpkg --print-architecture) "${_uri}" "$(printf '%s ' ${_components[@]})"  | sudo tee -ap "${_source}"
+            done
+            >&2 echo "Created ${_source}"
+        fi
     fi
 
     apt update
