@@ -473,11 +473,14 @@ binstall.apt() (
     set -Eeuo pipefail; shopt -s nullglob
     u.have ${FUNCNAME##*.} || return $(u.error "${FUNCNAME}: ${FUNCNAME##*.} not on path, stopping.")
 
-    local -a _uris=() _suites=() _components=() _keys=() _cmds=() _pkgs=() 
+    local -a _uris=() _suites=() _components=() _keys=() _cmds=() _pkgs=()
+    local -i _trusted=0
     for _a in "$@"; do
         local _k="${_a%%=*}"
         local _v="${_a##*=}"
         case "${_a}" in
+            # adds [trusted=yes] to add repos, use with caution
+            --trusted) _trusted=1;; 
             --uri=*) _uris+=("${_v}");;
             --suite=*) _suites+=("${_v}");;
             --component=*) _components+=("${_v}");;
@@ -493,17 +496,22 @@ binstall.apt() (
     (( ${#_pkgs[@]} )) || return $(u.error "${FUNCNAME} expecting --pkg=something")
 
     # keys
+    local _keyrings="/usr/share/keyrings"
     for _key in "${_keys[@]}"; do
-        curl -sSL "${_key}" | sudo apt-key add -
-        >&2 echo "Added '${_key}'"
+        local _keyring="${_keyrings}/$(path.basename ${_key}).gpg"
+        # TODO mike@carif.io: is this the preferred method and local target?
+        curl -sSL "${_key}" | sudo gpg --dearmor -o "${_keyring}"
+        >&2 echo "Added '${_keyring}' from '${_key}'"
     done
     
     
     local _source="/etc/apt/sources.list.d/$(path.basename "${_uris[0]}" 0).list"
     (( ${#_components[@]} )) || _components=(main universe restricted multiverse) 
     if [[ ! -r "${_source}" ]] ; then
-        for _uri in "$g{_uris[@]}"; do
-            printf 'deb [arch=%s] %s/ %s\n' $(dpkg --print-architecture) ${_uri} "$(printf '%s ' ${_components[@]})"  | sudo tee -ap "${_source}"
+        for _uri in "${_uris[@]}"; do
+            # TODO mike@carif.io: add signed-by=/usr/share/keyrings/${_key}.gpg. what's the default?
+            # printf 'deb [arch=%s signed-by=%s] %s/ %s\n' $(dpkg --print-architecture) "${_keyring}" "${_uri}" "$(printf '%s ' ${_components[@]})"  | sudo tee -ap "${_source}"
+            printf 'deb [arch=%s] %s/ %s\n' $(dpkg --print-architecture) "${_uri}" "$(printf '%s ' ${_components[@]})"  | sudo tee -ap "${_source}"
         done
         >&2 echo "Created ${_source}"
     fi

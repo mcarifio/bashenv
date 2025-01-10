@@ -11,20 +11,24 @@ example.options() (
     declare -p _bool _var _varo _doo _many _pairs >&2
 
     for _a in "${@}"; do
+        local _k="${_a%%=*}"
+        local _v="${_a##*=}"
         case "${_a}" in
+            # switches
             --bool) _bool=1;; ## turn _bool on
-            --var=*) _var="${_a##*=}";;
-            --varo=*) _varo="${_a##*=}";;
-	    --do=*) _do="${_a##*=}";; # assign undefined variable
-            --doo=*) _doo="${_a##*=}";;
-            --many=*) _many+=( "${_a##*=}" );;
-            --pairs=*) _pairs["$(u.field ${_a##*=})"]="$(u.field ${_a##*=} 1)";;
+            --var=*) _var="${_k}";;
+            --varo=*) _varo="${_k}";;
+	    --do=*) _do="${_v}";; # assign undefined variable
+            --doo=*) _doo="${_v}";;
+            --many=*) _many+=( "${_v}" );;
+            --pairs=*) _pairs["$(u.field ${_k})"]="$(u.field ${_v} 1)";;
 
-            --) shift; break;;
-            # --*) break;; ## break on unknown switch, pass it along
+            # switch processing
+            --) shift; break;; ## explicit stop
             # --*) >&2 echo "${FUNCNAME}: unknown switch ${_a}, stop processing switches"; break;;
-            --*) return $(u.error "${FUNCNAME} unknown switch '${_a}', stopping");; ## error on unknown switch
-            *) break;;
+            # --*) break;; ## unknown switch, pass it along
+            --*) break;; ## unknown switch, pass it along
+            *) break;; ## arguments start
         esac
         shift
     done
