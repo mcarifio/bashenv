@@ -1,27 +1,26 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail; shopt -s nullglob
+source $(u.here)/$(path.basename.part $0 2).lib.sh
 
-
-chk4() ( [[ "${1:?"${FUNCNAME} expects a username"}" = $(path.basename $0) -a "${2:?"${FUNCNAME} expects distro id"}" = $(path.basename $0 1) ]] )
 
 main() (
-    local _user=${USER} _id=$(os-release.id)
-    chk4 ${_user} ${_id} || return $(u.error "$0 is the wrong bootstrapper for ${_user} release ${_id}")
-
-    local _from='' ## --from=pathname
-    local _to="${HOME}" ## --to=pathname
-    local -a _parts=()
+    local -i _doctor=0 ## --doctor
+    local _user=${USER}
+    local _id=$(os-release.id)
+    local _from='' ## --from=${_pathname}
+    local _to="${HOME}" ## --to=${_pathname}
+    local -a _parts=() ## --part={_directory_suffix}
     
     for _a in "${@}"; do
         local _k="${_a%%=*}"
         local _v="${_a##*=}"
         case "${_a}" in
             # switches
-            # --many=*) _many+=( "${_v}" );;
-            # --pairs=*) _pairs["$(u.field ${_k})"]="$(u.field ${_v} 1)";;
+            --doctor) _doctor=1;;
+            --user=*) _user="${_v}";; ## unnecessary b/c of --to=*?
             --from=*) _from="${_v}";;
             --to=*) _to="${_v}";;
-            --part=*) _parts+=( "${_v}" )
+            --part=*) _parts+=( "${_v}" );;
             # switch processing
             --) shift; break;; ## explicit stop
             # --*) >&2 echo "${FUNCNAME}: unknown switch ${_a}, stop processing switches"; break;;
@@ -32,12 +31,41 @@ main() (
         shift
     done
 
+    (( ${#_parts[@]} )) || _parts=( .emacs.d .thunderbird .local .config opt .cargo explore src )
     [[ -d "${_from}" ]] || return $(u.error "'${_from}' is not a directory")
-    (( ${#_parts[@]} )) || _parts= ( .emacs.d .thunderbird .config opt .cargo explore src )
-    for _p in ${_parts[@]} do
+
+    if (( _doctor )); then
+        local -i _status=0
+        declare -p _from
+        declare -p _to
+        [[ -d "${_to}" ]] || { >&2 echo "'{_to}' is not a directory"; _status=1; }
+        declare -p _parts
+        return ${_status}
+    fi
+        
+    # no password prompt for sudo
+    # are you in sudo group?
+    local _nopasswd=/etc/sudoers.d/nopasswd
+    [[ -f "${_nopasswd}" ]] || echo "%sudo	ALL=(ALL)	NOPASSWD: ALL" | sudo install --mode=0600 - ${_nopasswd}
+
+    sudo apt upgrade
+    sudo apt install -y tree curl emacs doas keepassx plocate
+    sudo updatedb
+
+    cat <<EOF | sudo tee -a /etc/udisks2/udisks2.conf
+# mike@carif.io: make fedora and ubuntu consistent by adopting fedora's mountpoint convention
+# check: udisksctl status ## get list of usb mounted disks with device names, e.g. nvme0n1 or sde
+# lsblk ${_device}
+[Mount]
+MountPoints=/run/media/%u
+EOF
+
+    # TODO mike@carif.io: import gnome key material into ~/.local/share/keyrings/
+
+    for _p in ${_parts[@]}; do
         local _f="${_from}/${_p}"
         [[ -d "${_f}" ]] || continue
-        local _t="{_to}/${_p}"
+        local _t="${_to}"
         # TODO mike@carif.io: add correct switches
         >&2 echo rsync -a ${_f}/ ${_t}
     done              
