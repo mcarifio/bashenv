@@ -55,7 +55,7 @@ main() (
         shift
     done
 
-    (( ${#_parts[@]} )) || _parts=( .emacs.d .thunderbird .local .config opt .cargo explore src )
+    (( ${#_parts[@]} )) || _parts=( .emacs.d .thunderbird .local .config opt .cargo go explore src )
     [[ -d "${_from}" ]] || return $(u.error "'${_from}' is not a directory")
 
     # --docker checks some things

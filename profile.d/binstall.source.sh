@@ -415,6 +415,16 @@ binstall.dnf() (
 )
 f.x binstall.dnf
 
+
+binstall.dnf.all() (
+    for _a in $(find $(bashenv.binstalld) -mindepth 1 -maxdepth 1 -name \*.dnf.binstall.sh -a ! -name _template.dnf.binstall.sh -executable); do
+        u.have $(path.basename ${_a}) || ${_a} --cmd=true 
+    done
+)
+f.x binstall.dnf.all
+
+
+
 binstall.dnf.find-pkg() (
     # >&2 echo ${FUNCNAME} "$@"
     set -Eeuo pipefail; shopt -s nullglob
@@ -524,6 +534,14 @@ binstall.apt() (
     binstall.check $(binstall.apt.pkg.cmds ${_pkgs[@]}) ${_cmds[@]}
 )
 f.x binstall.apt
+
+binstall.apt.all() (
+    for _a in $(find $(bashenv.binstalld) -mindepth 1 -maxdepth 1 -name \*.apt.binstall.sh -a ! -name _template.apt.binstall.sh -executable); do
+        u.have $(path.basename ${_a}) || ${_a} --cmd=true 
+    done
+)
+f.x binstall.apt.all
+
 
 binstall.apt.pkg.cmd-pathnames() (
     : '${pkg}... ## |> pathnames, e.g. /usr/bin/ysh'
