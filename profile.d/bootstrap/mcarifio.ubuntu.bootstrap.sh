@@ -14,6 +14,11 @@ EOF
 )
 
 
+sudo.etherwake() (
+    >&2 echo ${FUNCNAME} tbs
+)
+
+
 sudo.nopasswd() (
     # no password prompt for sudo
     # are you in sudo group?
