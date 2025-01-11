@@ -309,7 +309,8 @@ binstall.rustup() (
 
 binstall.cargo() (
     set -Eeuo pipefail; shopt -s nullglob
-    u.have ${FUNCNAME##*.} || return $(u.error "${FUNCNAME}: ${FUNCNAME##*.} not on path, stopping.")
+    local _cmd=${FUNCNAME##*.}
+    u.have ${_cmd} || return $(u.error "${FUNCNAME}: ${_cmd} not on PATH.")
 
     local _pkg=''
     declare -a _cmds=()
@@ -350,14 +351,17 @@ f.x binstall.check
 
 binstall.go() (
     set -Eeuo pipefail; shopt -s nullglob
-    u.have ${FUNCNAME##*.} || return $(u.error "${FUNCNAME}: ${FUNCNAME##*.} not on path, stopping.")
+    local _cmd=${FUNCNAME##*.}
+    u.have ${_cmd} || return $(u.error "${FUNCNAME}: ${_cmd} not on PATH.")
 
     local pkg=''
+    local _url=''g
     local -a _cmds=()
     for _a in "${@}"; do
         local _k="${_a%%=*}"
         local _v="${_a##*=}"
         case "${_a}" in
+            --url=*) _url="${_v}";;
             --pkg=*) _pkg="${_v}";;
             --cmd=*) _cmds+=("${_v}");;
             --) shift; break;;
@@ -366,10 +370,9 @@ binstall.go() (
         shift
     done
 
-    [[ -z "${_pkg}" ]] && return $(u.error "${FUNCNAME} expecting --pkg=\${something}")
-    GOBIN=${GOBIN:-$(go env GOBIN)} go install "${_pkg}"
-    (( ${#_cmds[@]} )) || _cmds=( $(basename ${_pkg%%@*}) )
-    >&2 binstall.check ${_cmds[@]}
+    [[ -n "${_url}" ]] || return $(u.error "${FUNCNAME} expecting --url=\${something}")
+    GOBIN=${GOBIN:-$(go env GOBIN)} go install "${_url}"
+    (( ${#_cmds[@]} )) && >&2 binstall.check ${_cmds[@]}
 )
 f.x binstall.go
 
@@ -695,7 +698,7 @@ binstall.npm() (
     # TODO mike@carif.io: broken
     set -Eeuo pipefail; shopt -s nullglob
     local _cmd=${FUNCNAME##*.}
-    u.have ${_cmd} || return $(u.error "${FUNCNAME}: ${_cmd} not on path, stopping.")
+    u.have ${_cmd} || return $(u.error "${FUNCNAME}: ${_cmd} not on PATH.")
 
     declare -a _pkgs=() _cmds=()
 
@@ -714,7 +717,7 @@ binstall.npm() (
     (( ${#_pkgs[@]} )) || return $(u.error "${FUNCNAME} expecting --pkg=something")
     npm install -g --no-fund npm
     npm install -g --no-fund "$@" ${_pkgs[@]}
-    (( {#_cmds[@]} )) || _cmds=( ${_pkgs[@]} )
+    (( ${#_cmds[@]} )) || _cmds=( ${_pkgs[@]} )
     >&2 binstall.check ${_cmds[@]}
 )
 f.x binstall.npm

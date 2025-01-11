@@ -8,3 +8,6 @@ shopt -q login_shell || bashenv.init.succeeded &> /dev//null || source ~/.bash_p
 
 # run all bashenv functions of the form ${something}.session.
 bashenv.session.start
+
+
+[ -f "/home/mcarifio/.local/share/ghcup/env" ] && . "/home/mcarifio/.local/share/ghcup/env" # ghcup-env
