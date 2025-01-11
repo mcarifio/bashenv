@@ -128,7 +128,7 @@ u.stacktrace() (
           shopt -s extdebug
           for _f in ${FUNCNAME[@]:${_start}:${_top}}; do
               local _where=( $(declare -F ${_f}) )
-              printf ', {"pathname":"%s", "location": "%s@%s"}' ${_where[2]:-main} ${_where[0]:-0} ${_where[1]:-main}
+              printf ', {"pathname":"%s", "line": %i, "function": "%s"}' ${_where[2]:-main} ${_where[1]:-0} ${_where[0]:-main}
           done
           # close off the array
           printf ']'
