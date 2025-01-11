@@ -441,7 +441,7 @@ f.x binstall.dnf
 
 
 binstall.dnf.all() (
-    for _a in $(find $(bashenv.binstalld) -mindepth 1 -maxdepth 1 -name \*.dnf.binstall.sh -a ! -name _template.dnf.binstall.sh -executable); do
+    for _a in $(find $(bashenv.binstalld) -mindepth 1 -maxdepth 1 -name \*.dnf.binstall.sh -a ! -name _\*.dnf.binstall.sh -executable); do
         u.have $(path.basename ${_a}) || ${_a} --cmd=true 
     done
 )
@@ -560,7 +560,7 @@ binstall.apt() (
 f.x binstall.apt
 
 binstall.apt.all() (
-    for _a in $(find $(bashenv.binstalld) -mindepth 1 -maxdepth 1 -name \*.apt.binstall.sh -a ! -name _template.apt.binstall.sh -executable); do
+    for _a in $(find $(bashenv.binstalld) -mindepth 1 -maxdepth 1 -name \*.apt.binstall.sh -a ! -name _\*.apt.binstall.sh -executable); do
         u.have $(path.basename ${_a}) || ${_a} --cmd=true 
     done
 )
