@@ -103,21 +103,61 @@ u.switches() (
 )
 f.x u.switches
 
-u.error() (
-    local -i _status=${2:-$?}; (( _status )) || _status=1
-    : '${_cmd || return $(u.error "this is a message") ## usage'
-    set -Eeuo pipefail; shopt -s extdebug
 
+# TODO mike@carif.io: rename u.{stacktrace,error,warn,info} to log.*
+# meant to be called from u.error and u.warn
+# emits a stacktrace and pprints it to stderr (using jq).
+# returns the status of the last command before invocation.
+u.stacktrace() (
+    local -i _status=${3:-$?}
+    local _level="${1:-"${FUNCNAME} expecting a level e.g. error or warn"}"
+    local _message="${2:?"${FUNCNAME} expecting a message"}"
+    set -Eeuo pipefail
+    local -i _start=2 _top=${#FUNCNAME[@]}
+    local -i _length=$(( ${_top} - ${_start} ))
+    
     # generate a stacktrace as json
-    ( printf '{"status": %s, "message": "%s", "trace": [ %s ' ${_status} "$@" ${#FUNCNAME[@]}
-    for _f in ${FUNCNAME[@]}; do
-        local _where=( $(declare -F ${_f}) )
-        printf ', {"pathname":"%s", "location": "%s@%s"}' ${_where[2]:-main} ${_where[0]:-0} ${_where[1]:-main}
-    done
-    printf ']}' ) | >&2 jq -r '.'
+    ( printf '{ "level":"%s", "message": "%s", "status": %i' ${_level} "${_message}" ${_status}
+      if (( _length > 0 )); then
+          printf ', "trace": [ %i' ${_length}
+          shopt -s extdebug
+          for _f in ${FUNCNAME[@]:${_start}:${_top}}; do
+              local _where=( $(declare -F ${_f}) )
+              printf ', {"pathname":"%s", "location": "%s@%s"}' ${_where[2]:-main} ${_where[0]:-0} ${_where[1]:-main}
+          done
+          printf ']'
+      fi
+      printf '}' ) | >&2 jq -r '.'
+
     return ${_status}
 )
+f.x u.stacktrace
+
+# Writes an eroro pprinted message and stack trace to stderr. Returns status of caller or 1 iff status is 0.
+u.error() (
+    local -i _status=${2:-$?}
+    local _message="${1:?"${FUNCNAME} expecting a message"}"
+    u.stacktrace ${FUNCNAME#*.} "${_message}" ${_status}
+    return $(( _status ? _status : 1 ))
+)
 f.x u.error
+
+# Writes a warn pprinted message and stack trace to stderr. Returns 0 always.
+u.warn() (
+    local -i _status=${2:-$?}
+    local _message="${1:?"${FUNCNAME} expecting a message"}"
+    u.stacktrace ${FUNCNAME#*.} "${_message}" ${_status} || true
+)
+f.x u.warn
+
+# Writes an info pprinted message and stack trace to stderr. Returns 0 always.
+u.info() (
+    local -i _status=${2:-$?}
+    local _message="${1:?"${FUNCNAME} expecting a message"}"
+    u.stacktrace ${FUNCNAME#*.} "${_message}" ${_status} || true
+)
+f.x u.info
+
 
 u.bad() {
     local -i _status=${1:-1}; shift
