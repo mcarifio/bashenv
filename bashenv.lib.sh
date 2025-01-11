@@ -105,16 +105,16 @@ f.x u.switches
 
 u.error() (
     local -i _status=${2:-$?}; (( _status )) || _status=1
-    : '${command} || return $(u.error this is a message)'
+    : '${_cmd || return $(u.error "this is a message") ## usage'
+    set -Eeuo pipefail; shopt -s extdebug
 
-    set -Eeuo pipefail
-    shopt -s extdebug
-    printf >&2 '{status: %s, message: "%s", trace:"' ${_status} "$@"
+    # generate a stacktrace as json
+    ( printf '{"status": %s, "message": "%s", "trace": [ %s ' ${_status} "$@" ${#FUNCNAME[@]}
     for _f in ${FUNCNAME[@]}; do
         local _where=( $(declare -F ${_f}) )
-        printf >&2 '%s:%s@%s ' ${_where[2]:-main} ${_where[1]:-main} ${_where[0]:-0}
+        printf ', {"pathname":"%s", "location": "%s@%s"}' ${_where[2]:-main} ${_where[0]:-0} ${_where[1]:-main}
     done
-    printf >&2 "\"}\n"
+    printf ']}' ) | >&2 jq -r '.'
     return ${_status}
 )
 f.x u.error
@@ -704,18 +704,35 @@ u.map.mkall path.readable
 
 
 
-# u.have
-# u.have is the heart of guard()
+# u.have (the heart of guard())
 # u can have a command in various ways: on PATH, as a flatpak or as a snap (ubutu)
 u.have() (
-    : '${command} # succeeds iff ${command} is defined.'
+    : '[--install=${_pkg}.${_kind}] ${_cmd} # succeeds iff ${_cmd} is (eventually) defined.'
     set -Eeuo pipefail
-    local _option=${2:-'-p'}
-    type ${_option} ${1?:"${FUNCNAME} expecting a command"} >/dev/null
+
+    local _install='' ## the basename for an _installer, e.g. 'emacs.dnf'
+    for _a in "${@}"; do
+        local _k="${_a%%=*}"
+        local _v="${_a##*=}"
+        case "${_a}" in
+            # switches
+            --install=*) _install="${_v}";;
+            --) shift; break;;
+            --*) break;; 
+            *) break;;
+        esac
+        shift
+    done
+    local _cmd="${1?:"${FUNCNAME} expecting a command"}"
+
+    [[ -z "${_install}" ]] && { type -P ${_cmd} >/dev/null; return; }
+    local _installer=$(bashenv.binstalld)/${_install}.binstall.sh
+    ${_installer} || return $(u.error "installer '${_installer}' for command '${_cmd}' failed")
+    type -P ${_cmd} >/dev/null    
 )
 f.x u.have
 
-u.haveP() ( u.have ${1?:"${FUNCNAME} expecting a command"} -P; )
+u.haveP() ( u.have ${1?:"${FUNCNAME} expecting a command"}; )
 f.x u.haveP
 
 u.have.all() (
