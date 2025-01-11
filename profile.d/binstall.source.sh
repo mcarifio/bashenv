@@ -149,7 +149,8 @@ f.x binstall.asdf
 
 binstall.curl() (
     set -Eeuo pipefail; shopt -s nullglob
-    u.have ${FUNCNAME##*.} || return $(u.error "${FUNCNAME}: ${FUNCNAME##*.} not on path, stopping.")
+    local _cmd=${FUNCNAME##*.}
+    u.have ${_cmd} || return $(u.error "${FUNCNAME}: '${_cmd}' not on PATH")
 
     local _pkg='' _url='' _dir="${HOME}/.local/bin"
     local -a _cmds=()    
@@ -174,6 +175,7 @@ binstall.curl() (
 
     >&2 curl -LJ --show-error --output ${_tmp} "${_url}"
     [[ zst = "${_suffix}" ]] && zstd --decompress --no-progress "${_tmp}"
+    [[ xz = "${_suffix}" ]] && xz --decompress "${_tmp}"
 
     
     local -r _target="${_dir}/${_pkg}"
@@ -767,7 +769,7 @@ binstall.docker() (
                               --username ${_user:?"${FUNCNAME} expecting a username for login"} \
                               --password ${_password:?"${FUNCNAME} expecting a password for login"} \
                               ${_registry}
-
+    [[ -n "${_registry}" ]] && _pkg="${_registry}/${_pkg}"
     (set -x; docker pull "$@" "${_pkg}")
 )
 f.x binstall.docker
