@@ -112,12 +112,17 @@ u.stacktrace() (
     local -i _status=${3:-$?}
     local _level="${1:-"${FUNCNAME} expecting a level e.g. error or warn"}"
     local _message="${2:?"${FUNCNAME} expecting a message"}"
+
     set -Eeuo pipefail
+    # the slice of FUNCNAME[@] to actually print (2..-1)
     local -i _start=2 _top=${#FUNCNAME[@]}
+    # the length of that slice
     local -i _length=$(( ${_top} - ${_start} ))
-    
-    # generate a stacktrace as json
+
+    # print the "header": level, message, status
     ( printf '{ "level":"%s", "message": "%s", "status": %i' ${_level} "${_message}" ${_status}
+      # if the stacktrace has contents (_length > 0), emit an array containing the length of the array
+      # and {pathname, location} objects.
       if (( _length > 0 )); then
           printf ', "trace": [ %i' ${_length}
           shopt -s extdebug
@@ -125,8 +130,10 @@ u.stacktrace() (
               local _where=( $(declare -F ${_f}) )
               printf ', {"pathname":"%s", "location": "%s@%s"}' ${_where[2]:-main} ${_where[0]:-0} ${_where[1]:-main}
           done
+          # close off the array
           printf ']'
       fi
+      # close off the object and pprint with jq
       printf '}' ) | >&2 jq -r '.'
 
     return ${_status}
