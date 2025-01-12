@@ -389,6 +389,7 @@ binstall.dnf() (
     local _installer=$(type -P ${FUNCNAME##*.})
     [[ -n "${_installer}" ]] || return $(u.error "${FUNCNAME}: ${_installer} not on PATH")
     
+    local -i _status=0
     local -i _mk=0
     local -a _imports=()
     local -a _repos=()
@@ -419,16 +420,14 @@ binstall.dnf() (
     # TODO mike@carif.io: --assumeyes doesn't work?
     for _copr in "${_coprs[@]}"; do sudo ${_installer} copr enable "${_copr}" || return $(u.error "${FUNCNAME} cannot enable copr '${_copr}'"); done
     sudo ${_installer} install --assumeyes $@ ${_pkgs[@]} || sudo ${_installer} install --assumeyes --no-best --allowerasing $@ ${_pkgs[@]} 
-    binstall.check ${_cmds[@]} $(binstall.dnf.pkg.cmds ${_pkgs[@]})
-    local -i _status=$?
-
+    binstall.check ${_cmds[@]} $(binstall.dnf.pkg.cmds ${_pkgs[@]}) || (( _mk )) && u.warn "${FUNCNAME} checks failed?" || return $(u.error "${FUNCNAME} checks failed?")
     (( _mk )) || return ${_status}
 
     if (( ${#_pkgs[@]} == 1 && ${#_imports[@]} == 0 && ${#_repos[@]} == 0 && ${#_coprs[@]} == 0 && ${#_cmds[@]} == 0 )); then
-        ln -srv $(bashenv.binstalld){_template,${_pkg[0]}}.${_cmd}.binstall.sh
+        ln -srv $(bashenv.binstalld)/{_template,${_pkgs[0]}}.${_cmd}.binstall.sh
     else
-        cp -v --update=none-fail $(bashenv.binstalld){_template,${_pkg[0]}}.${_cmd}.binstall.sh
-        local _sh=$(bashenv.binstalld)${_pkg[0]}.${_cmd}.binstall.sh
+        cp -v --update=none-fail $(bashenv.binstalld)/{_template,${_pkg[0]}}.${_cmd}.binstall.sh
+        local _sh=$(bashenv.binstalld)/${_pkg[0]}.${_cmd}.binstall.sh
         (printf '# '; u.switches import ${_imports[@]} ) >> ${_sh}
         (printf '# '; u.switches repo ${_repos[@]} ) >> ${_sh}
         (printf '# '; u.switches copr ${_coprs[@]} ) >> ${_sh}
@@ -441,7 +440,8 @@ f.x binstall.dnf
 
 
 binstall.dnf.all() (
-    for _a in $(find $(bashenv.binstalld) -mindepth 1 -maxdepth 1 -name \*.dnf.binstall.sh -a ! -name _\*.dnf.binstall.sh -executable); do
+    local _installer=$(path.basename ${FUNCNAME} 1)
+    for _a in $(find $(bashenv.binstalld) -mindepth 1 -maxdepth 1 -name \*.${_installer}.binstall.sh -a ! -name _\*.${_installer}.binstall.sh -executable); do
         u.have $(path.basename ${_a}) || ${_a} --cmd=true 
     done
 )
@@ -505,8 +505,11 @@ binstall.dnf.installers-by-cmd() (
 binstall.apt() (
     : '[--uri=${url}]+ [--suite=${suite}]+ [--component=${component}] [--signed-by=${url}] pkg+'
     set -Eeuo pipefail; shopt -s nullglob
-    u.have ${FUNCNAME##*.} || return $(u.error "${FUNCNAME}: ${FUNCNAME##*.} not on path, stopping.")
+    local _cmd=${FUNCNAME##*.}
+    u.have ${_cmd} || return $(u.error "${FUNCNAME}: ${_cmd} not on PATH")
 
+    local -i _status=0
+    local -i _mk=0
     local -a _uris=() _suites=() _components=() _keys=() _cmds=() _pkgs=()
     local -i _trusted=0
     for _a in "$@"; do
@@ -514,6 +517,7 @@ binstall.apt() (
         local _v="${_a##*=}"
         case "${_a}" in
             # adds [trusted=yes] to add repos, use with caution
+            --mk) _mk=1;;
             --trusted) _trusted=1;; 
             --uri=*) _uris+=("${_v}");;
             --suite=*) _suites+=("${_v}");;
@@ -555,12 +559,31 @@ binstall.apt() (
 
     apt update
     apt install -y "$@" ${_pkgs[@]}
-    binstall.check $(binstall.apt.pkg.cmds ${_pkgs[@]}) ${_cmds[@]}
+    binstall.check $(binstall.${_cmd}.pkg.cmds ${_pkgs[@]}) ${_cmds[@]} || (( _mk )) && u.warn "${FUNCNAME} checks failed?" || return $(u.error "${FUNCNAME} checks failed?")
+    (( _mk )) || return ${_status}
+
+    _uris=() _suites=() _components=() _keys=() _cmds=() _pkgs=()
+    if (( ${#_pkgs[@]} == 1 && ${#_uris[@]} == 0 && ${#_suites[@]} == 0 && ${#_components[@]} == 0 && ${#_keys[@]} == 0 && ${#_cmds[@]} == 0)); then
+        ln -srv $(bashenv.binstalld)/{_template,${_pkgs[0]}}.${_cmd}.binstall.sh
+    else
+        cp -v --update=none-fail $(bashenv.binstalld)/{_template,${_pkg[0]}}.${_cmd}.binstall.sh
+        local _sh=$(bashenv.binstalld)/${_pkg[0]}.${_cmd}.binstall.sh
+        (printf '# '; u.switches uri ${_uriss[@]} ) >> ${_sh}
+        (printf '# '; u.switches suite ${_suites[@]} ) >> ${_sh}
+        (printf '# '; u.switches component ${_components[@]} ) >> ${_sh}
+        (printf '# '; u.switches key ${_keys[@]} ) >> ${_sh}
+        (printf '# '; u.switches pkg ${_pkgss[@]} ) >> ${_sh}
+        (printf '# '; u.switches cmd ${_cmds[@]} ) >> ${_sh}
+    fi
+    return ${_status}
+
 )
 f.x binstall.apt
 
 binstall.apt.all() (
-    for _a in $(find $(bashenv.binstalld) -mindepth 1 -maxdepth 1 -name \*.apt.binstall.sh -a ! -name _\*.apt.binstall.sh -executable); do
+    : 'install all missing commands via apt by way of binstall.d'
+    local _installer=$(path.basename ${FUNCNAME} 1)
+    for _a in $(find $(bashenv.binstalld) -mindepth 1 -maxdepth 1 -name \*.${_installer}.binstall.sh -a ! -name _\*.${_installer}.binstall.sh -executable); do
         u.have $(path.basename ${_a}) || ${_a} --cmd=true 
     done
 )
