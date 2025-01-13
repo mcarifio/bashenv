@@ -77,7 +77,7 @@ main() (
     sudo.udisk2.config
     
     sudo apt upgrade
-    sudo apt install -y tree curl emacs doas keepassx plocate
+    sudo apt install -y tree curl emacs doas keepassx plocate thunderbird terminator mtools dosfstools gparted
     sudo updatedb
     
     # TODO mike@carif.io: import gnome key material into ~/.local/share/keyrings/
