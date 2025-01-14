@@ -1,5 +1,45 @@
 ${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
 
+ssh() (
+    set -Eeuo pipefail
+    
+    local -i _identity=0
+    local _IdentityFile=''
+    local _password=''
+    local -A _switches=()
+    
+    for _a in "$@"; do
+        local _k="${_a%%=*}"
+        local _v="${_a##*=}"
+        case "${_a}" in
+	    --id) _identity=1;;
+	    --id=*) _IdentityFile="${_v}";;
+	    --password=*) _password="${_v}";;
+	    --trace) _trace='-x';;		
+            --) shift; break;;
+            --*) _switches[${_k}]="${_v}";;
+            *) break;;
+        esac
+        shift
+    done
+
+    # local _temp=${1:?"${FUNCNAME} expecting a host"}
+    # local -a _to=( ${_temp//@/ } )
+    # if (( ${#_to[@]} == 1 )); then
+    #     local _host=${_to[0]}
+    # else
+    #     local _user=${_to[0]}
+    #     local _host=${_to[1]}
+    # fi
+    
+
+    # local _o=''
+    # (( _id ) && [[ -z "${_IdentityFile}" ]] && _o+=" -o IdentityFile='${_IdentityFile}'"
+    
+    # command ${FUNCNAME} $(for _k in ${!_switches[@]}; do printf '--%s=%s ' ${_k} ${_switches[${_k}]}; done) ${_o} $@
+)
+f.x ssh
+
 ssh.scan() {
     set -Eeuo pipefail
     for ip in $(arp.scan $@); do ssh ${ip} id > /dev/null && echo ${ip}; done
@@ -15,20 +55,19 @@ ssh.keygen() (
     local _password=''
     local _trace='+x'
     
-    if (( ${#@} )) ; then
-        for _a in "${@}"; do
-            case "${_a}" in
-		--file=*) _file="${_a##*=}";;
-		--comment=*) _comment="${_a##*=}";;
-		--password=*) _password="${_a##*=}";;
-		--trace) _trace='-x';;		
-                --) shift; break;;
-                --*) >&2 echo "${FUNCNAME}: unknown switch ${_a}, stop processing switches"; break;;
-                *) break;;
-            esac
-            shift
-        done
-    fi
+    for _a in "${@}"; do
+        local _k="${_a%%=*}"
+        local _v="${_a##*=}"
+        case "${_a}" in
+	    --file=*) _file="${_v}";;
+	    --comment=*) _comment="${_v}";;
+	    --password=*) _password="${_v}";;
+	    --trace) _trace='-x';;		
+            --) shift; break;;
+            *) break;;
+        esac
+        shift
+    done
 
     # TODO mike@carif.io: doesn't work
     xz --compress --force --verbose "${_file}*" || true
@@ -86,6 +125,7 @@ ssh.IdentityFile() (
     [[ -r ${_f} ]] && { echo ${_f}; return 0; }
 )
 f.x ssh.IdentityFile
+
 
 ssh.ssh0() (
     : 'ssh.ssh [${user}@]?${host} $*'

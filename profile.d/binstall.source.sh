@@ -550,8 +550,8 @@ binstall.apt() (
         if [[ ! -r "${_source}" ]] ; then
             for _uri in "${_uris[@]}"; do
                 # TODO mike@carif.io: add signed-by=/usr/share/keyrings/${_key}.gpg. what's the default?
-                # printf 'deb [arch=%s signed-by=%s] %s/ %s\n' $(dpkg --print-architecture) "${_keyring}" "${_uri}" "$(printf '%s ' ${_components[@]})"  | sudo tee -ap "${_source}"
-                printf 'deb [arch=%s] %s/ %s\n' $(dpkg --print-architecture) "${_uri}" "$(printf '%s ' ${_components[@]})"  | sudo tee -ap "${_source}"
+                # printf 'deb [arch=%s signed-by=%s] %s %s\n' $(dpkg --print-architecture) "${_keyring}" "${_uri}" "$(printf '%s ' ${_components[@]})"  | sudo tee -ap "${_source}"
+                printf 'deb [arch=%s] %s %s\n' $(dpkg --print-architecture) "${_uri}" "$(printf '%s ' ${_components[@]})"  | sudo tee -ap "${_source}"
             done
             >&2 echo "Created ${_source}"
         fi
