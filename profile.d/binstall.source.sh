@@ -38,15 +38,15 @@ binstall.snap() (
     # >&2 echo "$@"
     set -Eeuo pipefail; shopt -s nullglob
     local _cmd=${FUNCNAME##*.}
-    u.have ${_cmd}  || return $(u.error "${FUNCNAME}: ${FUNCNAME##*.} not on path, stopping.")
-    local _version=latest _toolchain='' _pkg='' _url=''    
+    u.have ${_cmd}  || return $(u.error "${FUNCNAME}: ${_cmd} not on PATH")
+    
+    local _pkg=''
+
     for _a in "${@}"; do
         local _k="${_a%%=*}"
         local _v="${_a##*=}"
         case "${_a}" in
-	    --version=*) _version="${_a##*=}";;
             --pkg=*) _pkg="${_a##*=}";;
-            --url=*) _url="${_a##*=}";;
             --) shift; break;;
             *) break;;
         esac
@@ -54,7 +54,7 @@ binstall.snap() (
     done
     
     [[ -z "${_pkg}" ]] && return $(u.error "${FUNCNAME} expecting --pkg=\${something}")    
-    sudo $(type -P ${_cmd}) install ${_pkg}  --classic "$@"
+    sudo $(type -P ${_cmd}) install   --classic "$@" ${_pkg}
 )
 f.x binstall.snap
 
@@ -64,13 +64,18 @@ binstall.eget() (
     # >&2 echo "$@"
     set -Eeuo pipefail; shopt -s nullglob
     local _cmd=${FUNCNAME##*.}
+    u.have ${_cmd}  || return $(u.error "${FUNCNAME}: ${_cmd} not on PATH")
+
+    local -i _check=0
+    local _version=latest
+    local _pkg=''
     local -a _cmds=()
-    u.have ${_cmd}  || return $(u.error "${FUNCNAME}: ${_cmd} not on path, stopping.")
-    local _version=latest _pkg=''
     for _a in "${@}"; do
         local _k="${_a%%=*}"
         local _v="${_a##*=}"
         case "${_a}" in
+            --check) _check=1;;
+            --version=*) _version="${_v}";;
             --pkg=*) _pkg="${_v//\+/\/}";;
             --cmd=*) _cmds+=("${_v}");;
             --) shift; break;;
@@ -81,7 +86,7 @@ binstall.eget() (
     
     [[ -z "${_pkg}" ]] && return $(u.error "${FUNCNAME} expecting --pkg=\${something}")    
     ${_cmd} "$@" "${_pkg}"
-    binstall.check ${_cmds[@]}
+    (( _check )) && binstall.check ${_cmds[@]}
 )
 f.x binstall.eget
 
@@ -90,14 +95,17 @@ binstall.pkgx() (
     # >&2 echo "$@"
     set -Eeuo pipefail; shopt -s nullglob
     local _cmd=${FUNCNAME##*.}
+    u.have ${_cmd}  || return $(u.error "${FUNCNAME}: ${_cmd} not on PATH")
+
+    local -i _check
     local _pkg2cmd=''
     local -a _cmds=()
-    u.have ${_cmd}  || return $(u.error "${FUNCNAME}: ${_cmd} not on path, stopping.")
     local _version=latest _pkg=''
     for _a in "${@}"; do
         local _k="${_a%%=*}"
         local _v="${_a##*=}"
         case "${_a}" in
+            --check) _check=1;;
             --pkg=*) _pkg2cmd="${_v##*+}"; _pkg="${_v//+\/}";;
             --cmd=*) _cmds+=("${_v}");;
             --) shift; break;;
@@ -109,7 +117,7 @@ binstall.pkgx() (
     [[ -z "${_pkg}" ]] && return $(u.error "${FUNCNAME} expecting --pkg=\${something}")
     ${_cmd} "$@" "${_pkg}"
     (( ${#_cmds[@]} )) || _cmds=( ${_pkg2cmd} )
-    binstall.check ${_cmds[@]}
+    (( _check )) && binstall.check ${_cmds[@]}
 )
 f.x binstall.pkgx
 
@@ -117,14 +125,19 @@ f.x binstall.pkgx
 binstall.asdf() (
     : 'binstall.asdf [--version=latest] ${_plugin} [${_url}]'
     set -Eeuo pipefail; shopt -s nullglob
-    u.have ${FUNCNAME##*.} || return $(u.error "${FUNCNAME}: ${FUNCNAME##*.} not on path, stopping.")
+    local _cmd=${FUNCNAME##*.}
+    u.have ${_cmd} || return $(u.error "${FUNCNAME}: ${_cmd} not on PATH")
 
-    local _version=latest _pkg='' _url=''
+    local -i _check
+    local _version=latest
+    local _pkg=''
+    local _url=''
     local -a _cmds=()
     for _a in "${@}"; do
         local _k="${_a%%=*}"
         local _v="${_a##*=}"
         case "${_a}" in
+            --check) _check=1;;
 	    --version=*) _version="${_v}";;
 	    # --toolchain=*) _toolchain="${_a##*=}";;
             --pkg=*) _pkg="${_v}";;
@@ -143,7 +156,7 @@ binstall.asdf() (
     asdf global ${_pkg} ${_version} >&2
     asdf reshim ${_pkg}
     asdf which ${_pkg}
-    >&2 binstall.check ${_pkg} ${_cmds[@]}
+    (( _check )) && binstall.check ${_pkg} ${_cmds[@]}
 )
 f.x binstall.asdf
 
@@ -152,12 +165,16 @@ binstall.curl() (
     local _cmd=${FUNCNAME##*.}
     u.have ${_cmd} || return $(u.error "${FUNCNAME}: '${_cmd}' not on PATH")
 
-    local _pkg='' _url='' _dir="${HOME}/.local/bin"
+    local -i _check=0
+    local _pkg=''
+    local _url=''
+    local _dir="${HOME}/.local/bin"
     local -a _cmds=()    
     for _a in "${@}"; do
         local _k="${_a%%=*}"
         local _v="${_a##*=}"
-        case "${_a}" in            
+        case "${_a}" in
+            --check) _check=1;;
             --pkg=*) _pkg="${_v}";;
             --url=*) _url="${_v}";;
             --dir=*) _dir="${_v}";;
@@ -184,7 +201,7 @@ binstall.curl() (
     # curl -Ssf ${_url} | tar xz -C /tmp
     >&2 command install ${_tmp%%.${_suffix}} "${_target}"
     >&2 echo "installed '${_target}' from '${_url}'"
-    binstall.check ${_cmds[@]}
+    (( _check )) && binstall.check ${_cmds[@]}
     echo ${_target}
 )    
 f.x binstall.curl
@@ -212,12 +229,15 @@ binstall.sh() (
     : '${_url} ... # fetch a script remotely and run it'
     set -Eeuo pipefail; shopt -s nullglob
 
-    local _pkg='' _url=''
+    local -i _check=0
+    local _pkg=''
+    local _url=''
     local -a _cmds=()    
     for _a in "${@}"; do
         local _k="${_a%%=*}"
         local _v="${_a##*=}"
         case "${_a}" in
+            --check) _check=1;;
             --pkg=*) _pkg="${_v}";;
             --url=*) _url="${_v}";;
             --cmd=*) cmds+=("${_v}");;
@@ -231,7 +251,7 @@ binstall.sh() (
     [[ -z "${_url}" ]] && return $(u.error "${FUNCNAME} expecting --url=\${something}")    
 
     curl --proto '=https' --tlsv1.2 -sSLJ --show-error "${_url}" | bash -s -- "$@"
-    binstall.check ${_cmds[@]}
+    (( _check )) && binstall.check ${_cmds[@]}
 )    
 f.x binstall.sh
 
@@ -243,12 +263,15 @@ binstall.curl-tar() (
     local -r _suffix=${FUNCNAME##*.}
     u.have.all ${_suffix//-/ } || return $(u.error "${FUNCNAME} missing some of '${_suffix//-/ }'")
 
-    local _pkg='' _url=''
+    local -i _check=0
+    local _pkg=''
+    local _url=''
     local -a _cmds=()
     for _a in "${@}"; do
         local _k="${_a%%=*}"
         local _v="${_a##*=}"
         case "${_a}" in
+            --check) _check=1;;
             --pkg=*) _pkg="${_v}";;
             --url=*) _url="${_v}";;
             --cmd=*) cmds+=("${_v}");;
@@ -270,7 +293,7 @@ binstall.curl-tar() (
     command install  "${_cmd}" "${_target}"
     rm -rf /tmp/$(basename ${_url} .tar.${_suffix})
     >&2 echo "installed '${_target}' from '${_url}'"
-    binstall.check ${_cmds[@]}
+    (( _check )) && binstall.check ${_cmds[@]}
     echo ${_target}
 )
 f.x binstall.curl-tar
@@ -279,12 +302,14 @@ binstall.rustup() (
     : '[--home=somewhere] ${_pkg}...'
     set -Eeuo pipefail; shopt -s nullglob
 
+    local -i _check=0
     local -a _pkgs=()
     # parse calling arguments
     for _a in "${@}"; do
         local _k="${_a%%=*}"
         local _v="${_a##*=}"
         case "${_a}" in
+            --check) _check=1;;
             --home=*) _home="${_v}";;
             --pkg=*) _pkgs+=("${_v}");;
             --) shift; break;;
@@ -301,7 +326,7 @@ binstall.rustup() (
     binstall.sh https://sh.rustup.rs -- -y --verbose --no-modify-path --default-toolchain stable --profile complete
     # hardcoded installation directory ugh
     source ${CARGO_HOME:-~/.cargo/}env
-    binstall.check rustup cargo
+    (( _check )) && binstall.check rustup cargo
     for _crate in ${_pkgs[@]} "$@"; do binstall.cargo ${_crate}; done
 )
 
@@ -319,6 +344,7 @@ binstall.cargo() (
         local _k="${_a%%=*}"
         local _v="${_a##*=}"
         case "${_a}" in
+            --check) _check=1;;
             --pkg=*) _pkg="${_v}";;
             --cmd=*) _cmds+=("${_v}");;            
             --) shift; break;;
@@ -331,8 +357,7 @@ binstall.cargo() (
     path.add ${CARGO_HOME:-~/.cargo}/bin
     u.have cargo || return $(u.error "${FUNCNAME} cannot find cargo on PATH")
     cargo install --locked $@ ${_pkg}
-    (( {#_cmds[@]} )) || u.have ${_pkg} && _cmds=( ${_pkg} )
-    >&2 binstall.check ${_cmds[@]}
+    (( _check )) && binstall.check ${_cmds[@]}
 )
 f.x binstall.cargo
 
@@ -354,13 +379,15 @@ binstall.go() (
     local _cmd=${FUNCNAME##*.}
     u.have ${_cmd} || return $(u.error "${FUNCNAME}: ${_cmd} not on PATH.")
 
+    local -i _check=0
     local pkg=''
-    local _url=''g
+    local _url=''
     local -a _cmds=()
     for _a in "${@}"; do
         local _k="${_a%%=*}"
         local _v="${_a##*=}"
         case "${_a}" in
+            --check) _check=1;;
             --url=*) _url="${_v}";;
             --pkg=*) _pkg="${_v}";;
             --cmd=*) _cmds+=("${_v}");;
@@ -372,7 +399,7 @@ binstall.go() (
 
     [[ -n "${_url}" ]] || return $(u.error "${FUNCNAME} expecting --url=\${something}")
     GOBIN=${GOBIN:-$(go env GOBIN)} go install "${_url}"
-    (( ${#_cmds[@]} )) && >&2 binstall.check ${_cmds[@]}
+    (( _check )) && binstall.check ${_cmds[@]}
 )
 f.x binstall.go
 
@@ -428,7 +455,7 @@ f.x binstall.dnf
 binstall.dnf.all() (
     local _installer=$(path.basename ${FUNCNAME} 1)
     for _a in $(find $(bashenv.binstalld) -mindepth 1 -maxdepth 1 -name \*.${_installer}.binstall.sh -a ! -name _\*.${_installer}.binstall.sh -executable); do
-        u.have $(path.basename ${_a}) || ${_a} --cmd=true 
+        u.have $(path.basename ${_a}) || ${_a}
     done
 )
 f.x binstall.dnf.all
@@ -553,7 +580,7 @@ binstall.apt.all() (
     : 'install all missing commands via apt by way of binstall.d'
     local _installer=$(path.basename ${FUNCNAME} 1)
     for _a in $(find $(bashenv.binstalld) -mindepth 1 -maxdepth 1 -name \*.${_installer}.binstall.sh -a ! -name _\*.${_installer}.binstall.sh -executable); do
-        u.have $(path.basename ${_a}) || ${_a} --cmd=true 
+        u.have $(path.basename ${_a}) || ${_a}
     done
 )
 f.x binstall.apt.all
@@ -602,11 +629,13 @@ binstall.pip() (
     set -Eeuo pipefail; shopt -s nullglob
     python -m pip list &> /dev/null || return $(u.error "python -m pip not working, stopping.")
 
-    declare -a _pkgs=() _cmds=()
+    local -i _check=0
+    local -a _pkgs=() _cmds=()
     for _a in "${@}"; do
         local _k="${_a%%=*}"
         local _v="${_a##*=}"
         case "${_a}" in
+            --check) _check=1;;
             --pkg=*) _pkgs+=("${_v}");;
             --cmd=*) _cmds+=("${_v}");;
             --) shift; break;;
@@ -623,7 +652,7 @@ binstall.pip() (
     # You only get one go at it.
     python -m pip install --upgrade ${_pkgs[@]}
     # TODO mike@carif.io: deduce commands pip ${_pkg} provides?
-    binstall.check ${_cmds[@]}
+    (( _check )) && binstall.check ${_cmds[@]}
 )
 f.x binstall.pip
 
@@ -631,7 +660,7 @@ f.x binstall.pip
 git.gh.release-AppImage() (
     local _owner_project=${1:?"${FUNCNAME} expecting a github owner/project"}
     local _release=${2:-latest}
-    curl -s https://api.github.com/repos/${_owner_project}/releases/${_releae} | jq -r '.assets[] | select(.name | endswith(".AppImage")) | .browser_download_url'    
+    curl -s https://api.github.com/repos/${_owner_project}/releases/${_release} | jq -r '.assets[] | select(.name | endswith(".AppImage")) | .browser_download_url'    
 )
 f.x git.gh.release-AppImage
 
@@ -711,12 +740,13 @@ binstall.npm() (
     local _cmd=${FUNCNAME##*.}
     u.have ${_cmd} || return $(u.error "${FUNCNAME}: ${_cmd} not on PATH.")
 
-    declare -a _pkgs=() _cmds=()
-
+    local -i _check=0
+    local -a _pkgs=() _cmds=()
     for _a in "${@}"; do
         local _k="${_a%%=*}"
         local _v="${_a##*=}"
         case "${_a}" in
+            --check) _check=1;;
             --pkg=*) _pkgs+=("${_v}");;
             --cmd=*) _cmds+=("${_v}");;            
             --) shift; break;;
@@ -729,7 +759,7 @@ binstall.npm() (
     npm install -g --no-fund npm
     npm install -g --no-fund "$@" ${_pkgs[@]}
     (( ${#_cmds[@]} )) || _cmds=( ${_pkgs[@]} )
-    >&2 binstall.check ${_cmds[@]}
+    (( _check )) && binstall.check ${_cmds[@]}
 )
 f.x binstall.npm
 
