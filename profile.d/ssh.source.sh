@@ -23,6 +23,8 @@ ssh() (
         shift
     done
 
+    command ${FUNCNAME} "$@"
+    
     # local _temp=${1:?"${FUNCNAME} expecting a host"}
     # local -a _to=( ${_temp//@/ } )
     # if (( ${#_to[@]} == 1 )); then

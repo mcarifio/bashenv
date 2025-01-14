@@ -19,6 +19,81 @@ sudo.etherwake() (
 )
 
 
+gnome.settings() (
+    local -A _settings=( [cursor-size]=96 )
+    local -A _passthrough=()
+
+    for _a in "$@"; do
+        local _k="${_a%%=*}"
+        local _v="${_a##*=}"
+        case "${_a}" in
+            --*=*) [[ -v settings[${_k}] ]] && _settings[${_k}]="${_v}" || _passthrough[${_k}]="${_v}";;
+            --) shift; break;; ## explicit stop
+            --*) [[ -v settings[${_k}] ]] && _settings[${_k}]=1 || _passthrough[${_k}]=1;;
+            *) break;; ## arguments start
+        esac
+        shift
+    done
+    local -a _args=( "$@" )
+
+
+    # > Wifi
+    # set wifi ${_name} ${_password}
+
+    # > Network
+    # for all network devices, name their NetworkManager connection name to be $(basename $device)
+
+    # > Displays
+    # primary 2
+    # quad pattern
+
+    # > Sound
+
+    # > Power
+    # performance
+    # screen blank 15m
+
+    # > Multitasking
+
+    # > Appearance
+    # gnome-background
+    
+    # > Ubuntu Desktop
+    # don't show home folder
+    # auto-hide dock
+    # ... positioned on right
+
+    # > Apps
+    # > Notifications
+    # > Search
+    # > Online Accounts
+    # > Sharing
+
+    # > Mouse and Touchpad
+
+    # > Keyboard
+    # > Color
+    # > Printer
+    # > Tablet
+    # > Accessibility
+    #   > Seeing
+    #     set large text size
+    #     largest cursor size
+    gsettings set org.gnome.desktop.interface cursor-size 96
+    # > Privacy
+    # > Systems
+    # hostname
+    
+    
+)
+
+connect.wifi() (
+    # monchat
+)
+
+
+
+
 sudo.nopasswd() (
     # no password prompt for sudo
     # are you in sudo group?
@@ -75,6 +150,9 @@ main() (
         
     sudo.nopasswd sudo wheel
     sudo.udisk2.config
+
+    echo "104.236.99.3 do mike.carif.io" | sudo tee -a /etc/hosts
+    gnome.settings
     
     sudo apt upgrade
     sudo apt install -y tree curl emacs doas keepassx plocate thunderbird terminator mtools dosfstools gparted

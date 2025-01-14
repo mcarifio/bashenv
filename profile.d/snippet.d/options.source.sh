@@ -10,7 +10,7 @@ example.options() (
     echo "** ${FUNCNAME} keywords initialized:" >&2
     declare -p _bool _var _varo _doo _many _pairs >&2
 
-    for _a in "${@}"; do
+    for _a in "$@"; do
         local _k="${_a%%=*}"
         local _v="${_a##*=}"
         case "${_a}" in
@@ -146,3 +146,23 @@ __complete.example.options() {
 f.complete example.options
 complete -p example.options
 
+
+example.Aoptions() (
+    local -A _switches=( [cursor-size]=96 )
+    local -A _passthrough=()
+
+    for _a in "$@"; do
+        local _k="${_a%%=*}"
+        local _v="${_a##*=}"
+        case "${_a}" in
+            --switches) echo ${_k} ${!_switches[@]}; return 0;; ## for help and completion
+            --*=*) [[ -v settings[${_k}] ]] && _switches[${_k}]="${_v}" || _passthrough[${_k}]="${_v}";;
+            --) shift; break;; ## explicit stop
+            --*) [[ -v settings[${_k}] ]] && _switches[${_k}]=1 || _passthrough[${_k}]=1;;
+            *) break;; ## arguments start
+        esac
+        shift
+    done
+    local -a _args=( "$@" )
+    declare -p _switches _passthrough _args
+)

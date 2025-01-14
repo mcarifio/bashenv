@@ -390,7 +390,7 @@ binstall.dnf() (
     [[ -n "${_installer}" ]] || return $(u.error "${FUNCNAME}: ${_installer} not on PATH")
     
     local -i _status=0
-    local -i _mk=0
+    local -i _check=0
     local -a _imports=()
     local -a _repos=()
     local -a _coprs=()
@@ -401,7 +401,7 @@ binstall.dnf() (
         local _k="${_a%%=*}"
         local _v="${_a##*=}"
         case "${_a}" in
-            --mk) _mk=1;;
+            --check) _check=1;;
             --import=*) _imports+=("${_v}");;
             --add-repo=*) _repos+=("${_v}");; 
             --copr=*) _coprs+=("${_v}");;
@@ -420,21 +420,7 @@ binstall.dnf() (
     # TODO mike@carif.io: --assumeyes doesn't work?
     for _copr in "${_coprs[@]}"; do sudo ${_installer} copr enable "${_copr}" || return $(u.error "${FUNCNAME} cannot enable copr '${_copr}'"); done
     sudo ${_installer} install --assumeyes $@ ${_pkgs[@]} || sudo ${_installer} install --assumeyes --no-best --allowerasing $@ ${_pkgs[@]} 
-    binstall.check ${_cmds[@]} $(binstall.dnf.pkg.cmds ${_pkgs[@]}) || (( _mk )) && u.warn "${FUNCNAME} checks failed?" || return $(u.error "${FUNCNAME} checks failed?")
-    (( _mk )) || return ${_status}
-
-    if (( ${#_pkgs[@]} == 1 && ${#_imports[@]} == 0 && ${#_repos[@]} == 0 && ${#_coprs[@]} == 0 && ${#_cmds[@]} == 0 )); then
-        ln -srv $(bashenv.binstalld)/{_template,${_pkgs[0]}}.${_cmd}.binstall.sh
-    else
-        cp -v --update=none-fail $(bashenv.binstalld)/{_template,${_pkg[0]}}.${_cmd}.binstall.sh
-        local _sh=$(bashenv.binstalld)/${_pkg[0]}.${_cmd}.binstall.sh
-        (printf '# '; u.switches import ${_imports[@]} ) >> ${_sh}
-        (printf '# '; u.switches repo ${_repos[@]} ) >> ${_sh}
-        (printf '# '; u.switches copr ${_coprs[@]} ) >> ${_sh}
-        (printf '# '; u.switches pkg ${_pkgs[@]} ) >> ${_sh}
-        (printf '# '; u.switches cmd ${_cmds[@]} ) >> ${_sh}
-    fi
-    return ${_status}
+    (( _check )) && binstall.check $(binstall.dnf.pkg.cmds ${_pkgs[@]}) ${_cmds[@]} 
 )
 f.x binstall.dnf
 
@@ -508,8 +494,8 @@ binstall.apt() (
     local _cmd=${FUNCNAME##*.}
     u.have ${_cmd} || return $(u.error "${FUNCNAME}: ${_cmd} not on PATH")
 
+    local -i _check=0
     local -i _status=0
-    local -i _mk=0
     local -a _uris=() _suites=() _components=() _keys=() _cmds=() _pkgs=()
     local -i _trusted=0
     for _a in "$@"; do
@@ -517,7 +503,7 @@ binstall.apt() (
         local _v="${_a##*=}"
         case "${_a}" in
             # adds [trusted=yes] to add repos, use with caution
-            --mk) _mk=1;;
+            --check) _check=1;;
             --trusted) _trusted=1;; 
             --uri=*) _uris+=("${_v}");;
             --suite=*) _suites+=("${_v}");;
@@ -559,24 +545,7 @@ binstall.apt() (
 
     apt update
     apt install -y "$@" ${_pkgs[@]}
-    binstall.check $(binstall.${_cmd}.pkg.cmds ${_pkgs[@]}) ${_cmds[@]} || (( _mk )) && u.warn "${FUNCNAME} checks failed?" || return $(u.error "${FUNCNAME} checks failed?")
-    (( _mk )) || return ${_status}
-
-    _uris=() _suites=() _components=() _keys=() _cmds=() _pkgs=()
-    if (( ${#_pkgs[@]} == 1 && ${#_uris[@]} == 0 && ${#_suites[@]} == 0 && ${#_components[@]} == 0 && ${#_keys[@]} == 0 && ${#_cmds[@]} == 0)); then
-        ln -srv $(bashenv.binstalld)/{_template,${_pkgs[0]}}.${_cmd}.binstall.sh
-    else
-        cp -v --update=none-fail $(bashenv.binstalld)/{_template,${_pkg[0]}}.${_cmd}.binstall.sh
-        local _sh=$(bashenv.binstalld)/${_pkg[0]}.${_cmd}.binstall.sh
-        (printf '# '; u.switches uri ${_uriss[@]} ) >> ${_sh}
-        (printf '# '; u.switches suite ${_suites[@]} ) >> ${_sh}
-        (printf '# '; u.switches component ${_components[@]} ) >> ${_sh}
-        (printf '# '; u.switches key ${_keys[@]} ) >> ${_sh}
-        (printf '# '; u.switches pkg ${_pkgss[@]} ) >> ${_sh}
-        (printf '# '; u.switches cmd ${_cmds[@]} ) >> ${_sh}
-    fi
-    return ${_status}
-
+    (( _check )) && binstall.check $(binstall.${_cmd}.pkg.cmds ${_pkgs[@]}) ${_cmds[@]}
 )
 f.x binstall.apt
 
