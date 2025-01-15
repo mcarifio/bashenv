@@ -24,42 +24,76 @@ gnome.background() {
 
 
 main() (
-    local -A _defaults=( [primary]=snow4 [secondary]=black )
+    # expected keys and values
+    local -A _expected=( [primary]=snow4 [secondary]=black ) _required=( )
+
     # all switches explicitly stated at the command line
     local -A _stated=()
     # switches passed through (unprocessed by the loop)
     local -A _passthrough=()
 
+    # only _expected switches can be _required
+    for _k in ${!_required[@]}; do
+        [[ -v _expected[${_k}] ]] || return $(u.error "${FUNCNAME}: ${FUNCNAME} is misconfigured, required switch '${_k}' is not expected")
+    done
+    
     for _a in "$@"; do
-        # --key=value => $_k is 'key', $_v is 'value'
+        # if --key=value then _k is 'key' and _v is 'value'
+        # otherwise _k='' and _v is _a
         local _k="${_a%%=*}"
         _k="${_k##*--}"
         [[ -n "${_k}" ]] && local _v="${_a##*=}" || _v="${_a}"
+
         case "${_a}" in
+
+            # enumerate all the switches including the hardcoded ones --switches --defaults for bash completion consumption
             --switches) printf -- '--switches --defaults '
-                        printf -- '--%s ' ${!_defaults[@]}
+                        printf -- '--%s ' ${!_expected[@]}
                         echo
-                        return 0;; ## for help and completion
-            --defaults) for _k in ${!_defaults[@]}; do printf -- '--%s="%s" ' ${_k} "${_defaults[${_k}]}"; done
+                        return 0;;
+            
+            # enumerate the switches and default values for human consumption
+            --defaults) for _k in ${!_expected[@]}; do printf -- '--%s="%s" ' ${_k} "${_expected[${_k}]}"; done
                         echo
-                        return 0;; ## for help and completion
-            --*=*) [[ -v _defaults[${_k}] ]] && _stated[${_k}]="${_v}" || _passthrough[${_k}]="${_v}";;
+                        return 0;;
+
+            # --key=value; $_k is key, $_v is value.
+            # $_k is expected (via _expected) and now _stated or unexpected and therefore _passthrough
+            --*=*) [[ -v _expected[${_k}] ]] && _stated[${_k}]="${_v}" || _passthrough[${_k}]="${_v}";;
+
+            # explicit parsing break
             --) shift; break;; ## explicit stop
-            --*) [[ -v _defaults[${_k}] ]] && _stated[${_k}]=1 || _passthrough[${_k}]=1;;
-            *) break;; ## arguments start
+
+            # boolean switch --${_k}; set it to 1
+            --*) [[ -v _expected[${_k}] ]] && _stated[${_k}]=1 || _passthrough[${_k}]=1;;
+
+            # first positional argument, switch parsing ends
+            *) break;;
         esac
+
         shift
     done
-    # positional arguments
+    
+    # positional arguments are whatevers left over
     local -a _positionals=( "$@" )
     
-    # _defaults and _stated merged
+    # _expected and _stated merged to _merged; these are the actual switches
     local -A _merged=()
-    for _k in ${!_defaults[@]}; do _merged[${_k}]=${_defaults[${_k}]}; done
-    for _k in ${!_stated[@]}; do _merged[${_k}]=${_stated[${_k}]}; done
-    
-    # declare -p _defaults _stated _switches _passthrough _positionals
-    
+    for _k in ${!_expected[@]}; do
+        _merged[${_k}]="${_expected[${_k}]}"
+    done
+    for _k in ${!_stated[@]}; do
+        _merged[${_k}]="${_stated[${_k}]}"
+    done
+
+    # Missing any required values?
+    for _k in ${!_required[@]}; do
+        local _announcer=${_required[${_k}]:-u.error}
+        [[ -n "${_merged[${_k}]}" ]] || return $(${_announcer} "${FUNCNAME}: '--${_k}' is required")
+    done
+         
+    # body
+    # declare -p _expected _required _stated _merged _passthrough _positionals
     gnome.background ${_merged[primary]:-snow4} ${_merged[secondary]:-black}
 )
 
