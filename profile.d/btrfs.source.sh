@@ -1,7 +1,31 @@
 ${1:-false} || u.have $(path.basename.part ${BASH_SOURCE} 0) || return 0
 
-btrfs() ( command ${FUNCNAME} "$@"; )
+btrfs() (
+    sudo $(type -P ${FUNCNAME}) "$@"
+)
 f.x btrfs
+
+btrfs.findmnt() (
+    : '${_potentials}* ## find all mounted btrfs file system mountpoints'
+    set -Eeuo pipefail; shopt -s nullglob
+    local _cmd=${FUNCNAME%%.*}
+    sudo $(type -P findmnt) --type=${_cmd} --noheading --list -o TARGET "$@"
+)
+f.x btrfs.findmnt
+
+btrfs.snapshot() (
+    local _cmd=${FUNCNAME%%.*}
+    local _cmd=:; set -x
+    local _method=${FUNCNAME##*.}
+    for _a in "$@"; do
+        local _m=$(btrfs.findmnt $(realpath ${_a})) || continue
+        ${_cmd} subvolume ${_method} -r ${_m} ${_m}/${_method} && \
+            ${_cmd} subvolume list ${_m}
+    done        
+)
+f.x btrfs.snapshot
+
+
 
 btrfs.find.partitions-by-label() (
     set -Eeuo pipefail

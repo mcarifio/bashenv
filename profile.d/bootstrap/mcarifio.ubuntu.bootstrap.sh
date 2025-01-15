@@ -135,6 +135,10 @@ main() (
         shift
     done
 
+    mkdir -p ${HOME}/bin
+    # accomodate fedora conventions for udisk2
+    sudo ln -sr /run/media /media
+    # sudo mkdir -p /mnt/btrfs/snapshots/$(btrfs.findmnt)
     (( ${#_parts[@]} )) || _parts=( .emacs.d .thunderbird .local .config opt .cargo go explore src )
     [[ -d "${_from}" ]] || return $(u.error "'${_from}' is not a directory")
 

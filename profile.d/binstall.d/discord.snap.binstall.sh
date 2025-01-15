@@ -1,0 +1,1 @@
+_template.snap.binstall.sh

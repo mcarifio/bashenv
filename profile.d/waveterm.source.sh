@@ -3,7 +3,10 @@ ${1:-false} || u.haveP $(path.basename.part ${BASH_SOURCE} 0) || return 0
 waveterm() ( command ${FUNCNAME} "$@"; )
 f.x waveterm
 
-waveterm.doc.urls() ( echo https://docs.waveterm.dev/; ) # urls here
+waveterm.doc.urls() (
+    local -A _urls=( [start]="https://www.waveterm.dev/" [doc]="https://docs.waveterm.dev/" [vcs]="https://github.com/wavetermdev/waveterm" )
+    echo ${_urls[@]}
+)
 f.x waveterm.doc.urls
 
 waveterm.doc() (

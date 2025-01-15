@@ -6,9 +6,6 @@ apt() (
 
 f.x apt
 
-# do the rest below later
-return 0
-
 apt.src.deb() (
   : '${src_rpm} [${destination_dir:-$PWD/src.rpm}] # extract source rpm to an (optional) destination directory'
   local _src_rpm=${1:?'expecting a package or .src.rpm file'}
@@ -31,13 +28,23 @@ apt.src.deb() (
 )
 f.x apt.src.deb
 
+apt.installedp() (
+    : '${_pkg}* ## returns 0 iff all packages installed'
+    dpkg-query --show "$@" &> /dev/null
+)
+f.x apt.installedp
 
+apt.installed() (
+    : '${_pkg}* ## returns 0 iff all packages installed'
+    dpkg-query --show "$@"
+)
+f.x apt.installed
 
 apt.files() (
     : ' ${_pkg} # lists all files for a package; see also rpm -ql ${_pkg}'
     command dpkg --listfiles ${1:?'expecting a package'}
 )
-f.x dnf.files
+f.x apt.files
 
 # lock the kernel to a specific version. update in a more controlled way.
 apt.lock-kernel() (
@@ -47,11 +54,11 @@ apt.lock-kernel() (
 f.x apt.lock-kernel
 
 # what package does a command come from?
-deb.from() (
+apt.from() (
     : '${_cmd} # what package does ${_cmd} come from?'
-    rpm -qf $(type -P ${1:?'expecting a command'}) --qf '%{NAME}'
+    dpkg --search $(type -P ${1:?'expecting a command'})
 )
-f.x deb.from
+f.x apt.from
 
 deb.extract() {
     local _rpm_file=${1:?'expecting an rpm file'}
@@ -59,48 +66,27 @@ deb.extract() {
 }
 f.x deb.extract
 
-apt.from() (
-    : '{_cmd} # returns the repo id a package originated from'
-    dnf repoquery --qf "%{repoid}" ${1:?'expecting a package'}
-)
-f.x apt.from
-
-ubuntu.upgrade() (
+apt.release-upgrade() (
+    set -Eeuo pipefail; shopt -s nullglob
     local -i _next_version=${1:-$(( $(os-release.version) + 1 ))}
     >&2 echo "upgrade from version $(os-release.version) to ${_next_version}"
-    dnf upgrade --allowerasing -y
-    dnf install dnf-plugin-system-upgrade -y
-    dnf system-upgrade download -y --nogpgcheck --releasever=${_next_version}
-    dnf system-upgrade reboot
+    u.have do-release-upgrade || apt install update-manager-core
+    sudo do-release-upgrade 
+    >&2 echo 'sudo reboot ## next'
 )
-f.x ubuntu.upgrade
-
-ubuntu.id.last() (
-    dnf history list last|tail -n1|cut -d'|' -f1
-)
-f.x ubuntu.id.last
+f.x apt.release-upgrade
 
 apt.missing() (
     for _p in "$@"; do
-        rpm -q ${_p} > /dev/null || echo -n "${_p} "
+        apt.installedp ${_p} || echo -n "${_p} "
     done
 )
 f.x apt.missing
 
 apt.install.missing() (
-    local _missing=$(apt.missing "$@")
-    if [[ -n "${_missing}" ]] ; then
-        dnf upgrade --nobest --skip-broken
-        dnf install --nobest --skip-broken ${_missing}
-    fi
+    binstall.apt $(u.switches pkg $(apt.missing "$@"))
 )
-f.x apt.install
-
-function apt.is-installed (
-    : '${_pkg} ## returns 0 iff ${_pkg} is installed (works with versions)'
-    dnf list installed ${1:?"${FUNCNAME} expecting a package"} &> /dev/null
-)
-f.x apt.is-installed
+f.x apt.install.missing
 
 sourced || true
 

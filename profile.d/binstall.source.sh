@@ -523,7 +523,7 @@ binstall.apt() (
 
     local -i _check=0
     local -i _status=0
-    local -a _uris=() _suites=() _components=() _keys=() _cmds=() _pkgs=()
+    local -a _uris=() _suites=() _components=() _keys=() _cmds=() _pkgs=() _ppas=()
     local _name=''
     local -i _trusted=0
     for _a in "$@"; do
@@ -535,6 +535,7 @@ binstall.apt() (
             --trusted) _trusted=1;;
             --name=*) _name="${_v}";;
             --uri=*) _uris+=("${_v}");;
+            --ppa=*) _ppas+=("${_v}");;
             --suite=*) _suites+=("${_v}");;
             --component=*) _components+=("${_v}");;
             --signed-by=*) _keys+=("${_v}");;
@@ -549,6 +550,9 @@ binstall.apt() (
     (( ${#_pkgs[@]} )) || return $(u.error "${FUNCNAME} expecting --pkg=something")
     [[ -z "${_name}" ]] && _name=${_pkgs[0]}
 
+
+    # TODO mike@carif.io: btrfs snapshot of /?
+    
     # keys
     if (( ${#_keys[@]} )) ; then
         local _keyrings="/usr/share/keyrings"
@@ -559,7 +563,16 @@ binstall.apt() (
             >&2 echo "Added '${_keyring}' from '${_key}'"
         done
     fi
-    
+
+    # ppas
+    if (( ${#_ppas[@]} )) ; then
+        for _ppa in "${_ppas[@]}"; do
+            sudo add-apt-repository -y "${_ppa}" && >&2 echo "Added ppa '${_ppa}'"
+        done
+    fi
+
+
+    # uris -> sources.list.d
     if (( ${#_uris[@]} )) ; then
         local _source="/etc/apt/sources.list.d/${_name}.list"
         (( ${#_components[@]} )) || _components=(main universe restricted multiverse) 
