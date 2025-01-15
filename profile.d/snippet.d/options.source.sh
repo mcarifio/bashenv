@@ -147,22 +147,45 @@ f.complete example.options
 complete -p example.options
 
 
-example.Aoptions() (
-    local -A _switches=( [cursor-size]=96 )
+example.optionsA() (
+    # all switches with their defaults, including ''
+    local -A _defaults=( [one]=1 [two]=2 [blank]='' )
+    # all switches explicitly stated at the command line
+    local -A _stated=()
+    # switches passed through (unprocessed by the loop)
     local -A _passthrough=()
 
     for _a in "$@"; do
+        # --key=value => $_k is 'key', $_v is 'value'
         local _k="${_a%%=*}"
-        local _v="${_a##*=}"
+        _k="${_k##*--}"
+        [[ -n "${_k}" ]] && local _v="${_a##*=}" || _v="${_a}"
         case "${_a}" in
-            --switches) echo ${_k} ${!_switches[@]}; return 0;; ## for help and completion
-            --*=*) [[ -v settings[${_k}] ]] && _switches[${_k}]="${_v}" || _passthrough[${_k}]="${_v}";;
+            --switches) printf -- '--switches --defaults '
+                        printf -- '--%s ' ${!_defaults[@]}
+                        echo
+                        return 0;; ## for help and completion
+            --defaults) for _k in ${!_defaults[@]}; do printf -- '--%s="%s" ' ${_k} "${_defaults[${_k}]}"; done
+                        echo
+                        return 0;; ## for help and completion
+            --*=*) [[ -v _defaults[${_k}] ]] && _stated[${_k}]="${_v}" || _passthrough[${_k}]="${_v}";;
             --) shift; break;; ## explicit stop
-            --*) [[ -v settings[${_k}] ]] && _switches[${_k}]=1 || _passthrough[${_k}]=1;;
+            --*) [[ -v _defaults[${_k}] ]] && _stated[${_k}]=1 || _passthrough[${_k}]=1;;
             *) break;; ## arguments start
         esac
         shift
     done
-    local -a _args=( "$@" )
-    declare -p _switches _passthrough _args
+    # positional arguments
+    local -a _positionals=( "$@" )
+    
+    # _defaults and _stated merged
+    local -A _merged=()
+    for _k in ${!_defaults[@]}; do _merged[${_k}]=${_defaults[${_k}]}; done
+    for _k in ${!_stated[@]}; do _merged[${_k}]=${_stated[${_k}]}; done
+    
+    # declare -p _defaults _stated _switches _passthrough _positionals
+    declare -p _defaults _stated _merged _passthrough _positionals
+
+    # body
 )
+f.x example.optionsA

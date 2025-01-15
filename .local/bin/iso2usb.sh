@@ -20,9 +20,7 @@ main() (
 
     # eject the device
     sync
-    eject ${_device} && \
-        >&2 echo "ejected ${_device} successfully" || \
-        >&2 echo "ejected ${_device} unsuccessfully?"
+    eject ${_device} && >&2 echo "ejected ${_device} successfully" || >&2 echo "ejected ${_device} unsuccessfully?"
 )
 
 main "$@"
