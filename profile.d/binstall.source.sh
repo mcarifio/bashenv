@@ -524,6 +524,7 @@ binstall.apt() (
     local -i _check=0
     local -i _status=0
     local -a _uris=() _suites=() _components=() _keys=() _cmds=() _pkgs=()
+    local _name=''
     local -i _trusted=0
     for _a in "$@"; do
         local _k="${_a%%=*}"
@@ -531,7 +532,8 @@ binstall.apt() (
         case "${_a}" in
             # adds [trusted=yes] to add repos, use with caution
             --check) _check=1;;
-            --trusted) _trusted=1;; 
+            --trusted) _trusted=1;;
+            --name=*) _name="${_v}";;
             --uri=*) _uris+=("${_v}");;
             --suite=*) _suites+=("${_v}");;
             --component=*) _components+=("${_v}");;
@@ -545,12 +547,13 @@ binstall.apt() (
     done
 
     (( ${#_pkgs[@]} )) || return $(u.error "${FUNCNAME} expecting --pkg=something")
+    [[ -z "${_name}" ]] && _name=${_pkgs[0]}
 
     # keys
     if (( ${#_keys[@]} )) ; then
         local _keyrings="/usr/share/keyrings"
         for _key in "${_keys[@]}"; do
-            local _keyring="${_keyrings}/$(path.basename ${_key}).gpg"
+            local _keyring="${_keyrings}/${_name}.gpg"
             # TODO mike@carif.io: is this the preferred method and local target?
             curl -sSL "${_key}" | sudo gpg --dearmor -o "${_keyring}"
             >&2 echo "Added '${_keyring}' from '${_key}'"
@@ -558,7 +561,7 @@ binstall.apt() (
     fi
     
     if (( ${#_uris[@]} )) ; then
-        local _source="/etc/apt/sources.list.d/$(path.basename "${_uris[0]}" 0).list"
+        local _source="/etc/apt/sources.list.d/${_name}.list"
         (( ${#_components[@]} )) || _components=(main universe restricted multiverse) 
         if [[ ! -r "${_source}" ]] ; then
             for _uri in "${_uris[@]}"; do
