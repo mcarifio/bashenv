@@ -76,15 +76,14 @@ main() (
     # body
     # declare -p _expected _stated _switches _passthrough _positionals
     # printf '%s: ' ${FUNCNAME}; declare -p _args _expected _stated _merged _passthrough _positionals
-    (( ${#_froms[@]} )) || [[ -n "${_merged[root]}" ]] || return $(u.error "${FUNCNAME}: No --root or --from")
-    [[ -d "${_merged[root]}" ]] || return $(u.error "${FUNCNAME}: root '${_merged[root]}' not found")
+    [[ (( ${#_froms[@]} )) || -d "${_merged[root]}" ]] || return $(u.error "${FUNCNAME}@${LINENO}: No --root or --from")
     (( ${#_froms[@]} )) || _froms=( ${_merged[root]}/{.ssh,.cargo,opt,src,explore,*Projects,.config,.emacs.d,.local,.pki,.gnupg,.rustup,.thunderbird,go,snap} )
 
     for _d in "${_froms[@]}"; do
         [[ -d "${_d}" ]] || { >&2 echo "${_d} not found"; continue; }
         local _from="${_d}" _to="${_merged[to]}/$(basename ${_d})"
         >&2 echo "rsync ${_from} -> ${_to}"
-        command rsync --update --fsync --archive --partial \
+        sudo $(type -P rsync) --ignore-errors --owner --group --update --fsync --archive --partial \
                 --backup --links  --mkpath --xattrs --times "${_from}" "${_to}" || true
     done        
 )
