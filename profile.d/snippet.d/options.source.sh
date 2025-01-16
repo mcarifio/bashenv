@@ -149,24 +149,24 @@ f.x example.options
 
 
 example.optionsA() (
-
     # _expected are the (possible) expected switches and their default values, e.g. --one -> [one] -> 1.
-    local -A _expected=( [one]=1 [two]=2 [blank]='' [i-am-required]='' [warn-me]=1 )
     # _required are expected switches in _expected that must end with a value after parsing.
     # If not in _merged (see below), then the missing switch is "announced" with the associated function, e.g
     # [i_am_required] -> u.error so u.error is the announcing function. Note that u.error and u.warn effectively
-    # stop parsing.
-    local -A _required=( [i-am-required]=u.error [warn-me]=u.warn )
-    # all switches explicitly stated at the command line
-    local -A _stated=()
-    # switches passed through (unprocessed by the loop)
-    local -A _passthrough=()
-
+    # stop parsing. Note also _expected and _required are on the same line to make editing a little easier.
+    local -A _expected=( [one]=1 [two]=2 [blank]='' [i-am-required]='' [warn-me]=1 ) _required=( [i-am-required]=u.error [warn-me]=u.warn )
     # Only _expected switches can be _required.
     for _k in ${!_required[@]}; do
         [[ -v _expected[${_k}] ]] || return $(u.error "${FUNCNAME}: ${FUNCNAME} is misconfigured, required switch '${_k}' is not expected")
     done
     
+    # _args are the arguments before processing
+    local -a _args=( "$@" )
+    # all switches explicitly stated at the command line
+    local -A _stated=()
+    # switches passed through (unprocessed by the loop)
+    local -A _passthrough=()
+
     for _a in "$@"; do
         # if --key=value then _k is 'key' and _v is 'value'
         # otherwise _k='' and _v is _a

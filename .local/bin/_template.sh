@@ -1,35 +1,23 @@
 #!/usr/bin/env bash
-shopt -s nullglob
-[[ "$0" = */bashdb ]] && shift
+#!/usr/bin/env -S sudo bash
+set -Eeuo pipefail; shopt -s nullglob
 
+subr0() (
+    :
+)
 
-# All gnome settings to my liking
+subr1() (
+    :
+)
+            
 
-# https://andrewmccarthy.ie/setting-a-blank-desktop-background-in-gnome.html
-# gsettings list-keys org.gnome.desktop.background
-# gsettings describe org.gnome.desktop.background primary-color
-gnome.background() {
-    : 'gnome.background [${primary-color:-web-gray} [${secondary-color:-gray}]]'
-    local _primary=${1:-snow4}
-    local _secondary=${2:-blue}
-    gsettings set org.gnome.desktop.background picture-uri none
-    # gsettings set org.gnome.desktop.background color-shading-type 'solid'
-    gsettings set org.gnome.desktop.background color-shading-type vertical
-
-    # https://en.wikipedia.org/wiki/X11_color_names
-    # https://www.w3schools.com/colors/colors_x11.asp
-    gsettings set org.gnome.desktop.background primary-color "${_primary}"
-    gsettings set org.gnome.desktop.background secondary-color "${_secondary}"
-}
 
 
 main() (
-    # expected keys and values
-    # local -A _expected=( [one]=1 [two]=2 [blank]='' [i-am-required]='' [warn-me]=1 ) _required=( [i-am-required]=u.error [warn-me]=u.warn )
-    local -A _expected=( [primary]=snow4 [secondary]=black ) _required=( )
+    local -A _expected=( [one]=1 [two]=2 [three]=3 [blank]='' [i-am-required]='') _required=( [i-am-required] )
     # Only _expected switches can be _required.
     for _k in ${!_required[@]}; do
-        [[ -v _expected[${_k}] ]] || return $(u.error "${FUNCNAME}: ${FUNCNAME} is misconfigured, required switch '${_k}' is not expected")
+        [[ -v _expected[${_k}] ]] || return $(u.error "${FUNCNAME}: ${FUNCNAME} is misconfigured, required switch '${_k}' is not initalized")
     done
     
     # _args are the arguments before processing
@@ -95,56 +83,16 @@ main() (
     done
          
     # body
-    # declare -p _expected _required _stated _merged _passthrough _positionals
-    gnome.background ${_merged[primary]:-snow4} ${_merged[secondary]:-black}
-        # > Wifi
-    # set wifi ${_name} ${_password}
+    # declare -p _expected _stated _switches _passthrough _positionals
+    printf '%s: ' ${FUNCNAME}; declare -p _args _expected _stated _merged _passthrough _positionals
 
-    # > Network
-    # for all network devices, name their NetworkManager connection name to be $(basename $device)
-
-    # > Displays
-    # primary 2
-    # quad pattern
-
-    # > Sound
-
-    # > Power
-    # performance
-    # screen blank 15m
-
-    # > Multitasking
-
-    # > Appearance
-    # gnome-background
+    subr0
+    subr1
     
-    # > Ubuntu Desktop
-    # don't show home folder
-    # auto-hide dock
-    # ... positioned on right
-
-    # > Apps
-    # > Notifications
-    # > Search
-    # > Online Accounts
-    # > Sharing
-
-    # > Mouse and Touchpad
-
-    # > Keyboard
-    # > Color
-    # > Printer
-    # > Tablet
-    # > Accessibility
-    #   > Seeing
-    #     set large text size
-    #     largest cursor size
-    gsettings set org.gnome.desktop.interface cursor-size 96
-    # > Privacy
-    # > Systems
-    # hostname
-
 )
 
+
+main --four=4 --i-am-required=yup  --five=5 1 2 3 4
+printf '\n\n\n'
 main "$@"
 

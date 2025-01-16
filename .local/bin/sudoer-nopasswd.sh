@@ -1,36 +1,25 @@
 #!/usr/bin/env bash
-shopt -s nullglob
-[[ "$0" = */bashdb ]] && shift
+#!/usr/bin/env -S sudo bash
+set -Eeuo pipefail; shopt -s nullglob
 
-
-# All gnome settings to my liking
-
-# https://andrewmccarthy.ie/setting-a-blank-desktop-background-in-gnome.html
-# gsettings list-keys org.gnome.desktop.background
-# gsettings describe org.gnome.desktop.background primary-color
-gnome.background() {
-    : 'gnome.background [${primary-color:-web-gray} [${secondary-color:-gray}]]'
-    local _primary=${1:-snow4}
-    local _secondary=${2:-blue}
-    gsettings set org.gnome.desktop.background picture-uri none
-    # gsettings set org.gnome.desktop.background color-shading-type 'solid'
-    gsettings set org.gnome.desktop.background color-shading-type vertical
-
-    # https://en.wikipedia.org/wiki/X11_color_names
-    # https://www.w3schools.com/colors/colors_x11.asp
-    gsettings set org.gnome.desktop.background primary-color "${_primary}"
-    gsettings set org.gnome.desktop.background secondary-color "${_secondary}"
-}
-
+sudoer-nopasswd() (
+    local _match=${1:?"${FUNCNAME} expecting a user or group"}
+    local _suffix=${_match//%/}
+    local _nopasswd=/etc/sudoers.d/nopasswd-${_suffix}
+    sudo test -f "${_nopasswd}" || echo "${_match}	ALL=(ALL)	NOPASSWD: ALL" | sudo install --verbose --mode=0600 /dev/stdin ${_nopasswd}
+)
 
 main() (
-    # expected keys and values
-    # local -A _expected=( [one]=1 [two]=2 [blank]='' [i-am-required]='' [warn-me]=1 ) _required=( [i-am-required]=u.error [warn-me]=u.warn )
-    local -A _expected=( [primary]=snow4 [secondary]=black ) _required=( )
+    local -A _expected=() _required=()
     # Only _expected switches can be _required.
     for _k in ${!_required[@]}; do
-        [[ -v _expected[${_k}] ]] || return $(u.error "${FUNCNAME}: ${FUNCNAME} is misconfigured, required switch '${_k}' is not expected")
+        [[ -v _expected[${_k}] ]] || return $(u.error "${FUNCNAME}: ${FUNCNAME} is misconfigured, required switch '${_k}' is not initalized")
     done
+    # --group=wheel --group=sudo
+    local -a _groups=()
+    # --user=${USER}
+    local -a _users=()
+
     
     # _args are the arguments before processing
     local -a _args=( "$@" )
@@ -59,6 +48,8 @@ main() (
                         echo
                         return 0;;
 
+            --user=*) _users+=(${_v});;
+            --group=*) _groups+=(${_v});;
             # --key=value; $_k is key, $_v is value.
             # $_k is expected (via _expected) and now _stated or unexpected and therefore _passthrough
             --*=*) [[ -v _expected[${_k}] ]] && _stated[${_k}]="${_v}" || _passthrough[${_k}]="${_v}";;
@@ -95,56 +86,10 @@ main() (
     done
          
     # body
-    # declare -p _expected _required _stated _merged _passthrough _positionals
-    gnome.background ${_merged[primary]:-snow4} ${_merged[secondary]:-black}
-        # > Wifi
-    # set wifi ${_name} ${_password}
-
-    # > Network
-    # for all network devices, name their NetworkManager connection name to be $(basename $device)
-
-    # > Displays
-    # primary 2
-    # quad pattern
-
-    # > Sound
-
-    # > Power
-    # performance
-    # screen blank 15m
-
-    # > Multitasking
-
-    # > Appearance
-    # gnome-background
-    
-    # > Ubuntu Desktop
-    # don't show home folder
-    # auto-hide dock
-    # ... positioned on right
-
-    # > Apps
-    # > Notifications
-    # > Search
-    # > Online Accounts
-    # > Sharing
-
-    # > Mouse and Touchpad
-
-    # > Keyboard
-    # > Color
-    # > Printer
-    # > Tablet
-    # > Accessibility
-    #   > Seeing
-    #     set large text size
-    #     largest cursor size
-    gsettings set org.gnome.desktop.interface cursor-size 96
-    # > Privacy
-    # > Systems
-    # hostname
-
+    # declare -p _expected _stated _switches _passthrough _positionals
+    for _u in ${_users[@]}; do sudoer-nopasswd ${_u}; done
+    for _g in ${_groups[@]}; do sudoer-nopasswd "%${_g}"; done
 )
 
-main "$@"
 
+main --group=wheel --group=sudo "$@"
