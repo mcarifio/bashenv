@@ -81,10 +81,9 @@ main() (
 
     for _d in "${_froms[@]}"; do
         [[ -d "${_d}" ]] || { >&2 echo "${_d} not found"; continue; }
-        local _from="${_d}" _to="${_merged[to]}/$(basename ${_d})"
-        >&2 echo "rsync ${_from} -> ${_to}"
-        sudo $(type -P rsync) --ignore-errors --owner --group --update --fsync --archive --partial \
-                --backup --links  --mkpath --xattrs --times "${_from}" "${_to}" || true
+        local _from="${_d}/" _to="${_merged[to]}/$(basename ${_d})"
+        ( set -x; sudo $(type -P rsync) --ignore-errors --owner --group --update --fsync --archive --partial \
+                --backup --links  --mkpath --xattrs --times "${_from}" "${_to}" || true )
     done        
 )
 
