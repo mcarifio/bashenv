@@ -12,8 +12,10 @@ main() (
 
 # ${USER} $(date --iso) mount all disks with btrfs file label '${_label}' on /${_label} with some fault tolerance
 # as root:
-# systemctl daemon-reload
 # mkdir /${_label}
+# systemctl daemon-reload
+# findmnt --verify # check syntax
+# findmnt --fstab # what should happen next
 # mount /${_label}
 # mount -l --type=btrfs | grep ${_label} # check options
 # btrfs filesystems show ${_label} # find disks by label and enumerate them
