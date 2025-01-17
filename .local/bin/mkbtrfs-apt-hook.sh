@@ -2,35 +2,16 @@
 #!/usr/bin/env -S sudo bash
 set -Eeuo pipefail; shopt -s nullglob
 
-subr0() (
-    :
-)
-
-subr1() (
-    :
-)
-            
-
-
-
 main() (
-    # all args before any processing
+    # all args before processing
     local -a _args=( "$@" )
 
     local -A _expected=(
-        # add your
-        [one]=1
-        # ... comments here
-        [two]=2
-        # ... about default arguments
-        [three]=3
-        # ... or flags that must be explicit
-        [blank]=''
-        # ... and required values
-        [i-am-required]='')
-    # ... then enumerate the required keys
-    local -A _required=( [i-am-required] )
-    # Only _expected keys can be _required. You can set them in other ways; if so, remove this check.
+        [snapshots]=/snapshots
+        [hook]=/etc/apt/apt.conf.d/90btrfs-hook
+    )
+    local -A _required=( )
+    # Only _expected switches can be _required.
     for _k in ${!_required[@]}; do
         [[ -v _expected[${_k}] ]] || return $(u.error "${FUNCNAME}: ${FUNCNAME} is misconfigured, required switch '${_k}' is not initalized")
     done
@@ -97,8 +78,17 @@ main() (
          
     # body
     # declare -p _expected _stated _switches _passthrough _positionals
-    printf '%s: ' ${FUNCNAME}; declare -p _args _expected _stated _merged _passthrough _positionals
-
+    # printf '%s: ' ${FUNCNAME}; declare -p _args _expected _stated _merged _passthrough _positionals
+    cat <<EOF | sudo install /dev/stdin /etc/apt/apt.conf.d/90btrfs-prehook
+DPkg::Pre-Install-Pkgs {
+    "if [ -d /snapshots ]; then \
+        timestamp=$(date +%Y%m%d%H%M%S); \
+        _snapshot=/snapshots/$timestamp
+        btrfs subvolume snapshot / $_snapshot; \
+        echo 'before snapshot: $_snapshot'; \
+    fi";
+};
+EOF
     subr0
     subr1
     
