@@ -89,7 +89,7 @@ main() (
         cat <<EOF | sudo install --mode=0644 /dev/stdin ${_merged[prehook]}
 DPkg::Pre-Install-Pkgs { "if [ -d ${_merged[snapshots]} ]; then \
 _timestamp=\$(date --iso=seconds); \
-_snapshot=${_merged[snapshots]}/\${_timestamp} \
+_snapshot=${_merged[snapshots]}/\${_timestamp}; \
 btrfs subvolume snapshot / \${_snapshot}; \
 cat - > \${_snapshot}/packages.list.log; \
 echo snapshot \${_snapshot}; fi"; };
