@@ -7,8 +7,9 @@ main() (
     local -a _args=( "$@" )
 
     local -A _expected=(
-        [snapshots]=/snapshots
-        [hook]=/etc/apt/apt.conf.d/90btrfs-hook
+        [snapshots]=/snapshots/apt/prehook
+        [ignore]=/etc/apt/apt.conf.d/99ignore-extensions
+        [prehook]=/etc/apt/apt.conf.d/99btrfs-prehook
     )
     local -A _required=( )
     # Only _expected switches can be _required.
@@ -79,23 +80,23 @@ main() (
     # body
     # declare -p _expected _stated _switches _passthrough _positionals
     # printf '%s: ' ${FUNCNAME}; declare -p _args _expected _stated _merged _passthrough _positionals
-    cat <<EOF | sudo install /dev/stdin /etc/apt/apt.conf.d/90btrfs-prehook
-DPkg::Pre-Install-Pkgs {
-    "if [ -d /snapshots ]; then \
-        timestamp=$(date +%Y%m%d%H%M%S); \
-        _snapshot=/snapshots/$timestamp
-        btrfs subvolume snapshot / $_snapshot; \
-        echo 'before snapshot: $_snapshot'; \
-    fi";
-};
+    for _e in {.,.t,.tar.}{x,g}z {.,}attic '.git.*'; do
+        printf 'Dir::Ignore-Files-Silently:: "\%s$";\n'  "${_e}"
+    done | sudo install --mode=0644 /dev/stdin ${_merged[ignore]}
+
+    if findmnt --type=btrfs /; then
+        sudo mkdir -pv ${_merged[snapshots]} || true
+        cat <<EOF | sudo install --mode=0644 /dev/stdin ${_merged[prehook]}
+DPkg::Pre-Install-Pkgs { "if [ -d ${_merged[snapshots]} ]; then \
+_timestamp=\$(date --iso=seconds); \
+_snapshot=${_merged[snapshots]}/\${_timestamp} \
+btrfs subvolume snapshot / \${_snapshot}; \
+cat - > \${_snapshot}/packages.list.log; \
+echo snapshot \${_snapshot}; fi"; };
 EOF
-    subr0
-    subr1
-    
+    fi
 )
 
 
-main --four=4 --i-am-required=yup  --five=5 1 2 3 4
-printf '\n\n\n'
 main "$@"
 
