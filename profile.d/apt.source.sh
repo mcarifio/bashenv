@@ -3,8 +3,14 @@ ${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
 apt() (
     sudo $(type -P ${FUNCNAME}) "$@"
 )
-
 f.x apt
+
+apt.btrfs.snapshots() (
+    btrfs subvolume list /snapshots/apt/prehook
+    echo "installations:"
+    printf '\t%s\n' /snapshots/apt/prehook/*/packages.list.log
+)
+f.x apt.btrfs.snapshots
 
 apt.src.deb() (
   : '${src_rpm} [${destination_dir:-$PWD/src.rpm}] # extract source rpm to an (optional) destination directory'

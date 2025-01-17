@@ -57,5 +57,8 @@ torbrowser-launcher
 vlc
 xonsh
 zoxide 
-                      
-         
+snapper
+snapper-gui
+btrbk
+ipxe
+grub-ipxe
