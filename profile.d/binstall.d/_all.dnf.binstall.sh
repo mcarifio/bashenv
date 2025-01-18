@@ -4,7 +4,7 @@ source $(u.here)/../$(path.basename.part $0 2).source.sh
 
 
 # yuck
-sudo tee -a /etc/yum.repos.d/vscodium.repo << EOF
+sudo install /dev/stdin /etc/yum.repos.d/vscodium.repo << EOF
 [gitlab.com_paulcarroty_vscodium_repo]
 name=download.vscodium.com
 baseurl=https://download.vscodium.com/rpms/
@@ -16,11 +16,8 @@ metadata_expire=1h
 EOF
 
 
-# [--import=]* [--repo=]* [--copr=]* [--pkg=]* [--cmd=]*
-# --skip-unavailable if some packages are missing
 _installer=$(path.basename.part $0 1)
-binstall.${_installer} $(binstall.external-switches "$0" import repo copr pkg cmd) "$@" || \
-    u.warn "$0@${LINENO}: ${_installer} => $?, continuing... "
+binstall.${_installer} $(binstall.external-switches "$0" import repo copr pkg cmd) "$@" || u.warn "$0@${LINENO}: ${_installer} => $?, continuing... "
 # post install
 
 # if you installed the docker service
@@ -54,8 +51,8 @@ if systemctl list-unit-files | grep postgresql; then
 
     sudo systemctl stop postgresql || { journalctl --no-pager -xeu postgresql; exit $(u.error "$0@${LINENO}: cannot stop the postgresql service"); }
     
-    sudo cp -v --backup=numbered /var/lib/pgsql/data/pg_hba{,.dist}.conf
-    sudo xz --force /var/lib/pgsql/data/pg_hba.dist.conf
+    sudo cp --verbose --backup=numbered /var/lib/pgsql/data/pg_hba{,.dist}.conf
+    sudo xz --verbose --force /var/lib/pgsql/data/pg_hba.dist.conf
     # sed 's/127.0.0.1\/32\s+ident/127.0.0.1\/32\ttrust/;s/::1/128\s+ident/::1/128\ttrust/' /var/lib/pgsql/data/pg_hba.conf
     # TODO mike@carif.io: ssh configuration
     sudo systemctl restart postgresql || { journalctl --no-pager -xeu postgresql; exit $(u.error "$0@${LINENO}: cannot restart the postgresql service"); }
