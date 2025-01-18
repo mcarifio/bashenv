@@ -1,0 +1,4 @@
+https://download.arangodb.com/arangodb312/RPM/arangodb.repo
+https://brave-browser-rpm-release.s3.brave.com/brave-browser.repo
+https://packages.microsoft.com/yumrepos/vscode
+https://download.docker.com/linux/fedora/docker-ce.repo

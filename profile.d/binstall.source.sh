@@ -410,7 +410,7 @@ f.x binstall.go
 # Note that web browser can often report the url they downloaded from. This can useful
 # for ${_guard}.{dnf,apt}.binstall.sh.
 binstall.dnf() (
-    # >&2 echo ${FUNCNAME} "$@"
+    # >&2 echo ${FUNCNAME}@${LINENO} "$@"
     set -Eeuo pipefail; shopt -s nullglob
     local _cmd=${FUNCNAME##*.}
     local _installer=$(type -P ${FUNCNAME##*.})
@@ -427,10 +427,11 @@ binstall.dnf() (
     for _a in "${@}"; do
         local _k="${_a%%=*}"
         local _v="${_a##*=}"
+        # >&2 echo ${FUNCNAME}@${LINENO} ${_k} ${_v}
         case "${_a}" in
             --check) _check=1;;
             --import=*) _imports+=("${_v}");;
-            --add-repo=*) _repos+=("${_v}");; 
+            --add-repo=*|--repo=*) _repos+=("${_v}");;
             --copr=*) _coprs+=("${_v}");;
             --pkg=*) _pkgs+=("${_v}");;
             --cmd=*) _cmds+=("${_v}");;
@@ -440,13 +441,13 @@ binstall.dnf() (
         shift
     done
 
-    (( ${#_pkgs[@]} )) || return $(u.error "${FUNCNAME} expecting --pkg=something")
+    (( ${#_pkgs[@]} )) || return $(u.error "${FUNCNAME}@${LINENO}: expecting --pkg=something")
 
-    for _import in "${_imports[@]}"; do sudo $(type -P rpmkeys) --import "${_import}" || return $(u.error "${FUNCNAME} cannot import '${_import}'"); done
-    for _repo in "${_repos[@]}"; do sudo ${_installer} config-manager addrepo --from-repofile="${_repo}" || return $(u.error "${FUNCNAME} cannot addrepo '${_repo}'"); done
+    for _import in "${_imports[@]}"; do sudo $(type -P rpmkeys) --import "${_import}" || u.warn "${FUNCNAME}@${LINENO}: cannot import '${_import}', skipping..."; done
+    for _repo in "${_repos[@]}"; do sudo ${_installer} --assumeyes config-manager addrepo --overwrite --from-repofile="${_repo}" || u.warn "${FUNCNAME}@${LINENO}: cannot addrepo '${_repo}', skipping..."; done
     # TODO mike@carif.io: --assumeyes doesn't work?
-    for _copr in "${_coprs[@]}"; do sudo ${_installer} copr enable "${_copr}" || return $(u.error "${FUNCNAME} cannot enable copr '${_copr}'"); done
-    sudo ${_installer} install --assumeyes $@ ${_pkgs[@]} || sudo ${_installer} install --assumeyes --no-best --allowerasing $@ ${_pkgs[@]} 
+    for _copr in "${_coprs[@]}"; do sudo ${_installer} --assumeyes copr enable "${_copr}" || u.warn "${FUNCNAME}@${LINENO}: cannot enable copr '${_copr}', skipping..."; done
+    sudo ${_installer} install --assumeyes $@ ${_pkgs[@]} || sudo ${_installer} install --assumeyes --no-best --allowerasing --skip-unavailable $@ ${_pkgs[@]} 
     (( _check )) && binstall.check $(binstall.dnf.pkg.cmds ${_pkgs[@]}) ${_cmds[@]} 
 )
 f.x binstall.dnf
@@ -838,6 +839,20 @@ binstall.nix() (
     :
 )
 f.x binstall.nix
+
+
+# useful for _all.${_installer}.binstall.sh scripts
+binstall.external-switches() (
+    local _pathname="${1:?"expecting a pathname"}"; shift
+    local _result=''
+    for _s in "$@"; do
+        local _switch_pathname="${_pathname}.${_s}.list"
+        [[ -r "${_switch_pathname}" ]] && _result+="$(u.switches ${_s} $(< "${_switch_pathname}"))"
+    done
+    echo "${_result}"
+)
+f.x binstall.external-switches
+
 
 binstall.installer() (
     set -Eeuo pipefail
