@@ -62,3 +62,7 @@ snapper-gui
 btrbk
 ipxe
 grub-ipxe
+udiskie
+udevil
+usbview
+apt-btrfs-snapshot
