@@ -35,7 +35,7 @@ f.x rclone.env
 rclone.mount (
     : '${_mountspec} ${_mountpoint} ## e.g. mnt-gdrive-mcarifio:/ ${HOME}/mnt/gdrive/carif.io'
     rclone mount "${1:?"${FUNCNAME}@${BASH_LINENO}: expecting an rclone mountpoint"}" "${2:?"${FUNCNAME}@${BASH_LINENO}: expecting a target directory"}" \
-           --vfs-cache-mode full --drive-export-formats docx --drive-export-formats xlsx --drive-import-formats docx --drive-import-formats xlsx    
+           --vfs-cache-mode full --drive-export-formats docx --drive-export-formats xlsx --drive-import-formats docx --drive-import-formats xlsx
 )
 
 rclone.mount.carif() {
@@ -59,6 +59,13 @@ all.rclone.mount() {
     done
 }
 f.x all.rclone.mount
+
+rclone.mountpoints() (
+    mount --type=fuse.rclone
+)
+f.x rclone.mountpoints
+
+
 
 rclone.session() {
     : '# called by .bashrc'

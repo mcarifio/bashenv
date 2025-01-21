@@ -1,0 +1,11 @@
+[Unit]
+Description=mount rclone %p for %u
+After=network-online.target
+
+[Service]
+User=%u
+Group=%g
+
+ExecStartPre=mkdir -p %h/mnt/1drive/m00nlit.com || true
+
+ExecStart=/usr/bin/rclone mount %p:/ %h/mnt/1drive/m00nlit.com --vfs-cache-mode full --drive-export-formats docx --drive-export-formats xlsx --drive-import-formats docx --drive-import-formats xlsx    
