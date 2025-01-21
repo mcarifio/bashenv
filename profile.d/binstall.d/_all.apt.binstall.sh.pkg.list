@@ -66,3 +66,7 @@ udiskie
 udevil
 usbview
 apt-btrfs-snapshot
+net-tools
+wshowkeys
+wev
+nix-bin

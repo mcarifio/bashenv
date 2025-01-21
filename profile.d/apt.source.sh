@@ -36,13 +36,13 @@ f.x apt.src.deb
 
 apt.installedp() (
     : '${_pkg}* ## returns 0 iff all packages installed'
-    dpkg-query --show "$@" &> /dev/null
+    command dpkg-query --show "$@" &> /dev/null
 )
 f.x apt.installedp
 
 apt.installed() (
     : '${_pkg}* ## returns 0 iff all packages installed'
-    dpkg-query --show "$@"
+    command dpkg-query --show --showformat '${Package}\n' "$@"
 )
 f.x apt.installed
 
