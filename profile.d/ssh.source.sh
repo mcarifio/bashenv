@@ -27,13 +27,6 @@ ssh.options.gh0() (
 )
 f.x ssh.options.gh0
 
-ssh.dig() (
-    : '${_dnsname} ## get the first ip4 address for ${_dnsname} using local machine search path (e.g. /etc/resolv.conf) '
-    dig +short $"{1:?"${FUNCNAME} expecting a fqdn"}" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' | head -n1
-)
-f.x ssh.dig
-
-
 ssh.options.keypath() (
     : '${IdentityFile_pathname} # pathname of private key, usually _id_rsa; emit the ssh options for publickey auth only'
     printf -- ' -o PreferredAuthentications=publickey -o IdentitiesOnly=yes -o IdentityFile="%s" ' "${1:?"${FUNCNAME}: expecting and IdentityFile"}"
@@ -48,7 +41,7 @@ ssh.options.do() (
     # precedence: ssh() command line arguments, then ${FUNCNAME}, then ssh.options.defaults() and finally anything ssh() adds at the end
     local -A _options=()
 
-    # _options+=( [HostName]="$(ssh.dig ${FUNCNAME##*.})" )
+    # _options+=( [HostName]="$(dig.ip4 ${FUNCNAME##*.})" )
     # or using a cloudflair naming convention for "dns only" names: dnsonly.${_name}
     # _options+=( [HostName]="$(ssh.dig dnsonly.${FUNCNAME##*.})" )
     _options+=(
@@ -89,9 +82,14 @@ ssh() (
     }
     # *first* -o <option> wins, therefore command line, options per Host, ssh.options.defaults, User, HostName
     # Note that sshd must be configured to receive env variable SSH_FROM. Usually it's not
-    # >&2 echo \
-    SSH_FROM="${USER}@${HOSTNAME}" command ${FUNCNAME} "${_args[@]:0:${_len}}" $(ssh.options.${_Host}) $(ssh.options.defaults) -o User="${_User}" -o HostName="${_Host}" -o SendEnv="SSH_FROM" ${_Host}
+    local _hostgen=':'
+    f.exists ssh.options.${_Host} && _hostgen=ssh.options.${_Host}
+    # >&2 echo \        
+    SSH_FROM="${USER}@${HOSTNAME}" \
+            command ${FUNCNAME} "${_args[@]:0:${_len}}" $(${_hostgen}) \
+            $(ssh.options.defaults) -o User="${_User}" -o HostName="${_Host}" -o SendEnv="SSH_FROM" ${_Host}
 )
+f.x ssh
 
 
 ssh.scan() {
