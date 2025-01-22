@@ -32,6 +32,7 @@ ssh.dig() (
 )
 f.x ssh.dig
 
+
 ssh.options.do() (
     : 'ssh options for Host do'
     set -Eeuo pipefail; shopt -s nullglob
@@ -44,10 +45,12 @@ ssh.options.do() (
     # _options+=( [HostName]="$(ssh.dig dnsonly.${FUNCNAME##*.})" )
     _options+=( [HostName]="104.236.99.3" )
 
+    # pubkey auth only options
     _options+=( [PreferredAuthentications]=publickey \
                 [IdentitiesOnly]=yes \
                 [IdentityFile]="$(path.exists "${HOME}/.ssh/keys.d/quad/do_id_rsa")" )
     # >&2 declare -p _options
+    
     for _k in ${!_options[@]}; do printf -- ' -o %s=%s ' "${_k}" "${_options[${_k}]}"; done
 )
 f.x ssh.options.do
@@ -75,8 +78,9 @@ ssh() (
     local _User="${USER}"
     [[ "${_Host}" =~ ^([^@]*)@(.+)$ ]] && { _User="${BASH_REMATCH[1]}"; _Host="${BASH_REMATCH[2]}"; } # declare -p BASH_REMATCH
     # *first* -o <option> wins, therefore command line, options per Host, ssh.options.defaults, User, HostName
+    # Note that sshd must be configured to receive env variable SSH_FROM. Usually it's not
     # >&2 echo \
-    command ${FUNCNAME} "${_args[@]:0:${_len}}" $(ssh.options.${_Host}) $(ssh.options.defaults) -o User="${_User}" -o HostName="${_Host}" ${_Host}
+    SSH_FROM="${USER}@${HOSTNAME}" command ${FUNCNAME} "${_args[@]:0:${_len}}" $(ssh.options.${_Host}) $(ssh.options.defaults) -o User="${_User}" -o HostName="${_Host}" -o SendEnv="SSH_FROM" ${_Host}
 )
 
 
