@@ -1,46 +1,84 @@
 ${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
 
-ssh() (
-    set -Eeuo pipefail
-    
-    local -i _identity=0
-    local _IdentityFile=''
-    local _password=''
-    local -A _switches=()
-    
-    for _a in "$@"; do
-        local _k="${_a%%=*}"
-        local _v="${_a##*=}"
-        case "${_a}" in
-	    --id) _identity=1;;
-	    --id=*) _IdentityFile="${_v}";;
-	    --password=*) _password="${_v}";;
-	    --trace) _trace='-x';;		
-            --) shift; break;;
-            --*) _switches[${_k}]="${_v}";;
-            *) break;;
-        esac
-        shift
-    done
 
-    command ${FUNCNAME} "$@"
-    
-    # local _temp=${1:?"${FUNCNAME} expecting a host"}
-    # local -a _to=( ${_temp//@/ } )
-    # if (( ${#_to[@]} == 1 )); then
-    #     local _host=${_to[0]}
-    # else
-    #     local _user=${_to[0]}
-    #     local _host=${_to[1]}
-    # fi
-    
-
-    # local _o=''
-    # (( _id ) && [[ -z "${_IdentityFile}" ]] && _o+=" -o IdentityFile='${_IdentityFile}'"
-    
-    # command ${FUNCNAME} $(for _k in ${!_switches[@]}; do printf '--%s=%s ' ${_k} ${_switches[${_k}]}; done) ${_o} $@
+# Enumerate final options (which are the defaults since last option wins)
+# See man 5 ssh_config for a list of the ssh options.
+ssh.options.defaults() (
+    set -Eeuo pipefail; shopt -s nullglob
+    # populate _options with [sshOption]=${_value}
+    local -A _options=()
+    _options+=( )
+    # emit options to command line
+    for _k in ${!_options[@]}; do printf -- ' -o %s=%s ' ${_k} ${_options[$_k]}; done
 )
-f.x ssh
+
+
+# untested
+ssh.options.gh0() (
+    set -Eeuo pipefail; shopt -s nullglob
+    local -A _options=()
+    _options+=( [HostName]=github.com  [User]=git )
+    _options+=( [PreferredAuthenications]=publickey \
+               [IdentitiesOnly]=yes \
+               [IdentityFile]="$(path.exists "${HOME}/keys.d/git/${USER}-at-${_hostname}_id_rsa")" )
+    for _k in ${!_options[@]}; do printf -- ' -o %s=%s ' ${_k} ${_options[$_k]}; done
+
+
+)
+f.x ssh.options.gh0
+
+ssh.dig() (
+    dig +short $"{1:?"${FUNCNAME} expecting a fqdn"}" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' | head -n1
+)
+f.x ssh.dig
+
+ssh.options.do() (
+    : 'ssh options for Host do'
+    set -Eeuo pipefail; shopt -s nullglob
+
+    # precedence: ssh() command line arguments, then ${FUNCNAME}, then ssh.options.defaults() and finally anything ssh() adds at the end
+    local -A _options=()
+
+    # _options+=( [HostName]="$(ssh.dig ${FUNCNAME##*.})" )
+    # or using a cloudflair naming convention for "dns only" names: dnsonly.${_name}
+    # _options+=( [HostName]="$(ssh.dig dnsonly.${FUNCNAME##*.})" )
+    _options+=( [HostName]="104.236.99.3" )
+
+    _options+=( [PreferredAuthentications]=publickey \
+                [IdentitiesOnly]=yes \
+                [IdentityFile]="$(path.exists "${HOME}/.ssh/keys.d/quad/do_id_rsa")" )
+    # >&2 declare -p _options
+    for _k in ${!_options[@]}; do printf -- ' -o %s=%s ' "${_k}" "${_options[${_k}]}"; done
+)
+f.x ssh.options.do
+
+# simulate Host h0 h1 h3 ...:
+ssh.host.aliases() {
+    local _host="${1:? "${FUNCNAME} expecting a Host"}"; shift
+    for _a in $@; do
+        local _alias=ssh.options.${_a}
+        eval "${_alias}() ( ssh.options.${_host}; ); f.x ${_alias};"
+    done
+}
+
+# do is a Host for mike.carif.io
+ssh.host.aliases do mike.carif.io
+
+
+ssh() (
+    set -Eeuo pipefail; shopt -s nullglob
+    local -a _args=( $@ )
+    local -i _len=$(( ${#_args[@]} - 1 ))
+    # declare -p _args _len
+    (( _len >= 0 )) || return $(u.error "${FUNCNAME} expecting a Host")
+    local _Host="${_args[${_len}]}"
+    local _User="${USER}"
+    [[ "${_Host}" =~ ^([^@]*)@(.+)$ ]] && { _User="${BASH_REMATCH[1]}"; _Host="${BASH_REMATCH[2]}"; } # declare -p BASH_REMATCH
+    # *first* -o <option> wins, therefore command line, options per Host, ssh.options.defaults, User, HostName
+    # >&2 echo \
+    command ${FUNCNAME} "${_args[@]:0:${_len}}" $(ssh.options.${_Host}) $(ssh.options.defaults) -o User="${_User}" -o HostName="${_Host}" ${_Host}
+)
+
 
 ssh.scan() {
     set -Eeuo pipefail
@@ -96,25 +134,6 @@ ssh.mkpair() (
 f.x ssh.mkpair
 
 
-ssh.User() (
-    set -Eeuo pipefail
-    if [[ "$1" =~ ^([^@]*)@ ]] ; then
-        echo ${BASH_REMATCH[1]}
-    else
-        echo ${USER}
-    fi
-)
-f.x ssh.User
-
-ssh.HostName() (
-    if [[ "$1" =~ @(.*)$ ]] ; then
-        echo ${BASH_REMATCH[1]}
-    else
-        echo "$1"
-    fi
-)
-f.x ssh.HostName
-
 ssh.IdentityFile() (
     set -Eeuo pipefail
     local _remote_user=$1
@@ -128,35 +147,6 @@ ssh.IdentityFile() (
 )
 f.x ssh.IdentityFile
 
-
-ssh.ssh0() (
-    : 'ssh.ssh [${user}@]?${host} $*'
-    local _target=${1:?"${FUNCNAME} expecting a host"}; shift
-    local _remote_user=$(ssh.User ${_target})
-    local _remote_host=$(ssh.HostName ${_target})
-    local _IdentityFile=$(ssh.IdentityFile ${_remote_host} ${_remote_user})
-    local _options=""
-    [[ -n "${_IdentityFile}" ]] && _options+="-o IdentityFile=${_IdentityFile}"
-    (set -x; command ssh "$@" "${_options}" ${_target})
-)
-f.x ssh.ssh0
-
-
-ssh.i() (
-    : 'ssh.i [${user}:-${USER}]@${host} $* ## ssh to destination with an explicit IdentityFile based on the destination itself'
-    set -Eeuo pipefail
-    local _destination=${1:?'expecting a destination'}; shift
-    local _host=${_destination#*@} _user=${_destination%@*}
-    [[ -z "${_user}" ]] && _user=${USER}
-    local _keys_d=~/.ssh/keys.d
-    local _id_rsa=${_keys_d}/${_user}@${_host}_id_rsa
-    if [[ -r ${_id_rsa} ]] ; then
-        command ssh ${SSH_ARGS} -o IdentitiesOnly=true -o IdentityFile=${_id_rsa} ${_destination} "$@"
-    else
-        >&2 echo "IdentityFile ${_id_rsa} not found"
-    fi
-)
-f.x ssh.i
 
 
 ssh.x() (

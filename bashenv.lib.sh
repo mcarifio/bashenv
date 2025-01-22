@@ -144,7 +144,7 @@ f.x u.stacktrace
 u.error() (
     local -i _status=${2:-$?}
     local _message="${1:?"${FUNCNAME} expecting a message"}"
-    u.stacktrace ${FUNCNAME#*.} "${_message}" ${_status}
+    u.stacktrace ${FUNCNAME#*.} "${_message}" ${_status} || true
     return $(( _status ? _status : 1 ))
 )
 f.x u.error
@@ -748,6 +748,13 @@ path.readable() { [[ -r "$1" ]]; }
 f.x path.readable
 u.map.mkall path.readable
 
+path.exists() (
+    local _pathname="${1:?"${FUNCNAME}@${BASH_LINENO}: expecting a pathname"}"
+    local _mode="${2:-}"
+    [[ -n "${_mode}" ]] && { chmod "${_mode}" "${_pathname}" || return $(u.error "cannot chmod '${_mode}' on '${_pathname}'?"); }
+    [[ -r "${_pathname}" ]] && echo "${_pathname}" || return $(u.error "pathname '${_pathname}' is not readable.")
+)
+f.x path.exists
 
 
 
