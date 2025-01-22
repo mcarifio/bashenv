@@ -28,10 +28,18 @@ ssh.options.gh0() (
 f.x ssh.options.gh0
 
 ssh.dig() (
+    : '${_dnsname} ## get the first ip4 address for ${_dnsname} using local machine search path (e.g. /etc/resolv.conf) '
     dig +short $"{1:?"${FUNCNAME} expecting a fqdn"}" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' | head -n1
 )
 f.x ssh.dig
 
+
+ssh.options.keypath() (
+    : '${IdentityFile_pathname} # pathname of private key, usually _id_rsa; emit the ssh options for publickey auth only'
+    printf -- ' -o PreferredAuthentications=publickey -o IdentitiesOnly=yes -o IdentityFile="%s" ' "${1:?"${FUNCNAME}: expecting and IdentityFile"}"
+)
+f.x ssh.options.keypath
+                
 
 ssh.options.do() (
     : 'ssh options for Host do'
@@ -43,14 +51,12 @@ ssh.options.do() (
     # _options+=( [HostName]="$(ssh.dig ${FUNCNAME##*.})" )
     # or using a cloudflair naming convention for "dns only" names: dnsonly.${_name}
     # _options+=( [HostName]="$(ssh.dig dnsonly.${FUNCNAME##*.})" )
-    _options+=( [HostName]="104.236.99.3" )
-
-    # pubkey auth only options
-    _options+=( [PreferredAuthentications]=publickey \
-                [IdentitiesOnly]=yes \
-                [IdentityFile]="$(path.exists "${HOME}/.ssh/keys.d/quad/do_id_rsa")" )
+    _options+=(
+        # hardcoded host ip4 address
+        [HostName]="104.236.99.3" 
+    )
     # >&2 declare -p _options
-    
+    ssh.options.keypath "$(path.exists "${HOME}/.ssh/keys.d/quad/do_id_rsa")"
     for _k in ${!_options[@]}; do printf -- ' -o %s=%s ' "${_k}" "${_options[${_k}]}"; done
 )
 f.x ssh.options.do
@@ -76,7 +82,11 @@ ssh() (
     (( _len >= 0 )) || return $(u.error "${FUNCNAME} expecting a Host")
     local _Host="${_args[${_len}]}"
     local _User="${USER}"
-    [[ "${_Host}" =~ ^([^@]*)@(.+)$ ]] && { _User="${BASH_REMATCH[1]}"; _Host="${BASH_REMATCH[2]}"; } # declare -p BASH_REMATCH
+    [[ "${_Host}" =~ ^([^@]*)@(.+)$ ]] && {
+        # declare -p BASH_REMATCH
+        _User="${BASH_REMATCH[1]}"
+        _Host="${BASH_REMATCH[2]}"
+    }
     # *first* -o <option> wins, therefore command line, options per Host, ssh.options.defaults, User, HostName
     # Note that sshd must be configured to receive env variable SSH_FROM. Usually it's not
     # >&2 echo \
@@ -173,7 +183,8 @@ ssh.terminator.all() (
 f.x ssh.terminator.all
 
 ssh.env() {
-    touch ${HOME}/hushlogin
+    : 'turn off motd and other login notifications for ${USER}'
+    touch ${HOME}/.hushlogin
 }
 f.x ssh.env
 

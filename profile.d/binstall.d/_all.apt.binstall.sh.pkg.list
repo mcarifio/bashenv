@@ -67,6 +67,7 @@ udevil
 usbview
 apt-btrfs-snapshot
 net-tools
+arp-scan
 wshowkeys
 wev
 nix-bin
