@@ -82,12 +82,11 @@ ssh() (
     }
     # *first* -o <option> wins, therefore command line, options per Host, ssh.options.defaults, User, HostName
     # Note that sshd must be configured to receive env variable SSH_FROM. Usually it's not
-    local _hostgen=':'
-    f.exists ssh.options.${_Host} && _hostgen=ssh.options.${_Host}
     # >&2 echo \        
     SSH_FROM="${USER}@${HOSTNAME}" \
-            command ${FUNCNAME} "${_args[@]:0:${_len}}" $(${_hostgen}) \
+            command ${FUNCNAME} "${_args[@]:0:${_len}}" $(f.exists ssh.options.${_Host} && ssh.options.${_Host}) \
             $(ssh.options.defaults) -o User="${_User}" -o HostName="${_Host}" -o SendEnv="SSH_FROM" ${_Host}
+
 )
 f.x ssh
 
