@@ -7,6 +7,12 @@
 #       fn's arguments
 #   - the first line of the function definition is : 'text' which acts as a docstring
 
+# source ${_this_pathname} [true]
+${1:-false} || {
+  declare -Fpx sourced.from.key &> /dev/null && sourced.from.key $(realpath ${BASH_SOURCE}) && return 0
+  >&2 echo "sourcing $(realpath ${BASH_SOURCE})"
+}
+
 # declare -Axig __bashenv_fx
 f.x() {
     : '${_f}... # export functions ${_f}...'
@@ -980,6 +986,14 @@ bashenv.paths() {
 }
 f.x bashenv.paths
 
+
+bashenv.init.libs() {
+    bashenv.paths; for _l in $(bashenv.libs); do source "${_l}"; done
+}
+f.x bashenv.init.libs
+
+
+
 bashenv.init() {
     local -i _trace=0
     for _a in "${@}"; do
@@ -992,13 +1006,16 @@ bashenv.init() {
         shift
     done
 
-    bashenv.paths; (( _trace )) && echo ${PATH} >&2
+    # bashenv.paths; (( _trace )) && echo ${PATH} >&2
 
-    for _l in $(bashenv.libs); do
-        (( _trace )) && printf '%s => ' ${_l} >&2
-        source "${_l}"
-        (( _trace )) && printf '%s\n' $? >&2
-    done
+    # for _l in $(bashenv.libs); do
+    #     (( _trace )) && printf '%s => ' ${_l} >&2
+    #     source "${_l}"
+    #     (( _trace )) && printf '%s\n' $? >&2
+    # done
+    bashenv.init.libs
+
+
     for _s in $(bashenv.sources); do
         (( _trace )) && printf '%s => ' ${_s} >&2
         source "${_s}"
@@ -1465,5 +1482,15 @@ u.mkprobe u.probe.os 'uname -s'  [Linux]=Linux [Darwin]=Darwin
 u.mkprobe u.probe.target 'uname -s' [Darwin]=apple-darwin [Linux]=unknown-linux-gnu
 
 
-
-sourced || true
+# bashenv.lib.sh is treated differently at the end. it can be sourced in several ways
+# remember that it's been sourced
+sourced || {
+  local _status=$?
+  u.warn "${BASH_SOURCE} reported errors on source, continuing ..."
+}
+# ~/.bash_profile handles --login bash sessions
+# ~/.bashrc handles --interactive bash sessions
+# BASH_ENV handles scripts. See .local/bin/_template.sh for how to invoke
+[[ -n "${BASH_ENV}" ]] || return ${_status:-0}
+# initialize all the libraries
+bashenv.init.libs

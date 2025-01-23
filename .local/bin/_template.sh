@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
-#!/usr/bin/env -S sudo bash
-set -Eeuo pipefail; shopt -s nullglob
 
+[[ -n "${BASH_ENV}" ]] || {
+  export BASH_ENV="$(realpath $(dirname $0)/../../..)/bashenv/bashenv.lib.sh"
+  source "${BASH_ENV}"
+}
+
+set -Eeuo pipefail; shopt -s nullglob
 subr0() (
     :
 )
@@ -31,7 +35,7 @@ main() (
     # ... then enumerate the required keys
     local -A _required=( [i-am-required] )
     # Only _expected keys can be _required. You can set them in other ways; if so, remove this check.
-    for _k in ${!_required[@]}; do
+    for _k in "${!_required[@]}"; do
         [[ -v _expected[${_k}] ]] || return $(u.error "${FUNCNAME}: ${FUNCNAME} is misconfigured, required switch '${_k}' is not initalized")
     done
     
@@ -51,12 +55,12 @@ main() (
 
             # enumerate all the switches including the hardcoded ones --switches --defaults for bash completion consumption
             --switches) printf -- '--switches --defaults '
-                        printf -- '--%s ' ${!_expected[@]}
+                        printf -- '--%s ' "${!_expected[@]}"
                         echo
                         return 0;;
             
             # enumerate the switches and default values for human consumption
-            --defaults) for _k in ${!_expected[@]}; do printf -- '--%s="%s" ' ${_k} "${_expected[${_k}]}"; done
+            --defaults) for _k in "${!_expected[@]}"; do printf -- '--%s="%s" ' ${_k} "${_expected[${_k}]}"; done
                         echo
                         return 0;;
 
@@ -82,15 +86,15 @@ main() (
     
     # _expected and _stated merged to _merged; these are the actual switches
     local -A _merged=()
-    for _k in ${!_expected[@]}; do
+    for _k in "${!_expected[@]}"; do
         _merged[${_k}]="${_expected[${_k}]}"
     done
-    for _k in ${!_stated[@]}; do
+    for _k in "${!_stated[@]}"; do
         _merged[${_k}]="${_stated[${_k}]}"
     done
 
     # Missing any required values?
-    for _k in ${!_required[@]}; do
+    for _k in "${!_required[@]}"; do
         local _announcer=${_required[${_k}]:-u.error}
         [[ -n "${_merged[${_k}]}" ]] || return $(${_announcer} "${FUNCNAME}: '--${_k}' is required")
     done
