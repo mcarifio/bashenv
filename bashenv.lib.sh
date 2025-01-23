@@ -8,8 +8,7 @@
 #   - the first line of the function definition is : 'text' which acts as a docstring
 
 # source ${_this_pathname} [true]
-[[ ${1:-false} || -z "${__bashenv_sourced_from[$(realpath ${BASH_SOURCE})]}" ]] && return 0
->&2 echo "sourcing $(realpath ${BASH_SOURCE})"
+! ${1:-false} && declare -Fpx bashenv.sourced.from &> /dev/null && bashenv.sourced.from "$(realpath ${BASH_SOURCE})" && return 0
 
 # declare -Axig __bashenv_fx
 f.x() {
