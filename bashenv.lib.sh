@@ -7,9 +7,10 @@
 #       fn's arguments
 #   - the first line of the function definition is : 'text' which acts as a docstring
 
-# source ${_this_pathname} [true]
-! ${1:-false} && declare -Fpx bashenv.sourced.from &> /dev/null && bashenv.sourced.from "$(realpath ${BASH_SOURCE})" && return 0
-
+# skip if ${_this_pathname} true || echo
+[[ -z "$1" ]]  && declare -Fpx bashenv.sourced.from &> /dev/null && bashenv.sourced.from "$(realpath ${BASH_SOURCE})" && return 0
+[[ echo = "$1" ]] && >&2 echo "sourcing $(realpath ${BASH_SOURCE})"
+    
 # declare -Axig __bashenv_fx
 f.x() {
     : '${_f}... # export functions ${_f}...'

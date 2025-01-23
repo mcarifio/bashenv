@@ -6,12 +6,14 @@ bashenv.start() {
 
     local _bashenv="$(dirname $(realpath -Lm ${BASH_SOURCE}))" ## .bash_profile is a symlink to bashenv/.bash_profile
     local _initializer=${1:-${FUNCNAME%.*}.init}
+    local _echo=${2:-noecho}
     local _pathname="${HOME}/${_initializer}"
 
     # Source all the local libraries. Unfortunately order matters, so this has limited usefulness.
     for _l in ${_bashenv}/*.lib.sh; do
         # declare -p _l
-        source ${_l}
+        # always source ${_l} even if it's been sourced previously
+        source ${_l} ${_echo}
     done
 
     if [[ -n "${SSH_CONNECTION}" ]]; then
