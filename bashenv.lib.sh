@@ -158,7 +158,7 @@ u.color.red() ( printf -- '\e[31m%s\e[0m' "$1"; )
 f.x u.color.red
 
 u.emit() (
-    local _msg="${1:?$(u.expecting string)}"
+    local _msg="${1:?$(u.expect string)}"
     local _color="${2:-u.color.none}"
     (( ${#FUNCNAME[@]} >= 3 )) && _prefix="${FUNCNAME[2]}@"
     (( ${#BASH_SOURCE[@]} >= 3 )) && _prefix="$(realpath "${BASH_SOURCE[2]}")"
@@ -174,17 +174,57 @@ u.msg() (
 )
 f.x u.msg
 
-u.expecting() (
-    : 'f() ( local _var="${1:?$(u.expecting pathname)}" ... # argument check, e.g. $1 should be a pathname'
-    local _kind="${1:-"${FUNCNAME} expecting a kind"}"
-    u.msg "expecting a ${_kind}"
+
+A.spread.last() (
+    : 'one=1 two=2 three=3 one=million #> two=2 three=tree one=mission'
+    set -Eeuo pipefail; shopt -s nullglob
+    
+    local -A _options=()
+    for _a in "${@}"; do
+        # if _a == "Key=value" then _k=Key and _v=value
+        local _k="${_a%%=*}"
+        local _v="${_a##*=}"
+        case "${_a}" in
+	    *=*) _options["${_k}"]="${_v}";; # last assignment wins
+            *) return $(u.error "${_a} is in the wrong format");;
+        esac
+        shift
+    done
+    for _k in ${!_options[@]}; do printf -- " %s='%s' " ${_k} ${_options["${_k}"]}; done
 )
-f.x u.expecting
+f.x A.spread.last
+
+A.spread.first() (
+    : 'one=1 two=2 three=3 one=million #> two=2 three=tree one=1'
+    set -Eeuo pipefail; shopt -s nullglob
+    
+    local -A _options=()
+    for _a in "${@}"; do
+        # if _a == "Key=value" then _k=Key and _v=value
+        local _k="${_a%%=*}"
+        local _v="${_a##*=}"
+        case "${_a}" in
+	    *=*) [[ -v _options["${_k}"] ]] || _options["${_k}"]="${_v}";; # first assignment wins
+            *) return $(u.error "${_a} is in the wrong format");;
+        esac
+        shift
+    done
+    for _k in ${!_options[@]}; do printf -- " %s='%s' " ${_k} ${_options["${_k}"]}; done
+)
+f.x A.spread.first
+
+
+u.expect() (
+    : 'f() ( local _var="${1:?$(u.expect pathname)}" ... # argument check, e.g. $1 should be a pathname'
+    local _kind="${1:-"${FUNCNAME} expect a kind"}"
+    u.msg "expect a ${_kind}"
+)
+f.x u.expect
 
 u.assign() (
     : 'local _var="$(u.assign "$1" ${_default} [${_kind}])" ## assign _var $1 iff not -z or assign ${_default}'
-    local _value="${1:?$(u.expecting value)}"
-    local _default="${2:?$(u.expecting ${3:-default})}"    
+    local _value="${1:?$(u.expect value)}"
+    local _default="${2:?$(u.expect ${3:-default})}"    
     [[ -n  "${_value}" ]] && echo "${_value}" || echo "${_default}"
 )
 f.x u.assign
@@ -193,7 +233,7 @@ f.x u.assign
 # Writes an eroro pprinted message and stack trace to stderr. Returns status of caller or 1 iff status is 0.
 u.error() (
     local -i _status=${2:-$?}
-    local _message="${1:?"$(u.expecting message)"}"
+    local _message="${1:?"$(u.expect message)"}"
     u.stacktrace ${FUNCNAME#*.} "${_message}" ${_status} || true
     return $(( _status ? _status : 1 ))
 )
@@ -202,7 +242,7 @@ f.x u.error
 # Writes a warn pprinted message and stack trace to stderr. Returns 0 always.
 u.warn() (
     local -i _status=${2:-$?}
-    local _message="${1:?"$(u.expecting message)"}"
+    local _message="${1:?"$(u.expect message)"}"
     u.stacktrace ${FUNCNAME#*.} "${_message}" ${_status} || true
 )
 f.x u.warn
@@ -418,13 +458,13 @@ __example.plus1.complete() {
 f.x example.plus1
 
 f.apply() {
-    local _f=${1:?$(u.expecting function)}; shift
+    local _f=${1:?$(u.expect function)}; shift
     ${_f} "$@"
 }
 f.x f.apply
 
 f.apply.if() {
-    local _f=${1:?$(u.expecting function)}; shift
+    local _f=${1:?$(u.expect function)}; shift
     f.exists ${_f} && ${_f} "$@" || true
 }
 f.x f.apply.if

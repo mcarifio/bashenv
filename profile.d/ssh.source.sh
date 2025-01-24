@@ -5,7 +5,7 @@ ${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
 # See man 5 ssh_config for a list of the ssh options.
 ssh.options.defaults() (
     set -Eeuo pipefail; shopt -s nullglob
-    echo -n
+    echo -n " "
 )
 f.x ssh.options.defaults
 
@@ -27,10 +27,10 @@ f.x ssh.options.gh0
 ssh.options.keypath() (
     : '${IdentityFile_pathname} # pathname of private key, usually _id_rsa; emit the ssh options for publickey auth only'
     set -Eeuo pipefail; shopt -s nullglob
-    local _IdentityFile="${1:?"$(u.expecting pathname)"}"
+    local _IdentityFile="${1:?"$(u.expect pathname)"}"
     local _auths="${2:-publickey}"
     chmod --changes --silent 0600 "${_IdentityFile}"
-    echo -n "PreferredAuthentications=${_auths}" "IdentitiesOnly=yes" "IdentityFile="${_IdentityFile}"" " "
+    echo -n "PreferredAuthentications=${_auths} IdentitiesOnly=yes IdentityFile='${_IdentityFile}' "
 )
 f.x ssh.options.keypath
                 
@@ -38,51 +38,81 @@ f.x ssh.options.keypath
 ssh.options.do() (
     : 'ssh options for Host do'
     set -Eeuo pipefail; shopt -s nullglob
-    ssh.options.keypath "$(path.exists "${HOME}/.ssh/keys.d/quad/do_id_rsa")"
-    echo -n "HostName=104.236.99.3" " "
+    # TODO mike@carif.io: most variation here re: getting the right private key
+    ssh.options.keypath "$(path.exists "${HOME}/.ssh/keys.d/quad/do_id_rsa")"; echo -n "HostName=104.236.99.3 "
 )
 f.x ssh.options.do
 
 # simulate Host h0 h1 h3 ...:
 ssh.host.aliases() {
-    local _host="${1:? "${FUNCNAME} expecting a Host"}"; shift
+    local _host="${1:?$(u.expect host)}"; shift
     for _a in $@; do
         local _alias=ssh.options.${_a}
-        eval "${_alias}() ( ssh.options.${_host}; ); f.x ${_alias};"
+        eval "${_alias}() ( ssh.options.${_host} \"$@\"; ); f.x ${_alias};"
     done
 }
-
-# do is a Host for mike.carif.io
-ssh.host.aliases do mike.carif.io
+f.x ssh.host.aliases
+ssh.host.aliases do mike.carif.io # ssh.host.mike.carif.io forwards call to host.alias.do 
 
 ssh.options4() (
-    local _User=${1:?"${FUNCNAME} expecting a User"}; shift
-    local _Host=${1:?"${FUNCNAME} expecting a Host"}; shift
-    ssh.options.defaults
-    f.apply.if ssh.options.defaults.${HOSTNAME}
-    f.apply.if ssh.options.${_Host}
-    echo -n "$@" " "
-    echo -n "SendEnv=SSH_FROM" "User=${_User}" " "
-
+    local _User=${1:?$(u.expect User)}; shift
+    local _Host=${1:?$(u.expect Host)}; shift
+    ssh.options.defaults; f.apply.if ssh.options.defaults.${HOSTNAME}; f.apply.if ssh.options.${_Host}; echo -n "$@ SendEnv=SSH_FROM User='${_User}' "
 )
 f.x ssh.options4
  
+
+ssh.o.fmt() (
+    local _key="${1:?$(u.expect key)}"
+    local _value="${2:?$(u.expect value)}"
+    local _prefix="${3:-" -o "}" _suffix=" "
+    echo -n "${_prefix}${_key}"; [[ -n "${_value}" ]] && echo -n "=${_value}"; echo -n "${_suffix}"
+)
+f.x ssh.o.fmt
+
 ssh.o() (
     set -Eeuo pipefail; shopt -s nullglob
+    
     local -A _options=()
     for _a in "${@}"; do
+        # if _a == "Key=value" then _k=Key and _v=value
         local _k="${_a%%=*}"
         local _v="${_a##*=}"
         case "${_a}" in
-	    *=*) _options["${_k}"]="${_v}";;
+	    *=*) _options["${_k}"]="${_v}";; # last assignment wins
             *) return $(u.error "${_a} is in the wrong format");;
         esac
         shift
     done
-    _prefix=' -o '                    
-    for _k in ${!_options[@]}; do echo -n "${_prefix}${_k}"; [[ -v _options["${_k}"] ]] && echo -n "=${_options["${_k}"]} "; done
+    for _k in ${!_options[@]}; do ${FUNCNAME}.fmt ${_k} ${_options["${_k}"]}; done
 )
 f.x ssh.o
+
+sshfs.o.fmt() (
+    local _key="${1:?$(u.expect key)}"
+    local _value="${2:?$(u.expect value)}"
+    local _prefix="${3:-''}" _suffix=","
+    echo -n "${_prefix}${_key}"; [[ -n "${_value}" ]] && echo -n "=${_value}"; echo -n "${_suffix}"
+)
+f.x sshfs.o.fmt
+
+sshfs.o() (
+    set -Eeuo pipefail; shopt -s nullglob
+    
+    local -A _options=()
+    for _a in "${@}"; do
+        # if _a == "Key=value" then _k=Key and _v=value
+        local _k="${_a%%=*}"
+        local _v="${_a##*=}"
+        case "${_a}" in
+	    *=*) _options["${_k}"]="${_v}";; # last assignment wins
+            *) return $(u.error "${_a} is in the wrong format");;
+        esac
+        shift
+    done
+    for _k in ${!_options[@]}; do ${FUNCNAME}.fmt ${_k} ${_options["${_k}"]}; done
+)
+f.x sshfs.o
 
 ssh() (
     set -Eeuo pipefail; shopt -s nullglob
