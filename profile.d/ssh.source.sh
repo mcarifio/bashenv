@@ -5,13 +5,9 @@ ${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
 # See man 5 ssh_config for a list of the ssh options.
 ssh.options.defaults() (
     set -Eeuo pipefail; shopt -s nullglob
-    # populate _options with [sshOption]=${_value}
-    local -A _options=()
-    _options+=( )
-    # emit options to command line
-    for _k in ${!_options[@]}; do printf -- ' -o %s=%s ' ${_k} ${_options[$_k]}; done
+    echo -n
 )
-
+f.x ssh.options.defaults
 
 # untested
 ssh.options.gh0() (
@@ -21,15 +17,20 @@ ssh.options.gh0() (
     _options+=( [PreferredAuthenications]=publickey \
                [IdentitiesOnly]=yes \
                [IdentityFile]="$(path.exists "${HOME}/keys.d/git/${USER}-at-${_hostname}_id_rsa")" )
-    for _k in ${!_options[@]}; do printf -- ' -o %s=%s ' ${_k} ${_options[$_k]}; done
-
-
+    for _k in ${!_options[@]}; do
+        local _v="${_options[$_k]}"
+        printf " [%s]=\"%s\"" ${_k} ${_v}
+    done
 )
 f.x ssh.options.gh0
 
 ssh.options.keypath() (
     : '${IdentityFile_pathname} # pathname of private key, usually _id_rsa; emit the ssh options for publickey auth only'
-    printf -- ' -o PreferredAuthentications=publickey -o IdentitiesOnly=yes -o IdentityFile="%s" ' "${1:?"${FUNCNAME}: expecting and IdentityFile"}"
+    set -Eeuo pipefail; shopt -s nullglob
+    local _IdentityFile="${1:?"$(u.expecting pathname)"}"
+    local _auths="${2:-publickey}"
+    chmod --changes --silent 0600 "${_IdentityFile}"
+    echo -n "PreferredAuthentications=${_auths}" "IdentitiesOnly=yes" "IdentityFile="${_IdentityFile}"" " "
 )
 f.x ssh.options.keypath
                 
@@ -37,20 +38,8 @@ f.x ssh.options.keypath
 ssh.options.do() (
     : 'ssh options for Host do'
     set -Eeuo pipefail; shopt -s nullglob
-
-    # precedence: ssh() command line arguments, then ${FUNCNAME}, then ssh.options.defaults() and finally anything ssh() adds at the end
-    local -A _options=()
-
-    # _options+=( [HostName]="$(dig.ip4 ${FUNCNAME##*.})" )
-    # or using a cloudflair naming convention for "dns only" names: dnsonly.${_name}
-    # _options+=( [HostName]="$(ssh.dig dnsonly.${FUNCNAME##*.})" )
-    _options+=(
-        # hardcoded host ip4 address
-        [HostName]="104.236.99.3" 
-    )
-    # >&2 declare -p _options
     ssh.options.keypath "$(path.exists "${HOME}/.ssh/keys.d/quad/do_id_rsa")"
-    for _k in ${!_options[@]}; do printf -- ' -o %s=%s ' "${_k}" "${_options[${_k}]}"; done
+    echo -n "HostName=104.236.99.3" " "
 )
 f.x ssh.options.do
 
@@ -66,6 +55,34 @@ ssh.host.aliases() {
 # do is a Host for mike.carif.io
 ssh.host.aliases do mike.carif.io
 
+ssh.options4() (
+    local _User=${1:?"${FUNCNAME} expecting a User"}; shift
+    local _Host=${1:?"${FUNCNAME} expecting a Host"}; shift
+    ssh.options.defaults
+    f.apply.if ssh.options.defaults.${HOSTNAME}
+    f.apply.if ssh.options.${_Host}
+    echo -n "$@" " "
+    echo -n "SendEnv=SSH_FROM" "User=${_User}" " "
+
+)
+f.x ssh.options4
+ 
+ssh.o() (
+    set -Eeuo pipefail; shopt -s nullglob
+    local -A _options=()
+    for _a in "${@}"; do
+        local _k="${_a%%=*}"
+        local _v="${_a##*=}"
+        case "${_a}" in
+	    *=*) _options["${_k}"]="${_v}";;
+            *) return $(u.error "${_a} is in the wrong format");;
+        esac
+        shift
+    done
+    _prefix=' -o '                    
+    for _k in ${!_options[@]}; do echo -n "${_prefix}${_k}"; [[ -v _options["${_k}"] ]] && echo -n "=${_options["${_k}"]} "; done
+)
+f.x ssh.o
 
 ssh() (
     set -Eeuo pipefail; shopt -s nullglob
@@ -80,13 +97,7 @@ ssh() (
         _User="${BASH_REMATCH[1]}"
         _Host="${BASH_REMATCH[2]}"
     }
-    # *first* -o <option> wins, therefore command line, options per Host, ssh.options.defaults, User, HostName
-    # Note that sshd must be configured to receive env variable SSH_FROM. Usually it's not
-    # >&2 echo \        
-    SSH_FROM="${USER}@${HOSTNAME}" \
-            command ${FUNCNAME} "${_args[@]:0:${_len}}" $(f.exists ssh.options.${_Host} && ssh.options.${_Host}) \
-            $(ssh.options.defaults) -o User="${_User}" -o HostName="${_Host}" -o SendEnv="SSH_FROM" ${_Host}
-
+    SSH_FROM="${USER}@${HOSTNAME}" command ${FUNCNAME} "${_args[@]:0:${_len}}" $(ssh.o $(ssh.options4 ${_User} ${_Host})) ${_Host}
 )
 f.x ssh
 

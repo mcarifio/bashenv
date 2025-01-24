@@ -101,12 +101,19 @@ f.x u.field
 
 u.switches() (
     local _name=${1:?"${FUNCNAME} expecting a name"}; shift
-    local -a _values=( "$@" )
-    (( ${#_values[@]} )) && printf -- "--${_name}=%s " "${_values[@]}"
-    
+    # local -a _values=( "$@" )
+    # (( ${#_values[@]} )) && printf -- "--${_name}=%s " "${_values[@]}"
+    u.prefix '--' ${_name} "$@"
 )
 f.x u.switches
 
+u.prefix() (
+    local _prefix=${1:?"${FUNCNAME} expecting a prefix like --"}; shift
+    local _name=${1:?"${FUNCNAME} expecting a name"}; shift
+    local -a _values=( "$@" )
+    (( ${#_values[@]} )) && printf -- "${_prefix}${_name}=%s " "${_values[@]}"
+)
+f.x u.prefix
 
 # TODO mike@carif.io: rename u.{stacktrace,error,warn,info} to log.*
 # meant to be called from u.error and u.warn
@@ -144,10 +151,49 @@ u.stacktrace() (
 )
 f.x u.stacktrace
 
+
+u.color.none() ( printf -- '%s' "$1"; )
+f.x u.color.none
+u.color.red() ( printf -- '\e[31m%s\e[0m' "$1"; )
+f.x u.color.red
+
+u.emit() (
+    local _msg="${1:?$(u.expecting string)}"
+    local _color="${2:-u.color.none}"
+    (( ${#FUNCNAME[@]} >= 3 )) && _prefix="${FUNCNAME[2]}@"
+    (( ${#BASH_SOURCE[@]} >= 3 )) && _prefix="$(realpath "${BASH_SOURCE[2]}")"
+    (( ${#BASH_LINENO[@]} >= 3 )) && _prefix+=":${BASH_LINENO[2]}"
+    local _line=$(${_color} "${_prefix}| ${_msg}")
+    >&2 echo -e "${_line}"
+)
+f.x u.emit
+
+u.msg() (
+    local _msg="${1:-"${FUNCNAME} message tbs"}"; shift
+    u.emit "${_msg}" u.color.red
+)
+f.x u.msg
+
+u.expecting() (
+    : 'f() ( local _var="${1:?$(u.expecting pathname)}" ... # argument check, e.g. $1 should be a pathname'
+    local _kind="${1:-"${FUNCNAME} expecting a kind"}"
+    u.msg "expecting a ${_kind}"
+)
+f.x u.expecting
+
+u.assign() (
+    : 'local _var="$(u.assign "$1" ${_default} [${_kind}])" ## assign _var $1 iff not -z or assign ${_default}'
+    local _value="${1:?$(u.expecting value)}"
+    local _default="${2:?$(u.expecting ${3:-default})}"    
+    [[ -n  "${_value}" ]] && echo "${_value}" || echo "${_default}"
+)
+f.x u.assign
+          
+
 # Writes an eroro pprinted message and stack trace to stderr. Returns status of caller or 1 iff status is 0.
 u.error() (
     local -i _status=${2:-$?}
-    local _message="${1:?"${FUNCNAME} expecting a message"}"
+    local _message="${1:?"$(u.expecting message)"}"
     u.stacktrace ${FUNCNAME#*.} "${_message}" ${_status} || true
     return $(( _status ? _status : 1 ))
 )
@@ -156,7 +202,7 @@ f.x u.error
 # Writes a warn pprinted message and stack trace to stderr. Returns 0 always.
 u.warn() (
     local -i _status=${2:-$?}
-    local _message="${1:?"${FUNCNAME} expecting a message"}"
+    local _message="${1:?"$(u.expecting message)"}"
     u.stacktrace ${FUNCNAME#*.} "${_message}" ${_status} || true
 )
 f.x u.warn
@@ -371,12 +417,17 @@ __example.plus1.complete() {
 }
 f.x example.plus1
 
-f.apply() (
-    local _f=${1:?'expecting a function'}
-    shift
+f.apply() {
+    local _f=${1:?$(u.expecting function)}; shift
     ${_f} "$@"
-)
+}
 f.x f.apply
+
+f.apply.if() {
+    local _f=${1:?$(u.expecting function)}; shift
+    f.exists ${_f} && ${_f} "$@" || true
+}
+f.x f.apply.if
 
 sourced.reset() { declare -Aixg __bashenv_sourced=(); }
 f.x sourced.reset
@@ -816,6 +867,8 @@ flatpak.have() (
     [[ -n "${1:-}" ]] && flatpak list | grep --fixed-strings --silent ${1:-}
 )
 f.x flatpak.have
+
+
 
 
 # u.call

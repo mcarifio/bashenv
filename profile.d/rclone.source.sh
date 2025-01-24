@@ -32,7 +32,7 @@ f.x rclone.env
 
 # rclone mounters
 # TODO ;
-rclone.mount (
+rclone.mount() (
     : '${_mountspec} ${_mountpoint} ## e.g. mnt-gdrive-mcarifio:/ ${HOME}/mnt/gdrive/carif.io'
     rclone mount "${1:?"${FUNCNAME}@${BASH_LINENO}: expecting an rclone mountpoint"}" "${2:?"${FUNCNAME}@${BASH_LINENO}: expecting a target directory"}" \
            --vfs-cache-mode full --drive-export-formats docx --drive-export-formats xlsx --drive-import-formats docx --drive-import-formats xlsx

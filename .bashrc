@@ -1,4 +1,5 @@
 source.if /etc/bashrc
+source.if ~/.bash.dist.d/$(basename ${BASH_SOURCE})
 
 # TODO mike@carif.io: better way to handle this?
 [[ -n "${SSH_CONNECTION}" ]] && return 0
