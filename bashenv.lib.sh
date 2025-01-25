@@ -152,10 +152,15 @@ u.stacktrace() (
 f.x u.stacktrace
 
 
-u.color.none() ( printf -- '%s' "$1"; )
+# u.color.red() ( printf -- '\e[31m%s\e[0m' "$*"; )
+# f.x u.color.red
+u.mkcolor() { eval "u.color.$1() ( printf -- '\e[$2m%s\e[0m' \"\$*\"; ); f.x u.color.$1;"; }
+u.color.none() ( printf -- '%s' "$*"; )
 f.x u.color.none
-u.color.red() ( printf -- '\e[31m%s\e[0m' "$1"; )
-f.x u.color.red
+u.mkcolor red 31
+u.mkcolor green 32
+u.mkcolor blue 34
+# usage: echo $(u.color.green "some text") # |> some text # in green
 
 u.emit() (
     local _msg="${1:?$(u.expect string)}"
