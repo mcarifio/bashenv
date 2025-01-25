@@ -1572,16 +1572,5 @@ u.mkprobe u.probe.os 'uname -s'  [Linux]=Linux [Darwin]=Darwin
 # probe the target
 u.mkprobe u.probe.target 'uname -s' [Darwin]=apple-darwin [Linux]=unknown-linux-gnu
 
-
-# bashenv.lib.sh is treated differently at the end. it can be sourced in several ways
-# remember that it's been sourced
-sourced || {
-  local _status=$?
-  u.warn "${BASH_SOURCE} reported errors on source, continuing ..."
-}
-# ~/.bash_profile handles --login bash sessions
-# ~/.bashrc handles --interactive bash sessions
-# BASH_ENV handles scripts. See .local/bin/_template.sh for how to invoke
-[[ -n "${BASH_ENV}" ]] || return ${_status:-0}
-# initialize all the libraries
-bashenv.init.libs
+export BASH_ENV="$(realpath ${BASH_SOURCE})"
+sourced || true

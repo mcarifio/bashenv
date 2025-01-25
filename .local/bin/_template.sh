@@ -1,10 +1,5 @@
 #!/usr/bin/env bash
 
-[[ -n "${BASH_ENV}" ]] || {
-  export BASH_ENV="$(realpath $(dirname $0)/../../..)/bashenv/bashenv.lib.sh"
-  source "${BASH_ENV}"
-}
-
 set -Eeuo pipefail; shopt -s nullglob
 subr0() (
     :
