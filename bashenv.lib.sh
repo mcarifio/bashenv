@@ -1577,5 +1577,9 @@ u.mkprobe u.probe.os 'uname -s'  [Linux]=Linux [Darwin]=Darwin
 # probe the target
 u.mkprobe u.probe.target 'uname -s' [Darwin]=apple-darwin [Linux]=unknown-linux-gnu
 
+function % { xargs -i% "$@"; }
+f.x %
+
+
 export BASH_ENV="$(realpath ${BASH_SOURCE})"
 sourced || true

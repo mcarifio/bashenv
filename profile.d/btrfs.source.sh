@@ -26,24 +26,17 @@ btrfs.snapshot() (
 f.x btrfs.snapshot
 
 
+btrfs.partitions() (
+    lsblk --noheading --list -o NAME,FSTYPE,LABEL,PARTUUID,MOUNTPOINT | grep ${FUNCNAME%%.*}
+)
+f.x btrfs.partitions
 
 btrfs.find.partitions-by-label() (
     set -Eeuo pipefail
     local _label="${1:?"${FUNCNAME} expecting a label"}"
-    echo "select m.path as path, b.name as device from block_devices b left join mounts m on b.name = m.device where b.type = 'btrfs' AND b.label = '${_label}';" \
-         | sudo osqueryi --json
+    btrfs.partitions | grep --fixed-string ${_label}
 )
 f.x btrfs.find.partitions-by-label
-
-
-btrfs.mount.by-label() (
-    set -Eeuo pipefail
-    local _label=${1:?"${FUNCNAME} expecting a label, e.g. 'data'"}
-    local _mountpoint=${2:-/mnt/${_label}}
-    [[ -d "{_mountpoint}" ]] || sudo mkdir -p ${_mountpoint}
-    for _p in $(btrfs.find.partitions-by-label ${_label}); do echo sudo mount -o subvol=$(dirname ${_mountpoint}) ${_p} ${_mountpoint}; done
-    echo ${_mountpoint}
-)
 
 
 btrfs.doc.urls() ( echo ; ) # urls here
