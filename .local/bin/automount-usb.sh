@@ -45,6 +45,9 @@ automount-usb() (
 # to get PARTUUIDS
 # lsblk --noheading --list -o NAME,FSTYPE,LABEL,PARTUUID,MOUNTPOINT|grep btrfs
 
+return $(u.error "$0 doesn't work yet")
+
+# btrfs.partitions to get this table
 declare -A _label2partuuid=(
     [mobilework]=2049eea7-d3d8-4701-bf78-b08fd4fcde34
     [mobilehome]=7a17a28f-1aa5-410a-8806-e67e8660c2c2)
