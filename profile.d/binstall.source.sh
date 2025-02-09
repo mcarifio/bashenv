@@ -780,6 +780,37 @@ binstall.npm() (
 )
 f.x binstall.npm
 
+
+binstall.bun() (
+    # TODO mike@carif.io: broken
+    set -Eeuo pipefail; shopt -s nullglob
+    local _cmd=${FUNCNAME##*.}
+    u.have ${_cmd} || return $(u.error "${FUNCNAME}: ${_cmd} not on PATH.")
+
+    local -i _check=0
+    local -a _pkgs=() _cmds=()
+    for _a in "${@}"; do
+        local _k="${_a%%=*}"
+        local _v="${_a##*=}"
+        case "${_a}" in
+            --check) _check=1;;
+            --pkg=*) _pkgs+=("${_v}");;
+            --cmd=*) _cmds+=("${_v}");;            
+            --) shift; break;;
+            *) break;;
+        esac
+        shift
+    done
+
+    (( ${#_pkgs[@]} )) || return $(u.error "${FUNCNAME} expecting --pkg=something")
+    bun add --global --no-fund "$@" ${_pkgs[@]}
+    (( ${#_cmds[@]} )) || _cmds=( ${_pkgs[@]} )
+    (( _check )) && binstall.check ${_cmds[@]}
+)
+f.x binstall.bun
+
+
+
 binstall.docker() (
     : '--login= --registry= --user= --password= --namespace= --pkg= --image= --tag= --digest='
     set -Eeuo pipefail; shopt -s nullglob

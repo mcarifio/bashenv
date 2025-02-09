@@ -1075,10 +1075,14 @@ bashenv.mkA __bashenv_sourced_when
 # bashenv.mkA __bashenv_db
 
 bashenv.paths() {
-    path.add.all $(home)/go/bin $(home)/opt/*/current/bin $(home)/.config/*/bin \
-                 $(home)/bin $(home)/.local/bin \
-                 $(bashenv.root)/bin $(bashenv.root)/.local/bin
-    
+    path.add.all $(home)/go/bin \
+                 $(home)/opt/*/current/bin \
+                 $(home)/.config/*/bin \
+                 $(home)/bin \
+                 $(home)/.local/bin \
+                 $(bashenv.root)/bin \
+                 $(bashenv.root)/.local/bin \
+                 $(home)/.cache/.bun/bin
 }
 f.x bashenv.paths
 
