@@ -11,3 +11,4 @@ cargo install broot
 cargo install --locked smartcat
 cargo install --list smartcat
 cargo install --help
+cargo install --list
