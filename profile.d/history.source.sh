@@ -1,5 +1,3 @@
-${1:-u.have} $(path.basename.part ${BASH_SOURCE} 0) || return 0
-
 # add _history to PROMPT_COMMAND so that all bash shells can see everyone else's commands
 # might get expensive when the history is long but haven't been a problem.
 history.prompt() {
