@@ -1,5 +1,8 @@
 ${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
 
+# needs ble.sh to work properly
+return 0 # until I figure out how to use it
+
 atuin.env() {
     true || return $(u.error "${FUNCNAME} failed")
 }

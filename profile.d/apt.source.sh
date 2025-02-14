@@ -2,6 +2,7 @@ ${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
 
 apt() (
     sudo $(type -P ${FUNCNAME}) "$@"
+    sudo apt-mark auto "$@"
 )
 f.x apt
 
