@@ -17,3 +17,4 @@ cargo install --list
 =======
 cargo install varlink-cli
 >>>>>>> 3368a6f4851817f47f870da947fa0f01d8a81a84
+cargo install rustlings
