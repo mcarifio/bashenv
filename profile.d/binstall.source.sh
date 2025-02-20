@@ -524,7 +524,7 @@ binstall.apt() (
 
     local -i _check=0
     local -i _status=0
-    local -a _uris=() _suites=() _components=() _keys=() _cmds=() _pkgs=() _ppas=()
+    local -a _debconfs=() _uris=() _suites=() _components=() _keys=() _cmds=() _pkgs=() _ppas=()
     local _name=''
     local -i _trusted=0
     for _a in "$@"; do
@@ -535,6 +535,7 @@ binstall.apt() (
             --check) _check=1;;
             --trusted) _trusted=1;;
             --name=*) _name="${_v}";;
+            --debconf=*) _debconfs+=("${_v}");;
             --uri=*) _uris+=("${_v}");;
             --ppa=*) _ppas+=("${_v}");;
             --suite=*) _suites+=("${_v}");;
@@ -562,6 +563,13 @@ binstall.apt() (
             # TODO mike@carif.io: is this the preferred method and local target?
             curl -sSL "${_key}" | sudo gpg --dearmor -o "${_keyring}"
             >&2 echo "Added '${_keyring}' from '${_key}'"
+        done
+    fi
+
+    # debconfs
+    if (( ${#_debconfs[@]} )) ; then
+        for _debconf in "${_debconfs[@]}"; do
+            echo "${_debconf}" | sudo debconf-set-selections
         done
     fi
 
