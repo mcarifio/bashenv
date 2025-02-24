@@ -119,7 +119,7 @@ f.x u.prefix
 # meant to be called from u.error and u.warn
 # emits a stacktrace and pprints it to stderr (using jq).
 # returns the status of the last command before invocation.
-u.stacktrace() (
+u.stacktrace0() (
     local -i _status=${3:-$?}
     local _level="${1:-"${FUNCNAME} expecting a level e.g. error or warn"}"
     local _message="${2:?"${FUNCNAME} expecting a message"}"
@@ -148,6 +148,14 @@ u.stacktrace() (
       printf '}' ) | >&2 jq -r '.'
 
     return ${_status}
+)
+f.x u.stacktrace0
+
+u.stacktrace() (
+    set -Eeuo pipefail; shopt -s nullglob
+    for i in $(seq 1 $(( ${#FUNCNAME[@]} - 1 )) ); do
+        >&2 echo ${FUNCNAME[$i]}@$(realpath ${BASH_SOURCE[$i]}):${BASH_LINENO[$i]}
+    done
 )
 f.x u.stacktrace
 
@@ -906,6 +914,13 @@ u.haveP.all() (
 f.x u.haveP.all
 
 
+u.need() (
+    set -Eeuo pipefail; shopt -s nullglob
+    local _cmd=${1:?"${FUNCNAME} expecting a command"}
+    type -P ${_cmd} || return $(u.error "${_cmd} not on PATH")
+)
+f.x u.need
+
 flatpak.have() (
     : '${command} # succeeds iff ${command} is defined.'
     set -Eeuo pipefail
@@ -913,6 +928,14 @@ flatpak.have() (
 )
 f.x flatpak.have
 
+
+# 0 iff the script the function is in has been run as an executable
+r.run() ( [[ "${BASH_SOURCE[1]}" = "$0" ]]; )
+f.x r.run
+
+# 0 iff the script the function is in has been sourced
+r.sourced() ( ! r.run; )
+f.x r.sourced
 
 
 
