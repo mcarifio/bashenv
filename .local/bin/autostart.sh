@@ -63,7 +63,7 @@ f.x bashenv.autostart
 
 
 main() (
-    set -Eeuo pipefaile; shopt -s nullglob
+    set -Eeuo pipefail; shopt -s nullglob
     trap u.stacktrace ERR
     bashenv.autostart "$@"
 )
