@@ -38,8 +38,8 @@ mksearchable() (
     [[ (( _regenerate )) && -r "${_db}" ]] && { xz --force "${_db}" || true; }
     # index ${_root}
     if [[ ! -r "${_db}" ]]; then
-        sudo updatedb --require-visibility yes --add-prunenames '2sort 2sort-manually .attic' --output "${_db}" --database-root "$@"
-        sudo chown ${USER}:${USER} "${_db}"
+        sudo updatedb --require-visibility yes --add-prunenames '2sort 2sort-manually .attic' --output "${_db}" --database-root "$@" || true
+        sudo chown ${USER}:${USER} "${_db}" || true
     fi
 
     [[ -n "${_fname}" && -r "${_db}" ]] && printf '%s() ( locate --database "%s" "$@"; ); f.x %s;' ${_fname} "${_db}" ${_fname}
