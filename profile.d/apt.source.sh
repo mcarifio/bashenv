@@ -2,7 +2,7 @@ ${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
 
 apt() (
     sudo $(type -P ${FUNCNAME}) "$@"
-    sudo apt-mark auto "$@"
+    # sudo apt-mark auto "$@"
 )
 f.x apt
 
@@ -47,11 +47,11 @@ apt.installed() (
 )
 f.x apt.installed
 
-apt.files() (
+apt.contents() (
     : ' ${_pkg} # lists all files for a package; see also rpm -ql ${_pkg}'
     command dpkg --listfiles ${1:?'expecting a package'}
 )
-f.x apt.files
+f.x apt.contents
 
 # lock the kernel to a specific version. update in a more controlled way.
 apt.lock-kernel() (

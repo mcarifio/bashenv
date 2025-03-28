@@ -17,7 +17,7 @@ mksearchable() (
 
     # parse flags
     local -i _regenerate=0
-    local _fname='' _db=''
+    local _fname='e.locate' _db=''
     
     for _a in "${@}"; do
         case "${_a}" in
@@ -42,7 +42,7 @@ mksearchable() (
         sudo chown ${USER}:${USER} "${_db}" || true
     fi
 
-    [[ -n "${_fname}" && -r "${_db}" ]] && printf '%s() ( locate --database "%s" "$@"; ); f.x %s;' ${_fname} "${_db}" ${_fname}
+    [[ -r "${_db}" ]] && printf '%s() ( locate --database "%s" "$@"; ); f.x %s;' ${_fname:-e.locate} "${_db}" ${_fname}
 )
 
 main() (
