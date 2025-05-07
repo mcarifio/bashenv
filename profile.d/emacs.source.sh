@@ -4,7 +4,7 @@ ${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
 ec() (
     : '[${_pathname}] ## run emacsclient after starting emacs.service'
     set -Eeuo pipefail; shopt -s nullglob
-    emacs.server || return $(u.error "emacs daemon not started")
+    # emacs.server || return $(u.error "emacs daemon not started")
     [[ -n "${DISPLAY}" ]] && emacsclient --reuse-frame --no-wait --timeout=20 --quiet "$@" || emacsclient --tty --timeout=20 --quiet "$@"
 )
 f.x ec
@@ -122,7 +122,7 @@ emacs.env() (
     [[ -n "${DISPLAY}" ]] || return $(u.error "${FUNCNAME} needs windowing to run the emacs systemd service")
     export EDITOR="ec"
     export VISUAL="${EDITOR}"
-    emacs.server || return $(u.error "cannot start emacs service in login shell $$")
+    # emacs.server || return $(u.error "cannot start emacs service in login shell $$")
     loginctl enable-linger ${USER}
 )
 f.x emacs.env
