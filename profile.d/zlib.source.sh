@@ -201,6 +201,13 @@ e.locate() (
 )
 f.x e.locate
 
+e.locate.ac() (
+    set -Eeuo pipefail
+    ${FUNCNAME%.*} -r -- $(printf -- '-%s-[[:digit:]][[:digit:]][[:digit:]][[:digit:]]\.%s\.' ${1:?'[^-]*'} ${2:-'[^\.]*'})
+)
+f.x e.locate.ac
+
+
 zlib.env() {
     e.locate.regenerate
 }
