@@ -11,6 +11,25 @@ set -Eeuo pipefail; shopt -s nullglob
 # This creates the bash function `locate.e` which can be called with query arguments.
 # mksearchable --function --name=foo ~/Documents/e names the bash function `foo`.
 
+# no longer used
+zlib.env0() {
+    # source <(mksearchable.sh --regenerate --fname=e.locate "$(zlib.root)")
+    local _regenerate=''
+    for _a in "${@}"; do
+        case "${_a}" in
+            --regenerate) _regenerate='--regenerate ';;
+            --) shift; break;;
+            --*) return $(u.error "${FUNCNAME} received unknown switch '${_a}', stopping.") 1;;
+            *) break;;
+        esac
+        shift
+    done
+    
+    source <(mksearchable.sh ${_regenerate} --fname=e.locate "$(zlib.root)")
+}
+
+
+
 mksearchable() (
     : '[${_root}] ## generate plocate database at pathname _db of content rooted at pathname _root'
     set -Eeuo pipefail; shopt -s nullglob

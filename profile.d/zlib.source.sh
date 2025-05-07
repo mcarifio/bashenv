@@ -172,20 +172,37 @@ zlib.rename() (
 )
 f.x zlib.rename
 
+e.locate.regenerate() (
+    set -Eeuo pipefail
+    local _db="${1:-$(zlib.root)/${FUNCNAME%.*}.db}"
+    >&2 printf "${FUNCNAME} regenerating '${_db}'... "
+    sudo updatedb --require-visibility yes --add-prunenames '2sort 2sort-manually .attic' --output "${_db}" --database-root "${_db%/*}"
+    sudo chown ${USER}:${USER} "${_db}"
+    >&2 echo done
+)
+f.x e.locate.regenerate
+
+u.young() (
+    local _pn="${1:?'expecting a pathname'}"
+    local -i _threshold=${2:-$(( 7 * 24 * 60 * 60 ))} # default 1 week
+    [[ -e "${_pn}" ]] || return $(u.error "'${_pn}' not found")
+    local -i _now=$(date +%s) _mod=$(stat -c %Y -- "${_pn}")
+    (( ( _now - _mod ) < _threshold ))
+)
+
+
+e.locate() (
+    set -Eeuo pipefail
+    local _db="$(zlib.root)/${FUNCNAME}.db"
+    # declare -p _db
+    # TODO mcarifio: regenerate if _db is "too old"
+    u.young "${_db}" || ${FUNCNAME}.regenerate "${_db}"
+    locate --database "${_db}" "$@"    
+)
+f.x e.locate
+
 zlib.env() {
-    # source <(mksearchable.sh --regenerate --fname=e.locate "$(zlib.root)")
-    local _regenerate=''
-    for _a in "${@}"; do
-        case "${_a}" in
-            --regenerate) _regenerate='--regenerate ';;
-            --) shift; break;;
-            --*) return $(u.error "${FUNCNAME} received unknown switch '${_a}', stopping.") 1;;
-            *) break;;
-        esac
-        shift
-    done
-    
-    source <(mksearchable.sh ${_regenerate} --fname=e.locate "$(zlib.root)")
+    e.locate.regenerate
 }
 f.x zlib.env
 
