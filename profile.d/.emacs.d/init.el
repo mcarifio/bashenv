@@ -1,5 +1,5 @@
+;; -*- lexical-binding: t; -*-
 ;; Bootstrap then init (so you can use bootstrapped stuff in init).
-
 ;; less broken
 
 
@@ -24,23 +24,6 @@
   (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/"))
   (package-initialize))
 
-(defun bootstrap-straight()
-  "https://github.com/radian-software/straight.el"
-  (defvar bootstrap-version)
-  (let ((bootstrap-file
-         (expand-file-name
-          "straight/repos/straight.el/bootstrap.el"
-          (or (bound-and-true-p straight-base-dir)
-              user-emacs-directory)))
-        (bootstrap-version 7))
-    (unless (file-exists-p bootstrap-file)
-      (with-current-buffer
-          (url-retrieve-synchronously
-           "https://raw.githubusercontent.com/radian-software/straight.el/develop/install.el"
-           'silent 'inhibit-cookies)
-        (goto-char (point-max))
-        (eval-print-last-sexp)))
-    (load bootstrap-file nil 'nomessage)))
 
 ;; elisp linked data, tbd
 (defmacro elld(&rest rest))
@@ -94,7 +77,8 @@
   ;; (bootstrap-quelpa)
   ;; (bootstrap-elpaca))
   ;; (bootstrap-melpa))
-  (bootstrap-straight))
+  ;; (bootstrap-straight))
+  )
 
 ;; (defun use-lean4-mode()
 ;;   (use-package lean4-mode
@@ -317,16 +301,84 @@
   (custom-set-variables '(package-selected-packages '(yaml-mode use-package quelpa markdown-mode magit)))
   (custom-set-faces))
 
+(cl-defun init-copilot(&optional (max-char 500000))
+  (setq copilot-server-executable
+        (executable-find "copilot-language-server"))
+  (setq copilot-max-char max-char)
+  (use-package copilot
+    :straight (copilot :type git :host github :repo "zerolfx/copilot.el")
+    :hook (prog-mode . copilot-mode)))
+
+(defun init-PATH()
+  (use-package exec-path-from-shell
+    :config
+    (exec-path-from-shell-initialize)))
+
+(cl-defun add-auth-folder(&optional (folder user-emacs-directory))
+  (dolist (n '("authinfo.gpg" "authinfo"))
+    (push (expand-file-name n folder) auth-sources)))
+
+
+(cl-defun gptel-ask-about-region (prompt &optional (response-buffer "*gptel-response*"))
+  "Send the active region along with a question PROMPT to gptel."
+  (interactive "sAsk ChatGPT: ")
+  (unless (use-region-p) (user-error "No region selected"))
+  (let ((region (buffer-substring-no-properties (region-beginning) (region-end)))
+        (from (make-overlay (region-beginning) (region-end))))    
+    (message "gptel-ask-about-region => %s ... " response-buffer)
+    (gptel-request
+        (format "%s\n\n%s" prompt region)
+      :callback (lambda (response metadata)
+                  (with-current-buffer (get-buffer-create response-buffer)
+                    (goto-char (point-max))
+                    (insert "\n*** gptel-request from: " (buffer-name (overlay-buffer from)) (overlay-start from) (overlay-end from))
+                    (insert "\n* prompt: " prompt "\n* response: " response)
+                    (insert "\n***")
+                    (display-buffer (current-buffer)))))
+    (message "gptel-ask-about-region => %s ... done" response-buffer)))
+
+;; a little broken 
+(cl-defun auth-get-key(&key (host "api.openai.com") (user "apikey"))
+  (let* ((entry (car (auth-source-search :host host :user user)))
+       (secret (plist-get entry :secret)))
+  (if (functionp secret)
+      (funcall secret)
+    secret)))
+
+(defun init-gptel()
+  (use-package gptel
+    :straight (gptel :type git :host github :repo "karthink/gptel")
+    :init
+    (define-prefix-command 'gptel-prefix-map)
+    (define-key global-map (kbd "C-c g") 'gptel-prefix-map)
+    :config
+    ;; Set your API key or use auth-source
+    (setq gptel-api-key (auth-get-key))
+    ;; Optional: set default model and endpoint
+    (setq gptel-model "gpt-4")
+    ;; Optional: keybinding
+    :bind
+    (:map gptel-prefix-map ("s" . #'gptel-send))
+    (:map gptel-prefix-map ("a" . #'gptel-ask-about-region))))
+
+    ;; (global-set-key (kbd "C-c q") #'gptel-send)
+    ;; (global-set-key (kbd "C-c q r") #'gptel-ask-about-region)
+
 
 (defun init-emacs()
   (bootstrap-emacs)
+  (init-PATH)
   ;; (bootstrap-treemacs)
   ;; (init-magit)
   (customize)
   (init-height)
   (init-tweaks)
   (init-yaml-mode)
-  (init-markdown-mode))
+  (init-markdown-mode)
+  
+  (init-copilot)
+  ;; (unwind-protect (add-auth-folder) (message "add-auth-folder failed?"))
+  (init-gptel))
   ;;(init-gleam-mode)
   ;;(use-treesit-jump))
   ;; (elpaca-wait))

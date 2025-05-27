@@ -247,6 +247,7 @@ f.x u.assign
 u.error() (
     local -i _status=${2:-$?}
     local _message="${1:?"$(u.expect message)"}"
+    echo ${_message} >&2
     u.stacktrace ${FUNCNAME#*.} "${_message}" ${_status} || true
     return $(( _status ? _status : 1 ))
 )
@@ -544,7 +545,7 @@ f.x A.clone;
 
 # TODO mike@carif.io: rename u.map to f.map
 # u.map
-u.map() {
+map() {
     : '${f} ${item} ... # apply $f to each item in the list echoing the result'
     local _f=${1:?"${FUNCNAME} expecting a function"}; shift
     for _a in "$@"; do ${_f} ${_a} || return $(u.error "${FUNCNAME} ${_f} ${_a}"); done
@@ -566,7 +567,7 @@ __u.map.complete() {
     fi
     let __previous_position=_position
 }
-f.x u.map
+f.x map
 
 # u.map.mkall
 u.map.mkall() {
