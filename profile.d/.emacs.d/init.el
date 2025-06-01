@@ -3,11 +3,17 @@
 ;; less broken
 
 
-(defmacro mapply (f &rest rest)
+(defmacro mapply0 (f &rest rest)
   `(let ((result "done"))
      (message "%s..." ,f)
      (unwind-protect (apply ,f ,@rest) (setq result "failed"))
      (message "%s...%s" ,f result)))
+
+(cl-defun announce(f &rest rest)
+  (message "%s %s... " f rest)
+  (let ((result (unwind-protect (apply f rest))))
+    (if result (message "%s %s... => %s ;; succeeded" f rest result)
+      (message "%s %s... failed" f rest))))
   
 
 (defun bootstrap-quelpa()
@@ -78,7 +84,7 @@
   ;; (bootstrap-elpaca))
   ;; (bootstrap-melpa))
   ;; (bootstrap-straight))
-  )
+  t)
 
 ;; (defun use-lean4-mode()
 ;;   (use-package lean4-mode
@@ -364,9 +370,57 @@
     ;; (global-set-key (kbd "C-c q") #'gptel-send)
     ;; (global-set-key (kbd "C-c q r") #'gptel-ask-about-region)
 
+(defun my/build-tree-sitter-nushell ()
+  "Build the Nushell tree-sitter grammar and produce .so for Emacs."
+  (let* ((default-directory (straight--repos-dir "tree-sitter-nushell"))
+         (grammar-dir (expand-file-name "tree-sitter" user-emacs-directory))
+         (output (expand-file-name "libtree-sitter-nushell.so" grammar-dir)))
+    (make-directory grammar-dir t)
+    (unless (executable-find "tree-sitter")
+      (error "tree-sitter CLI not found; install via `npm install -g tree-sitter-cli` or `cargo install tree-sitter-cli`"))
+    (shell-command "sed 's/name: \"nu\"/name: \"nushell\"/' src/grammar.js")
+    (shell-command "tree-sitter generate")
+    (shell-command (format "gcc -shared -fPIC -o %s src/parser.c src/scanner.c" output))))
 
-(defun init-emacs()
+
+(defun init-nushell()
+  (use-package tree-sitter-nushell
+    :straight
+    (:host github
+            :repo "nushell/tree-sitter-nu"
+            :files ("src" "grammar.js" "package.json")
+            :build my/build-tree-sitter-nushell)
+    :config
+    (unless (treesit-language-available-p 'nushell)
+      (treesit-install-language-grammar 'nushell))
+    (unless (treesit-language-available-p 'nushell)
+      (message "tree-sitter-nushell unavailable?"))))
+  
+
+(defun init-treesit()
+  (setq treesit-language-source-alist
+        '((bash "https://github.com/tree-sitter/tree-sitter-bash")
+          (cmake "https://github.com/uyha/tree-sitter-cmake")
+          (css "https://github.com/tree-sitter/tree-sitter-css")
+          (elisp "https://github.com/Wilfred/tree-sitter-elisp")
+          (go "https://github.com/tree-sitter/tree-sitter-go")
+          (html "https://github.com/tree-sitter/tree-sitter-html")
+          (javascript "https://github.com/tree-sitter/tree-sitter-javascript" "master" "src")
+          (json "https://github.com/tree-sitter/tree-sitter-json")
+          (make "https://github.com/alemuller/tree-sitter-make")
+          (markdown "https://github.com/ikatyang/tree-sitter-markdown")
+          (python "https://github.com/tree-sitter/tree-sitter-python")
+          (toml "https://github.com/tree-sitter/tree-sitter-toml")
+          (tsx "https://github.com/tree-sitter/tree-sitter-typescript" "master" "tsx/src")
+          (typescript "https://github.com/tree-sitter/tree-sitter-typescript" "master" "typescript/src")
+          (yaml "https://github.com/ikatyang/tree-sitter-yaml")))
+          ;; (nushell "https://github.com/nushell/tree-sitter-nushell")))
+  (mapc #'treesit-install-language-grammar (mapcar #'car treesit-language-source-alist)))
+
+
+(defun init-emacs0()
   (bootstrap-emacs)
+  (init-magit)
   (init-PATH)
   ;; (bootstrap-treemacs)
   ;; (init-magit)
@@ -377,10 +431,30 @@
   (init-markdown-mode)
   
   (init-copilot)
+  (init-treesit)
+  ;; (announce #'init-nushell)
   ;; (unwind-protect (add-auth-folder) (message "add-auth-folder failed?"))
   (init-gptel))
   ;;(init-gleam-mode)
   ;;(use-treesit-jump))
   ;; (elpaca-wait))
 
-(init-emacs)
+
+;; (bootstrap-treemacs)
+;; (init-magit) 
+;; (announce #'init-nushell)
+(defun init-emacs()
+    (mapc #'announce
+          (list #'bootstrap-emacs
+                #'init-magit
+                #'init-PATH
+                #'customize
+                #'init-height
+                #'init-tweaks
+                #'init-yaml-mode
+                #'init-markdown-mode
+                #'init-copilot
+                #'init-treesit
+                #'init-gptel)))
+
+(announce #'init-emacs)
