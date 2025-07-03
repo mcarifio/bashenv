@@ -14,3 +14,6 @@ cargo install rustypaste
 cargo install tuftool
 cargo install brush-shell
 cargo install somo
+cargo install tree-sitter-cli
+cargo install tree-sitter-cli
+

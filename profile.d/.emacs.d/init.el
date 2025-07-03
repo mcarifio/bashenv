@@ -1,13 +1,19 @@
+;; -*- lexical-binding: t; -*-
 ;; Bootstrap then init (so you can use bootstrapped stuff in init).
-
 ;; less broken
 
 
-(defmacro mapply (f &rest rest)
+(defmacro mapply0 (f &rest rest)
   `(let ((result "done"))
      (message "%s..." ,f)
      (unwind-protect (apply ,f ,@rest) (setq result "failed"))
      (message "%s...%s" ,f result)))
+
+(cl-defun announce(f &rest rest)
+  (message "%s %s... " f rest)
+  (let ((result (unwind-protect (apply f rest))))
+    (if result (message "%s %s... => %s ;; succeeded" f rest result)
+      (message "%s %s... failed" f rest))))
   
 
 (defun bootstrap-quelpa()
@@ -24,23 +30,6 @@
   (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/"))
   (package-initialize))
 
-(defun bootstrap-straight()
-  "https://github.com/radian-software/straight.el"
-  (defvar bootstrap-version)
-  (let ((bootstrap-file
-         (expand-file-name
-          "straight/repos/straight.el/bootstrap.el"
-          (or (bound-and-true-p straight-base-dir)
-              user-emacs-directory)))
-        (bootstrap-version 7))
-    (unless (file-exists-p bootstrap-file)
-      (with-current-buffer
-          (url-retrieve-synchronously
-           "https://raw.githubusercontent.com/radian-software/straight.el/develop/install.el"
-           'silent 'inhibit-cookies)
-        (goto-char (point-max))
-        (eval-print-last-sexp)))
-    (load bootstrap-file nil 'nomessage)))
 
 ;; elisp linked data, tbd
 (defmacro elld(&rest rest))
@@ -94,7 +83,8 @@
   ;; (bootstrap-quelpa)
   ;; (bootstrap-elpaca))
   ;; (bootstrap-melpa))
-  (bootstrap-straight))
+  ;; (bootstrap-straight))
+  t)
 
 ;; (defun use-lean4-mode()
 ;;   (use-package lean4-mode
@@ -317,18 +307,154 @@
   (custom-set-variables '(package-selected-packages '(yaml-mode use-package quelpa markdown-mode magit)))
   (custom-set-faces))
 
+(cl-defun init-copilot(&optional (max-char 500000))
+  (setq copilot-server-executable
+        (executable-find "copilot-language-server"))
+  (setq copilot-max-char max-char)
+  (use-package copilot
+    :straight (copilot :type git :host github :repo "zerolfx/copilot.el")
+    :hook (prog-mode . copilot-mode)))
 
-(defun init-emacs()
+(defun init-PATH()
+  (use-package exec-path-from-shell
+    :config
+    (exec-path-from-shell-initialize)))
+
+(cl-defun add-auth-folder(&optional (folder user-emacs-directory))
+  (dolist (n '("authinfo.gpg" "authinfo"))
+    (push (expand-file-name n folder) auth-sources)))
+
+
+(cl-defun gptel-ask-about-region (prompt &optional (response-buffer "*gptel-response*"))
+  "Send the active region along with a question PROMPT to gptel."
+  (interactive "sAsk ChatGPT: ")
+  (unless (use-region-p) (user-error "No region selected"))
+  (let ((region (buffer-substring-no-properties (region-beginning) (region-end)))
+        (from (make-overlay (region-beginning) (region-end))))    
+    (message "gptel-ask-about-region => %s ... " response-buffer)
+    (gptel-request
+        (format "%s\n\n%s" prompt region)
+      :callback (lambda (response metadata)
+                  (with-current-buffer (get-buffer-create response-buffer)
+                    (goto-char (point-max))
+                    (insert "\n*** gptel-request from: " (buffer-name (overlay-buffer from)) (overlay-start from) (overlay-end from))
+                    (insert "\n* prompt: " prompt "\n* response: " response)
+                    (insert "\n***")
+                    (display-buffer (current-buffer)))))
+    (message "gptel-ask-about-region => %s ... done" response-buffer)))
+
+;; a little broken 
+(cl-defun auth-get-key(&key (host "api.openai.com") (user "apikey"))
+  (let* ((entry (car (auth-source-search :host host :user user)))
+       (secret (plist-get entry :secret)))
+  (if (functionp secret)
+      (funcall secret)
+    secret)))
+
+(defun init-gptel()
+  (use-package gptel
+    :straight (gptel :type git :host github :repo "karthink/gptel")
+    :init
+    (define-prefix-command 'gptel-prefix-map)
+    (define-key global-map (kbd "C-c g") 'gptel-prefix-map)
+    :config
+    ;; Set your API key or use auth-source
+    (setq gptel-api-key (auth-get-key))
+    ;; Optional: set default model and endpoint
+    (setq gptel-model "gpt-4")
+    ;; Optional: keybinding
+    :bind
+    (:map gptel-prefix-map ("s" . #'gptel-send))
+    (:map gptel-prefix-map ("a" . #'gptel-ask-about-region))))
+
+    ;; (global-set-key (kbd "C-c q") #'gptel-send)
+    ;; (global-set-key (kbd "C-c q r") #'gptel-ask-about-region)
+
+(defun my/build-tree-sitter-nushell ()
+  "Build the Nushell tree-sitter grammar and produce .so for Emacs."
+  (let* ((default-directory (straight--repos-dir "tree-sitter-nushell"))
+         (grammar-dir (expand-file-name "tree-sitter" user-emacs-directory))
+         (output (expand-file-name "libtree-sitter-nushell.so" grammar-dir)))
+    (make-directory grammar-dir t)
+    (unless (executable-find "tree-sitter")
+      (error "tree-sitter CLI not found; install via `npm install -g tree-sitter-cli` or `cargo install tree-sitter-cli`"))
+    (shell-command "sed 's/name: \"nu\"/name: \"nushell\"/' src/grammar.js")
+    (shell-command "tree-sitter generate")
+    (shell-command (format "gcc -shared -fPIC -o %s src/parser.c src/scanner.c" output))))
+
+
+(defun init-nushell()
+  (use-package tree-sitter-nushell
+    :straight
+    (:host github
+            :repo "nushell/tree-sitter-nu"
+            :files ("src" "grammar.js" "package.json")
+            :build my/build-tree-sitter-nushell)
+    :config
+    (unless (treesit-language-available-p 'nushell)
+      (treesit-install-language-grammar 'nushell))
+    (unless (treesit-language-available-p 'nushell)
+      (message "tree-sitter-nushell unavailable?"))))
+  
+
+(defun init-treesit()
+  (setq treesit-language-source-alist
+        '((bash "https://github.com/tree-sitter/tree-sitter-bash")
+          (cmake "https://github.com/uyha/tree-sitter-cmake")
+          (css "https://github.com/tree-sitter/tree-sitter-css")
+          (elisp "https://github.com/Wilfred/tree-sitter-elisp")
+          (go "https://github.com/tree-sitter/tree-sitter-go")
+          (html "https://github.com/tree-sitter/tree-sitter-html")
+          (javascript "https://github.com/tree-sitter/tree-sitter-javascript" "master" "src")
+          (json "https://github.com/tree-sitter/tree-sitter-json")
+          (make "https://github.com/alemuller/tree-sitter-make")
+          (markdown "https://github.com/ikatyang/tree-sitter-markdown")
+          (python "https://github.com/tree-sitter/tree-sitter-python")
+          (toml "https://github.com/tree-sitter/tree-sitter-toml")
+          (tsx "https://github.com/tree-sitter/tree-sitter-typescript" "master" "tsx/src")
+          (typescript "https://github.com/tree-sitter/tree-sitter-typescript" "master" "typescript/src")
+          (yaml "https://github.com/ikatyang/tree-sitter-yaml")))
+          ;; (nushell "https://github.com/nushell/tree-sitter-nushell")))
+  (mapc #'treesit-install-language-grammar (mapcar #'car treesit-language-source-alist)))
+
+
+(defun init-emacs0()
   (bootstrap-emacs)
+  (init-magit)
+  (init-PATH)
   ;; (bootstrap-treemacs)
   ;; (init-magit)
   (customize)
   (init-height)
   (init-tweaks)
   (init-yaml-mode)
-  (init-markdown-mode))
+  (init-markdown-mode)
+  
+  (init-copilot)
+  (init-treesit)
+  ;; (announce #'init-nushell)
+  ;; (unwind-protect (add-auth-folder) (message "add-auth-folder failed?"))
+  (init-gptel))
   ;;(init-gleam-mode)
   ;;(use-treesit-jump))
   ;; (elpaca-wait))
 
-(init-emacs)
+
+;; (bootstrap-treemacs)
+;; (init-magit) 
+;; (announce #'init-nushell)
+(defun init-emacs()
+    (mapc #'announce
+          (list #'bootstrap-emacs
+                #'init-magit
+                #'init-PATH
+                #'customize
+                #'init-height
+                #'init-tweaks
+                #'init-yaml-mode
+                #'init-markdown-mode
+                #'init-copilot
+                #'init-treesit
+                #'init-gptel)))
+
+(announce #'init-emacs)

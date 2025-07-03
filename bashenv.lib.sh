@@ -247,6 +247,7 @@ f.x u.assign
 u.error() (
     local -i _status=${2:-$?}
     local _message="${1:?"$(u.expect message)"}"
+    echo ${_message} >&2
     u.stacktrace ${FUNCNAME#*.} "${_message}" ${_status} || true
     return $(( _status ? _status : 1 ))
 )
@@ -542,9 +543,54 @@ A.clone() (
 )
 f.x A.clone;
 
+be.mkchecker() {
+    local _name=${1:?"${FUNCNAME} missing _name"}; shift
+    local _ckname=ck.${_name}
+    eval $(printf 'function %s { local _checked=${1:?"${FUNCNAME} missing checked"};${FUNCNAME#*.} ${_checked} || return $(u.error "${FUNCNAME}: ${_checked} not ${FUNCNAME#*.}");}' ${_ckname})
+    # echo ${_ckname}    
+}    
+
+# be.ok ${predicate} ${instance}
+function be.check {
+    local _check=${1:?"${FUNCNAME} missing _check"}; shift
+    local _object=${1:-"${FUNCNAME} missing _object"}; shift
+    ${_check} ${_object} &> /dev/null || return $(u.error "${FUNCNAME}: ${_object} not ${_check}")
+}
+f.x be.check
+
+
+be.assert() (
+  "$@" && return 0
+   echo "${FUNCNAME} assertion failed: $*" >&2
+   exit $?
+)
+f.x be.assert
+
+function be.callable? { command -v ${1:?"${FUNCNAME} missing name"} &> /dev/null; }
+f.x be.callable? 
+
+# be.check be.callable? emacs
+
+# u.call
+u.call() {
+    : '${command} ... #> run a command against arguments, skip if ${command} nonexistant.'
+    local _f=${1:?'expecting a command'}
+    shift
+    be.callable ${_f} || return 0
+    ${_f} "$@"
+}
+
+__u.call.complete() {
+    local _command=$1 _word=$2 _previous_word=$3
+    COMPREPLY=($(compgen -A function -- "$2"))
+
+    COMPREPLY=($(f.match "$2") $(compgen -c "$2"))
+}
+f.x u.call
+
 # TODO mike@carif.io: rename u.map to f.map
 # u.map
-u.map() {
+map() {
     : '${f} ${item} ... # apply $f to each item in the list echoing the result'
     local _f=${1:?"${FUNCNAME} expecting a function"}; shift
     for _a in "$@"; do ${_f} ${_a} || return $(u.error "${FUNCNAME} ${_f} ${_a}"); done
@@ -566,7 +612,7 @@ __u.map.complete() {
     fi
     let __previous_position=_position
 }
-f.x u.map
+f.x map
 
 # u.map.mkall
 u.map.mkall() {
@@ -930,30 +976,13 @@ f.x flatpak.have
 
 
 # 0 iff the script the function is in has been run as an executable
-r.run() ( [[ "${BASH_SOURCE[1]}" = "$0" ]]; )
-f.x r.run
+be.was.run() ( [[ "${BASH_SOURCE[1]}" = "$0" ]]; )
+f.x be.was.run
 
 # 0 iff the script the function is in has been sourced
-r.sourced() ( ! r.run; )
-f.x r.sourced
+be.was.sourced() ( ! r.run; )
+f.x be.was.sourced
 
-
-
-# u.call
-u.call() {
-    : '${command} ... #> run a command against arguments, skip if ${command} nonexistant.'
-    local _f=${1:?'expecting a command'}
-    shift
-    u.have ${_f} || return 0
-    ${_f} "$@"
-}
-__u.call.complete() {
-    local _command=$1 _word=$2 _previous_word=$3
-    COMPREPLY=($(compgen -A function -- "$2"))
-
-    COMPREPLY=($(f.match "$2") $(compgen -c "$2"))
-}
-f.x u.call
 
 
 prompt.command.add() {
