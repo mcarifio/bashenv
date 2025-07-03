@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+
+newest() (
+  local _glob="${1:?"${FUNCNAME} missing _glob"}"
+  ls -t -- ${_glob} 2>/dev/null | head -n1
+)
+
+
+start() (
+    local _here=$(dirname $(realpath -qm ${BASH_SOURCE}))
+    local _appImage="$(newest "${_here}/Cursor-*-$(arch).AppImage")"
+    set -x; ${_appImage} --no-sandbox "$@"
+)
+
+start "$@"
+

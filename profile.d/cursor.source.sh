@@ -1,10 +1,5 @@
 ${1:-false} || u.have $(path.basename.part ${BASH_SOURCE} 0) || return 0
 
-cursor() (
-    : '~/.local/bin/cursor ## an .AppImage renamed '
-    command ${FUNCNAME} --no-sandbox "$@"
-)
-f.x cursor
 
 cursor.doc.urls() (
     local -A _urls=(
