@@ -207,6 +207,12 @@ e.locate.ac() (
 )
 f.x e.locate.ac
 
+e.locate.topic() (
+    e.locate ${1:?"${FUNCNAME} missing topic?"} | \
+        awk -F/ '{for (i=1; i<NF; i++) if ($i ~ /ide$/) print $0}' | \
+        while read -r path; do [[ -d "$path" ]] && echo "$path"; done | sort -u
+)
+f.x e.locate.topic
 
 zlib.env() {
     e.locate.regenerate

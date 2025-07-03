@@ -1607,6 +1607,25 @@ u.mkprobe u.probe.target 'uname -s' [Darwin]=apple-darwin [Linux]=unknown-linux-
 function % { xargs -i% "$@"; }
 f.x %
 
+parse() (
+    local -i _count=0
+    for _a in "$@"; do
+        local _k="${_a%%=*}"
+        local _v="${_a##*=}"
+        [[ "${_k}" = _* ]] && return $(u.error "'${_k}' has a leading underscore, invalid")
+        _k="${_k#--}"
+        case "${_a}" in
+            --) ;;
+            --*) printf '[%s]=1 ' ${_k};;
+            --*=*) printf '[%s]=%q ' ${_k} ${_v};;
+            *) printf '[pos%d]=%q ' $(( _count++ )) "${_a}";;
+        esac
+        shift
+    done    
+    printf '[_last]=%d [_count]=%d ' $(( _count - 1 )) ${_count}    
+)
+
+
 
 export BASH_ENV="$(realpath ${BASH_SOURCE})"
 sourced || true

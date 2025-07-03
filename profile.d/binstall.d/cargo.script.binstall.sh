@@ -12,3 +12,5 @@ cargo install varlink-cli
 cargo install rustlings
 cargo install rustypaste
 cargo install tuftool
+cargo install brush-shell
+cargo install somo

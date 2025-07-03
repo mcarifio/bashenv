@@ -536,11 +536,11 @@ binstall.apt() (
             --trusted) _trusted=1;;
             --name=*) _name="${_v}";;
             --debconf=*) _debconfs+=("${_v}");;
-            --uri=*) _uris+=("${_v}");;
+            --uri=*) _uri="${_v}";;
             --ppa=*) _ppas+=("${_v}");;
             --suite=*) _suites+=("${_v}");;
             --component=*) _components+=("${_v}");;
-            --signed-by=*) _keys+=("${_v}");;
+            --signed-by=*) _key="${_v}";;
             --pkg=*) _pkgs+=("${_v}");;
             --cmd=*) _cmds+=("${_v}");;
             --) shift; break;;
@@ -556,14 +556,12 @@ binstall.apt() (
     # TODO mike@carif.io: btrfs snapshot of /?
     
     # keys
-    if (( ${#_keys[@]} )) ; then
+    if [[ -n "${_key}" ]] ; then
         local _keyrings="/usr/share/keyrings"
-        for _key in "${_keys[@]}"; do
-            local _keyring="${_keyrings}/${_name}.gpg"
-            # TODO mike@carif.io: is this the preferred method and local target?
-            curl -sSL "${_key}" | sudo gpg --dearmor -o "${_keyring}"
-            >&2 echo "Added '${_keyring}' from '${_key}'"
-        done
+        local _keyring="${_keyrings}/${_name}.gpg"
+        # TODO mike@carif.io: is this the preferred method and local target?
+        curl -sSL "${_key}" | sudo gpg --dearmor -o "${_keyring}"
+        >&2 echo "Added '${_keyring}' from '${_key}'"
     fi
 
     # debconfs
@@ -582,15 +580,11 @@ binstall.apt() (
 
 
     # uris -> sources.list.d
-    if (( ${#_uris[@]} )) ; then
+    if [[ -n "${_uri}" ]] ; then
         local _source="/etc/apt/sources.list.d/${_name}.list"
         (( ${#_components[@]} )) || _components=(main universe restricted multiverse) 
         if [[ ! -r "${_source}" ]] ; then
-            for _uri in "${_uris[@]}"; do
-                # TODO mike@carif.io: add signed-by=/usr/share/keyrings/${_key}.gpg. what's the default?
-                # printf 'deb [arch=%s signed-by=%s] %s %s\n' $(dpkg --print-architecture) "${_keyring}" "${_uri}" "$(printf '%s ' ${_components[@]})"  | sudo tee -ap "${_source}"
-                printf 'deb [arch=%s] %s %s\n' $(dpkg --print-architecture) "${_uri}" "$(printf '%s ' ${_components[@]})"  | sudo tee -ap "${_source}"
-            done
+            printf 'deb [arch=%s signed-by=%s] %s %s\n' $(dpkg --print-architecture) "${_keyring}" "${_uri}" "$(printf '%s ' ${_components[@]})"  | sudo tee -ap "${_source}"
             >&2 echo "Created ${_source}"
         fi
     fi
