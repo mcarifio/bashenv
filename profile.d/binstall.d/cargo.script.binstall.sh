@@ -17,3 +17,4 @@ cargo install somo
 cargo install tree-sitter-cli
 cargo install tree-sitter-cli
 
+cargo install jj-cli
