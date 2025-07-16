@@ -1,6 +1,6 @@
 ${1:-false} || u.haveP $(path.basename.part ${BASH_SOURCE} 0) || return 0
 
-waveterm() ( command ${FUNCNAME} "$@"; )
+waveterm() ( command ${FUNCNAME} --no-sandbox "$@"; )
 f.x waveterm
 
 waveterm.doc.urls() (
@@ -24,9 +24,7 @@ f.x waveterm.env
 waveterm.session() {
     : '# called by .bashrc'
     local -r _shell=${1:-$(u.shell)}
-    local -r _cmd=${2:-${FUNCNAME%.*}}
-    local -r _completions=/usr/share/bash-completion/completions
-    source.if ${_completions}/${_cmd}.${_shell} ${_completions}/${_cmd}
+    source <(wsh completion ${_shell})
 }
 f.x waveterm.session
 

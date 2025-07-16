@@ -590,7 +590,7 @@ f.x u.call
 
 # TODO mike@carif.io: rename u.map to f.map
 # u.map
-map() {
+u.map() {
     : '${f} ${item} ... # apply $f to each item in the list echoing the result'
     local _f=${1:?"${FUNCNAME} expecting a function"}; shift
     for _a in "$@"; do ${_f} ${_a} || return $(u.error "${FUNCNAME} ${_f} ${_a}"); done
