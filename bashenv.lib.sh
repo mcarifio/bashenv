@@ -612,7 +612,7 @@ __u.map.complete() {
     fi
     let __previous_position=_position
 }
-f.x map
+f.x u.map
 
 # u.map.mkall
 u.map.mkall() {
