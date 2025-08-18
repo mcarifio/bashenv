@@ -18,3 +18,5 @@ cargo install tree-sitter-cli
 cargo install tree-sitter-cli
 
 cargo install jj-cli
+cargo install rnm
+cargo install rnr

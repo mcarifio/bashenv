@@ -5,7 +5,7 @@ ec() (
     : '[${_pathname}] ## run emacsclient after starting emacs.service'
     set -Eeuo pipefail; shopt -s nullglob
     # emacs.server || return $(u.error "emacs daemon not started")
-    [[ -n "${DISPLAY}" ]] && emacsclient --reuse-frame --no-wait --timeout=20 --quiet "$@" || emacsclient --tty --timeout=20 --quiet "$@"
+    [[ -n "${DISPLAY}" ]] && emacsclient --alternate-editor= --reuse-frame --no-wait --timeout=20 --quiet "$@" || emacsclient --alternate-editor= --tty --timeout=20 --quiet "$@"
 )
 f.x ec
 

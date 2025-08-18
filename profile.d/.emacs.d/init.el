@@ -13,7 +13,7 @@
   (message "%s %s... " f rest)
   (let ((result (unwind-protect (apply f rest))))
     (if result (message "%s %s... => %s ;; succeeded" f rest result)
-      (message "%s %s... failed" f rest))))
+      (message "%s %s... failed, continuing..." f rest))))
   
 
 (defun bootstrap-quelpa()
@@ -307,13 +307,13 @@
   (custom-set-variables '(package-selected-packages '(yaml-mode use-package quelpa markdown-mode magit)))
   (custom-set-faces))
 
-(cl-defun init-copilot(&optional (max-char 500000))
-  (setq copilot-server-executable
-        (executable-find "copilot-language-server"))
-  (setq copilot-max-char max-char)
-  (use-package copilot
-    :straight (copilot :type git :host github :repo "zerolfx/copilot.el")
-    :hook (prog-mode . copilot-mode)))
+;; (cl-defun init-copilot(&optional (max-char 500000))
+;;   (setq copilot-server-executable
+;;         (executable-find "copilot-language-server"))
+;;   (setq copilot-max-char max-char)
+;;   (use-package copilot
+;;     :straight (copilot :type git :host github :repo "zerolfx/copilot.el")
+;;     :hook (prog-mode . copilot-mode)))
 
 (defun init-PATH()
   (use-package exec-path-from-shell
@@ -430,7 +430,7 @@
   (init-yaml-mode)
   (init-markdown-mode)
   
-  (init-copilot)
+  ;; (init-copilot)
   (init-treesit)
   ;; (announce #'init-nushell)
   ;; (unwind-protect (add-auth-folder) (message "add-auth-folder failed?"))
@@ -452,9 +452,9 @@
                 #'init-height
                 #'init-tweaks
                 #'init-yaml-mode
-                #'init-markdown-mode
-                #'init-copilot
-                #'init-treesit
-                #'init-gptel)))
+                #'init-markdown-mode)))
+                ;; #'init-copilot
+                ;; #'init-treesit)))
+                ;; #'init-gptel)))
 
 (announce #'init-emacs)
