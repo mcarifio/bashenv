@@ -1,22 +1,25 @@
-${1:-false} || [[ -r ${ASDF_DIR:-${HOME}/opt/asdf/current}/asdf.sh ]] || return 0
-export ASDF_DATA_DIR=${HOME}/opt/asdf/current
-source ${ASDF_DATA_DIR}/asdf.sh
+# https://asdf-vm.com/guide/upgrading-to-v0-16
+path.add ${HOME}/opt/asdf/current/bin
+${1:-false} || u.have asdf || return 0
+export ASDF_DATA_DIR="$(dirname $(dirname $(which asdf)))"
+path.add ${ASDF_DATA_DIR}/shims
+ASDF_CONFIG_FILE=${HOME}/.config/asdf/asdfrc
+
 
 # is plugin
 asdf.plugin.have() (
     set -Eeuo pipefail
-    asdf plugin-list | command grep --quiet -e "^${1:?'expecting a plugin'}\$" &> /dev/null
+    asdf plugin list | command grep --quiet -e "^${1:?'expecting a plugin'}\$" &> /dev/null
 )
 f.x asdf.plugin.have
 
 
 asdf.plugin.add() (
     : '${_plugin} [${_from}] # add an asdf plugin from an optional url'
-    set -Eeuo pipefail
-    set -Eeuo pipefail
+    set -Eeuo pipefail; shopt -s nullglob
     local _pkg=${1:?'expecting a plugin'}
     local _from=${2:-}
-    asdf plugin-add ${_pkg} ${_from}
+    asdf plugin add ${_pkg} ${_from}
 )
 f.x asdf.plugin.add
 
@@ -30,7 +33,7 @@ asdf.install() (
 	    --url=*) local _url="${_a##*=}"
                      local _plugin=$(path.basename "${_url}")
                      _plugin=${_plugin/asdf-/}
-                     asdf plugin-add "${_plugin}" "${_url}";;
+                     asdf plugin add "${_plugin}" "${_url}";;
             --) shift; break;;
             *) break;;
         esac
@@ -47,7 +50,7 @@ asdf.install() (
 f.x asdf.install
 
 asdf.remove.past() (
-    : '${_plugin}* # remove older versions for each ${_plugin}, $(asdf plugin-list) for all installed plugins'
+    : '${_plugin}* # remove older versions for each ${_plugin}, $(asdf plugin list) for all installed plugins'
     set -Eeuo pipefail
     for _plugin in "$@"; do
         >&2 echo -n "${FUNCNAME} ${_plugin} ... "
@@ -57,8 +60,8 @@ asdf.remove.past() (
 )
 f.x asdf.remove.past
 
-# asdf.plugin-add chezmoi https://github.com/joke/asdf-chezmoi.git
-# asdf.plugin-add cheat https://github.com/jmoratilla/asdf-cheat-plugin.git
+# asdf.plugin add chezmoi https://github.com/joke/asdf-chezmoi.git
+# asdf.plugin add cheat https://github.com/jmoratilla/asdf-cheat-plugin.git
 
 # Don't install pypy using asdf, it breaks python itself. See ~/opt/pypy/current/bin/pypy.
 # python3
@@ -148,7 +151,7 @@ asdf.install.all() (
     set -Eeuo pipefail
     for _url in "$@"; do
         local _pkg=$(path.basename ${_url##*/asdf-})
-        asdf plugin-add ${_pkg} ${_url}
+        asdf plugin add ${_pkg} ${_url}
         asdf.install ${_pkg}
     done    
 )
