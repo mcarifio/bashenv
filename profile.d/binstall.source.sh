@@ -515,8 +515,8 @@ binstall.dnf.installers-by-cmd() (
 )
 
 
-
-binstall.apt() (
+# create sources .list style. eventually remove this
+binstall.aptlist() (
     : '[--uri=${url}]+ [--suite=${suite}]+ [--component=${component}] [--signed-by=${url}] pkg+'
     set -Eeuo pipefail; shopt -s nullglob
     local _cmd=${FUNCNAME##*.}
@@ -593,6 +593,88 @@ binstall.apt() (
     apt install -y "$@" ${_pkgs[@]}
     (( _check )) && binstall.check $(binstall.${_cmd}.pkg.cmds ${_pkgs[@]}) ${_cmds[@]}
 )
+f.x binstall.aptlist
+
+binstall.apt() (
+    : '[--uri=${url}] [--suite=${suite}]* [--component=${component}]+ [--signed-by=${url}] pkg+'
+    set -Eeuo pipefail; shopt -s nullglob
+    local _cmd=${FUNCNAME##*.}
+    u.have ${_cmd} || return $(u.error "${FUNCNAME}: ${_cmd} not on PATH")
+
+    local -i _check=0
+    local -i _status=0
+    local -a _debconfs=() _uris=() _suites=() _components=() _keys=() _cmds=() _pkgs=() _ppas=()
+    local _name=''
+    local -i _trusted=0
+    for _a in "$@"; do
+        local _k="${_a%%=*}"
+        local _v="${_a##*=}"
+        case "${_a}" in
+            # adds [trusted=yes] to add repos, use with caution
+            --check) _check=1;;
+            --trusted) _trusted=1;;
+            --name=*) _name="${_v}";;
+            --debconf=*) _debconfs+=("${_v}");;
+            --uri=*) _uri="${_v}";;
+            --ppa=*) _ppas+=("${_v}");;
+            --suite=*) _suites+=("${_v}");;
+            --component=*) _components+=("${_v}");;
+            --signed-by=*) _key="${_v}";;
+            --pkg=*) _pkgs+=("${_v}");;
+            --cmd=*) _cmds+=("${_v}");;
+            --) shift; break;;
+            *) break ;;
+        esac
+        shift
+    done
+
+    (( ${#_pkgs[@]} )) || return $(u.error "${FUNCNAME} expecting --pkg=something")
+    [[ -z "${_name}" ]] && _name=${_pkgs[0]}
+
+
+    # TODO mike@carif.io: btrfs snapshot of /?
+    
+    # keys
+    set -x
+    if [[ -n "${_key}" ]] ; then
+        local _key_signed_by=$(mktemp -q --suffix=.gpg)
+        # TODO mike@carif.io: is this the preferred method and local target?
+        curl -fsSL "${_key}" | gpg --yes --dearmor -o "${_key_signed_by}" # force output
+    fi
+
+    # debconfs
+    if (( ${#_debconfs[@]} )) ; then
+        for _debconf in "${_debconfs[@]}"; do
+            echo "${_debconf}" | sudo debconf-set-selections
+        done
+    fi
+
+    # ppas
+    if (( ${#_ppas[@]} )) ; then
+        for _ppa in "${_ppas[@]}"; do
+            sudo add-apt-repository -y "${_ppa}" && >&2 echo "Added ppa '${_ppa}'"
+        done
+    fi
+
+
+    # uris -> sources.list.d
+    if [[ -n "${_uri}" ]] ; then
+        local _source="/etc/apt/sources.list.d/${_name}.sources"
+        # (( ${#_components[@]} )) || _components=(main universe restricted multiverse) 
+        if [[ ! -r "${_source}" ]] ; then
+            local _signed_by=/usr/share/keyrings/${_name}.gpg
+            (printf 'Types: deb\nEnabled: yes\nArchitectures: %s\nURIs: %s\nSuites: %s\nComponents: %s\n' $(dpkg --print-architecture) "${_uri}" "$(printf '%s ' ${_suites[@]})" "$(printf '%s ' ${_components[@]})" ; [[ -r "${_key_signed_by}" ]] && echo "Signed-By: ${_signed_by}") | sudo tee -ap "${_source}"
+            sudo install -o root -g root ${_key_signed_by} ${_signed_by}
+            >&2 echo "Created ${_source}"
+        fi
+    fi
+
+    apt update
+    apt install -y "$@" ${_pkgs[@]}
+    (( _check )) && binstall.check $(binstall.${_cmd}.pkg.cmds ${_pkgs[@]}) ${_cmds[@]}
+)
+f.x binstall.apt
+
 f.x binstall.apt
 
 binstall.apt.all() (
