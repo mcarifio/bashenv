@@ -60,8 +60,8 @@ asdf.remove.past() (
 )
 f.x asdf.remove.past
 
-# asdf.plugin add chezmoi https://github.com/joke/asdf-chezmoi.git
-# asdf.plugin add cheat https://github.com/jmoratilla/asdf-cheat-plugin.git
+# asdf.plugin.add chezmoi https://github.com/joke/asdf-chezmoi.git
+# asdf.plugin.add cheat https://github.com/jmoratilla/asdf-cheat-plugin.git
 
 # Don't install pypy using asdf, it breaks python itself. See ~/opt/pypy/current/bin/pypy.
 # python3
@@ -125,8 +125,7 @@ if asdf.plugin.have plz ; then
 fi
 
 asdf.session() {
-    local _asdf_bash=${ASDF_DATA_DIR:-~/opt/asdf/current}/completions/asdf.bash
-    [[ -r "${_asdf_bash}" ]] && source "${_asdf_bash}" || return $(u.error "${FUNCNAME} failed")
+    source <(asdf completion $(u.shell))
 }
 f.x asdf.session
 

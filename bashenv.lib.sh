@@ -10,7 +10,15 @@
 # skip if ${_this_pathname} true || echo
 [[ -z "$1" ]]  && declare -Fpx bashenv.sourced.from &> /dev/null && bashenv.sourced.from "$(realpath ${BASH_SOURCE})" && return 0
 [[ echo = "$1" ]] && >&2 echo "sourcing $(realpath ${BASH_SOURCE})"
-    
+
+set() {
+    command set -Eeuo pipefail
+    shopt -s nullglob
+    command set "$@"
+}
+f.x set
+
+
 # declare -Axig __bashenv_fx
 f.x() {
     : '${_f}... # export functions ${_f}...'
