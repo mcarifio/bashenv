@@ -11,14 +11,6 @@
 [[ -z "$1" ]]  && declare -Fpx bashenv.sourced.from &> /dev/null && bashenv.sourced.from "$(realpath ${BASH_SOURCE})" && return 0
 [[ echo = "$1" ]] && >&2 echo "sourcing $(realpath ${BASH_SOURCE})"
 
-set() {
-    command set -Eeuo pipefail
-    shopt -s nullglob
-    command set "$@"
-}
-f.x set
-
-
 # declare -Axig __bashenv_fx
 f.x() {
     : '${_f}... # export functions ${_f}...'
@@ -88,6 +80,21 @@ f.status() {
     fi
 }
 f.x f.status
+
+in.called() { (( ${BASH_SUBSHELL} || ${#BASH_ARGV[@]} )); }
+f.x in.called
+                                                          
+# strict only called in subshells or scripts
+strict() {
+    in.called || return $(u.err "${FUNCNAME} called in a bash REPL") 0
+    command set -Eeuo pipefail
+    shopt -s nullglob lastpipe
+    command set "$@"
+}
+f.x strict
+
+
+
 
 
 f.match() {
