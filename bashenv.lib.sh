@@ -81,12 +81,14 @@ f.status() {
 }
 f.x f.status
 
+# status 0 iff in an executed bash script of bash function that creates a subshell
+# e.g. f() ( :; ).
 in.called() { (( ${BASH_SUBSHELL} || ${#BASH_ARGV[@]} )); }
 f.x in.called
                                                           
 # strict only called in subshells or scripts
 strict() {
-    in.called || return $(u.err "${FUNCNAME} called in a bash REPL") 0
+    in.called || return $(u.err "${FUNCNAME} called in REPL" 0)
     command set -Eeuo pipefail
     shopt -s nullglob lastpipe
     command set "$@"

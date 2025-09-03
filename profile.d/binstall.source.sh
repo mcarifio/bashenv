@@ -604,8 +604,8 @@ binstall.apt() (
     local -i _check=0
     local -i _status=0
     local -a _debconfs=() _uris=() _suites=() _components=() _keys=() _cmds=() _pkgs=() _ppas=()
-    local _name=''
-    local -i _trusted=0
+    local _name='' _key='' _uri=''
+    local -i _trusted=0 _check=0
     for _a in "$@"; do
         local _k="${_a%%=*}"
         local _v="${_a##*=}"
@@ -635,7 +635,6 @@ binstall.apt() (
     # TODO mike@carif.io: btrfs snapshot of /?
     
     # keys
-    set -x
     if [[ -n "${_key}" ]] ; then
         local _key_signed_by=$(mktemp -q --suffix=.gpg)
         # TODO mike@carif.io: is this the preferred method and local target?
