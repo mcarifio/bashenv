@@ -128,6 +128,8 @@ asdf.session() {
     source <(asdf completion $(u.shell))
 }
 f.x asdf.session
+asdf.session
+
 
 asdf.platform-update() {
     asdf update
