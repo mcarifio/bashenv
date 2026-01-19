@@ -2,7 +2,7 @@
 
 zlib.root() (
     : '[${_folder}...] # return the first folder that actually exists or '
-    path.folder {/run,}/media/${USER}/mobilehome/${USER}/Documents/e ${HOME}/Documents/e
+    path.folder {/run,}/media/${USER}/mobilehome0/${USER}/Documents/e ${HOME}/Documents/e
 )
 f.x zlib.root
 
@@ -202,8 +202,9 @@ e.locate() (
 f.x e.locate
 
 e.locate.ac() (
-    set -Eeuo pipefail
-    ${FUNCNAME%.*} -r -- $(printf -- '-%s-[[:digit:]][[:digit:]][[:digit:]][[:digit:]]\.%s\.' ${1:-'[^\-]*'} ${2:-'[^\.]*'})
+    set -eu
+    local -l author=${1:-'[^\-]*'} category=${2:-'[^\.]*'}
+    ${FUNCNAME%.*} -r -- $(printf -- '-%s-[[:digit:]][[:digit:]][[:digit:]][[:digit:]]\.%s\.' ${author} "${category}")
 )
 f.x e.locate.ac
 

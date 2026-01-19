@@ -8,7 +8,7 @@ ASDF_CONFIG_FILE=${HOME}/.config/asdf/asdfrc
 
 # is plugin
 asdf.plugin.have() (
-    set -Eeuo pipefail
+    set -eu
     asdf plugin list | command grep --quiet -e "^${1:?'expecting a plugin'}\$" &> /dev/null
 )
 f.x asdf.plugin.have
@@ -16,16 +16,23 @@ f.x asdf.plugin.have
 
 asdf.plugin.add() (
     : '${_plugin} [${_from}] # add an asdf plugin from an optional url'
-    set -Eeuo pipefail; shopt -s nullglob
+    set -eu; shopt -s nullglob
     local _pkg=${1:?'expecting a plugin'}
     local _from=${2:-}
     asdf plugin add ${_pkg} ${_from}
 )
 f.x asdf.plugin.add
 
+asdf.latest-version() (
+    set -eu
+    local _pkg=${1:?'expecting a pkg'}
+    asdf list ${_pkg} | tail -1 | tr -d ' *' || echo "${FUNCNAME} failed" >&2
+)
+f.x asdf.latest-version
+
 asdf.install() (
     : '[--url=${_plugin_url}] ${_plugin} ${_version} ## install ${_plugin} ${_verision} from ${_url}'
-    set -Eeuo pipefail
+    set -euo pipefail
 
     for _a in "${@}"; do
         local _v="${_a##*=}"
@@ -43,9 +50,11 @@ asdf.install() (
     local _pkg=${1:-${_plugin:?'expecting a package'}}
     local _version=${2:-latest}
     asdf install ${_pkg} ${_version}
-    asdf global ${_pkg} ${_version}
+    _version=$(asdf.latest-version ${_pkg}) && asdf set -u ${_pkg} ${_version}
     asdf reshim ${_pkg}
+    asdf which ${_pkg}
     hash -r ${_pkg}
+    which ${_pkg}
 )
 f.x asdf.install
 
