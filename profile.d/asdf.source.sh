@@ -23,10 +23,18 @@ asdf.plugin.add() (
 )
 f.x asdf.plugin.add
 
-asdf.latest-version() (
-    set -eu
+
+# asdf.starred() (
+#     set -euo pipefail
+#     local _pkg=${1:?'expecting a pkg'}
+#     asdf list ${_pkg} | grep -E ^[[:space:]]\\*\+[[:digit:]]\+\.[[:digit:]]\+\.[[:digit:]] | tr -d ' *' || echo "${FUNCNAME} failed" >&2
+# )
+# f.x asdf.latest-version
+
+asdf.latest-installed() (
+    set -euo pipefail
     local _pkg=${1:?'expecting a pkg'}
-    asdf list ${_pkg} | tail -1 | tr -d ' *' || echo "${FUNCNAME} failed" >&2
+    asdf list ${_pkg} | sed 's/^[* ]*//' | grep -v '^system$' | sort -V | tail -1
 )
 f.x asdf.latest-version
 
@@ -50,13 +58,21 @@ asdf.install() (
     local _pkg=${1:-${_plugin:?'expecting a package'}}
     local _version=${2:-latest}
     asdf install ${_pkg} ${_version}
-    _version=$(asdf.latest-version ${_pkg}) && asdf set -u ${_pkg} ${_version}
+    asdf.set ${_pkg}
+)
+f.x asdf.install
+
+asdf.set() (
+    set -euo pipefail
+    local _pkg=${1:?'expecting a pkg'}
+    local _version=$(asdf.latest-installed ${_pkg})
+    asdf set -u ${_pkg} ${_version}
     asdf reshim ${_pkg}
     asdf which ${_pkg}
     hash -r ${_pkg}
     which ${_pkg}
 )
-f.x asdf.install
+
 
 asdf.remove.past() (
     : '${_plugin}* # remove older versions for each ${_plugin}, $(asdf plugin list) for all installed plugins'
