@@ -1433,7 +1433,7 @@ f.x u.all-hosts # hping3
 # hack
 if u.have asdf; then
     asdf.pipi() {
-        python -m pip install -U $*
+        python -m pip install --break-system-packages --upgrade $*
         asdf reshim python
         hash -r
     }

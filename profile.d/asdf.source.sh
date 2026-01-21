@@ -94,7 +94,7 @@ if asdf.plugin.have python; then
     # https://github.com/danhper/asdf-python/
     # asdf plugin add python
     export ASDF_PYTHON_DEFAULT_PACKAGES_FILE=${ASF_DATA_DIR}/.default-python-packages
-    path.add $(asdf where python)/bin
+    
 fi
 
 # nodejs

@@ -1,5 +1,9 @@
 ${1:-false} || u.have.all $(path.basename.part ${BASH_SOURCE} 0) || return 0
 
+# python is on PATH so site module is available
+# usually resolves to ~/.local/bin which is likely already on PATH
+path.add $(python -m site --user-base)/bin
+
 path.frontier.dir() (
     local _root=${1:-${PWD}}
     cat <<- EOF | forward.py /dev/stdin "${_root}"
@@ -22,8 +26,8 @@ f.x pyz
 
 # see binstall.pip
 python.pip() (
-    python -m pip install -U pip
-    python -m pip install -U "$@"
+    python -m pip install --break-system-packages --upgrade pip
+    python -m pip install --break-system-packages --upgrade "$@"
 )
 f.x python.pip
 
